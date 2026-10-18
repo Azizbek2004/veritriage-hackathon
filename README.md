@@ -1,6 +1,6 @@
 # VeriTriage — Agent Environment
 
-This repository is the self-organizing engineering environment for VeriTriage. It is **not** the product build. Product code is intentionally absent so the AI agent can create it from a clean, frozen starting point.
+This repository is the self-organizing engineering environment for VeriTriage. It is **not** the product build. Product code and contract files are intentionally absent so the AI agent can create them from a clean, frozen starting point.
 
 ## What Is Here
 
@@ -10,7 +10,7 @@ This repository is the self-organizing engineering environment for VeriTriage. I
 | `BOOTSTRAP.md` | The one-time product scaffold instructions. Run this before the orchestrator. |
 | `.agents/` | Orchestrator, analyzer, implementer, evaluator, reviewer, state machine, human handoff, remediation, Q&A war room. |
 | `.skills/` | `ponytail`, `test-first`, `no-slop-verifier`, `scope-guard`, `signalr-checklist`. |
-| `contracts/` | Frozen C# domain records, TypeScript mirror, OpenAPI spec. |
+| `contracts/` | Contract plan and approved delta. C#/TS/OpenAPI files are created in B-000. |
 | `BACKLOG.md` | Ordered build tasks and the bootstrap phase. |
 | `REMEDIATION.md` | Bounded seven-change post-baseline delta plan. |
 | `pitch/` | Post-remediation opening, deployment slide, throughput math. |
@@ -20,6 +20,7 @@ This repository is the self-organizing engineering environment for VeriTriage. I
 
 ## What Is Intentionally Absent
 
+- `contracts/domain/`, `contracts/types/`, and `contracts/api/` — created in B-000 from `blueprint.md`.
 - `src/`, `apps/`, and `tests/PayShield.Tests` — created by `BOOTSTRAP.md`.
 - `fixtures/` data — human-owned; agents must not invent ARES or Textract data.
 - `tests/golden/` snapshots — created after the verifier is implemented and approved.
@@ -30,18 +31,19 @@ No product test baseline is included. The product scaffold and its generated bui
 ## Start Order
 
 1. **Human:** read `contracts/README.md`, `fixtures/README.md`, `evaluation/README.md`, and `REMEDIATION.md`. Populate fixtures. Approve the package set. Confirm the 68–72% post-remediation estimate, not 81%.
-2. **AI agent:** read `AGENTS.md`, then execute `BOOTSTRAP.md`. Create the .NET 9 solution, web/mobile shells, test harness, and the VT-001 red test. Commit.
+2. **AI agent:** read `AGENTS.md`, then execute `BOOTSTRAP.md`. Materialize the contracts (B-000), create the .NET 9 solution, web/mobile shells, test harness, and the VT-001 red test. Commit.
 3. **AI agent:** prove the baseline: `dotnet test` exactly one intended failure; `npm test` and `npm run build` green. Then launch the orchestrator with `Read .agents/orchestrator.md and begin Phase 1.`
 4. **AI agent:** as the owning tasks land, fold in the seven remediation deltas from `REMEDIATION.md`. After all seven are green, run the remediation verification pass and write `EXTENDED_FINDINGS.md`.
 5. **Humans:** rehearse the OCR drop and QR sign. No new scope after H+20.
 
 ## The One Rule That Matters
 
-The agent proposes. The verifier proves. The human signs. Every task ends with a test. Every commit is gated by an independent evaluator and a diff-first reviewer. No contract drift, no package drift, no scope creep.
+The agent proposes. The verifier proves. The human signs. Every task ends with a test. Every commit is gated by an independent evaluator and a diff-first reviewer. No contract drift once the contracts are materialized, no package drift, no scope creep.
 
 ## Key Documents
 
 - Frozen rules: `AGENTS.md`
+- Contract plan: `contracts/README.md`
 - Product scaffold: `BOOTSTRAP.md`
 - Remediation delta: `REMEDIATION.md`
 - Q&A drill: `.agents/QA_WAR_ROOM.md`

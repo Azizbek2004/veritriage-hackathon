@@ -15,7 +15,7 @@ In this order:
 3. `REMEDIATION.md` — the seven changes, acceptance criteria, and status.
 4. `.agents/QA_WAR_ROOM.md` — the three traps and the NEVER SAY list.
 5. `BACKLOG.md` — current tasks.
-6. `contracts/` — frozen types. Do not modify except the approved delta already applied.
+6. `contracts/README.md` — the plan; B-000 materializes and freezes the files. The approved `regulatory_clock` delta is applied there. Do not modify the materialized contracts.
 7. `tests/golden/` — expected outputs. Do not modify.
 8. `evaluation/EVAL_REPORT.md` and `evaluation/HONEST_AMENDMENTS.md` if they exist.
 
@@ -25,7 +25,8 @@ If `src/PayShield.sln` is missing, stop. The product has not been bootstrapped. 
 
 ## Preconditions
 
-- `BOOTSTRAP.md` is complete.
+- `BOOTSTRAP.md` is complete, including B-000.
+- `contracts/` is materialized and frozen; `contracts/README.md` says `Frozen`.
 - The remediation baseline is green: `dotnet test`, `npm test`, `npm run build`, `git status --porcelain` empty.
 - All seven owning tasks are green: VT-003, VT-014, VT-023, VT-024, VT-027, VT-028. If one is not, stop and return to the orchestrator; do not implement it here without a human decision.
 - `REMEDIATION_PLAN.md` is written and lists every file and acceptance you are verifying.
@@ -46,12 +47,12 @@ Verify exactly the seven deltas in `REMEDIATION.md`, in this order:
 6. Change 3 — three-state regulatory clock badge.
 7. Change 7 — compact QR, F9 failover, 2.6s cassette.
 
-The deltas are folded into the owning tasks in `BACKLOG.md`. The environment bootstrap pre-staged the docs, Q&A, math, and contract delta. Your job at VT-031 is to verify the acceptances, not to rebuild what the owning tasks already delivered. If a delta is missing or wrong, apply only that bounded fix after a human `DECISION.md`, then re-run the acceptance.
+The deltas are folded into the owning tasks in `BACKLOG.md`. The environment bootstrap pre-staged the docs, Q&A, math, and contract-delta plan; B-000 materializes the contracts. Your job at VT-031 is to verify the acceptances, not to rebuild what the owning tasks already delivered. If a delta is missing or wrong, apply only that bounded fix after a human `DECISION.md`, then re-run the acceptance.
 
 ## Out of Scope
 
 - No Mastercard MCC label or virtual card UI.
-- No `contracts/domain/*.cs` change except the already-applied optional `regulatory_clock`.
+- No `contracts/domain/*.cs` change except the optional `regulatory_clock` applied during B-000.
 - No change to `fixtures/textract_invoice.json` or `fixtures/invoice_hero.png`.
 - No new NuGet or npm package.
 - No verifier pipeline refactor.
@@ -129,4 +130,4 @@ If blocked, return `REMEDIATION BLOCKED` with the change number, failing accepta
 
 ## Environment-Only Note
 
-This environment contains the plan, pre-staged docs, and contract delta. It does not contain product code or a green baseline. A remediation run against this repo must stop at precondition 2 and write `BLOCKED.md` until `BOOTSTRAP.md` is complete. That is correct behavior, not a failure.
+This environment contains the plan, pre-staged docs, and contract-delta plan. It does not contain product code, contract files, or a green baseline. A remediation run against this repo must stop at the preconditions and write `BLOCKED.md` until `BOOTSTRAP.md` and B-000 are complete. That is correct behavior, not a failure.

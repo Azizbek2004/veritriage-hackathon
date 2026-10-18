@@ -10,6 +10,7 @@ These tasks create structure, not features. They are specified in `BOOTSTRAP.md`
 
 | ID | Workstream | Task | Files | Acceptance | Status |
 |---|---|---|---|---|---|
+| B-000 | contracts | Materialize frozen contracts | `contracts/domain/*.cs`, `contracts/types/api.d.ts`, `contracts/api/openapi.yaml` | Files match `blueprint.md` plus the approved `regulatory_clock` delta; `contracts/README.md` says `Frozen`; committed separately | TODO |
 | B-001 | infra | .NET 9 solution and four project shells | `src/PayShield.sln`, `src/PayShield.*/*.csproj` | `dotnet build` passes; contracts linked into Domain | TODO |
 | B-002 | verifier | Test harness and VT-001 red test | `tests/PayShield.Tests/PayShield.Tests.csproj`, `tests/PayShield.Tests/JsonPointerResolverTests.cs`, `src/PayShield.Verifier/JsonPointerResolver.cs` | `dotnet test` has exactly one failing test | TODO |
 | B-003 | web | Next.js 15 shell | `apps/web/package.json`, `tsconfig.json`, `next.config.ts`, `app/*` | `npm run build` passes; `npm test` exits 0 | TODO |
@@ -33,7 +34,7 @@ The file column lists implementation targets. The red test counts toward the ana
 
 | ID | Workstream | Task | Files (max 3) | Red test | Depends | Priority | Status |
 |---|---|---|---|---|---|---|---|
-| VT-001 | verifier | RFC 6901 JSON pointer resolver | `src/PayShield.Verifier/JsonPointerResolver.cs`, `tests/PayShield.Tests/JsonPointerResolverTests.cs` | `Resolve_HandlesEscapedSegmentsAndMissingPaths` | B-002 | P0 | TODO |
+| VT-001 | verifier | RFC 6901 JSON pointer resolver | `src/PayShield.Verifier/JsonPointerResolver.cs`, `tests/PayShield.Tests/JsonPointerResolverTests.cs` | `Resolve_HandlesEscapedSegmentsAndMissingPaths` | B-001, B-002 | P0 | TODO |
 | VT-002 | verifier | Gate 1 strict schema | `src/PayShield.Verifier/Gates/Gate1_Schema.cs`, `tests/PayShield.Tests/Gate1Tests.cs` | `Gate1_RejectsExtraField`, `Gate1_RejectsMissingField` | VT-001 | P0 | TODO |
 | VT-003 | verifier | Gate 2 scope invariant | `src/PayShield.Verifier/Gates/Gate2_SecondHopPolicy.cs`, `tests/PayShield.Tests/Gate2_SecondHopPolicyTests.cs` | `Gate2_RejectsThreeHop`, `Gate2_RejectsDifferentIcoOnHop2` | VT-001 | P0 | TODO |
 | VT-004 | verifier | Gate 3 OCR provenance | `src/PayShield.Verifier/Gates/Gate3_OcrProvenance.cs`, `tests/PayShield.Tests/Gate3Tests.cs` | `Gate3_RejectsLowOcrConfidence`, `Gate3_RejectsBoundingBoxOutOfRange` | VT-001 | P0 | TODO |
@@ -74,7 +75,7 @@ The seven changes are not a second backlog. They are acceptance criteria on the 
 |---|---|---|
 | 1 — 21 FTE hook | VT-023 | `AGENTS.md`, `pitch/opening.md` |
 | 2 — Gate 2 scope invariant | VT-003 | `AGENTS.md`, `.agents/QA_WAR_ROOM.md` |
-| 3 — Regulatory clock badge | VT-024 (contract delta applied) | `AGENTS.md`, `contracts/README.md` |
+| 3 — Regulatory clock badge | VT-024 (contract delta applied in B-000) | `AGENTS.md`, `contracts/README.md` |
 | 4 — Q&A war room | none (docs) | `.agents/QA_WAR_ROOM.md` |
 | 5 — Deployment story | none (docs) | `AGENTS.md`, `pitch/slide_2.md` |
 | 6 — 180s throughput math | VT-023 | `AGENTS.md`, `pitch/throughput_math.md` |
@@ -89,11 +90,11 @@ The seven changes are not a second backlog. They are acceptance criteria on the 
 - No new feature tasks after H+20. VT-032 is bug-fix only.
 - The H+14 cut list may mark tasks `CUT`; never delete their tests without a `DECISION.md`.
 - The remediation changes are bounded. A new idea goes to `EXTENDED_FINDINGS.md`, not the backlog.
-- No product code exists until B-001 starts. The current next action is B-001.
+- No product code or contract files exist until B-000 starts. The current next action is B-000.
 
 ## Current
 
-- Active: none. The repository is the environment; product code is absent.
-- Next: B-001, then B-002 through B-006.
+- Active: none. The repository is the environment; product code and contracts are absent.
+- Next: B-000, then B-001 through B-006.
 - Human blockers: HUMAN-001 (fixtures) before VT-007; HUMAN-002 (packages) before any restore; HUMAN-004/HUMAN-005 before VT-031.
 - The original readiness line `dotnet test` expecting one failing test is restored by B-002, not by this environment bootstrap.

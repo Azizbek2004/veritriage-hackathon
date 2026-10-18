@@ -6,7 +6,7 @@ This repository is the agent environment, not the product. Do not create product
 
 Do not run `npm install`, `dotnet add package`, or any package install. The human owns packages and fixtures.
 
-Do not edit `contracts/` or `fixtures/`. Do not edit `tests/golden/`.
+Do not edit `contracts/` (the README is the plan) or `fixtures/`. B-000 materializes the contract files. Do not edit `tests/golden/`.
 
 After the product scaffold and the remediation baseline are green, follow `.agents/orchestrator.md` and `.agents/remediation.md` exactly. The orchestrator starts only after `BOOTSTRAP.md` is complete.
 

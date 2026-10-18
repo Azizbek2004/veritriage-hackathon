@@ -10,8 +10,9 @@ Launch instruction after bootstrap: `Read .agents/orchestrator.md and begin Phas
 
 ## Environment-Only Gate
 
-This repository currently contains the agent environment and frozen contracts, not the product. Do not begin Phase 1 until the human or bootstrap agent has completed `BOOTSTRAP.md`:
+This repository currently contains the agent environment and the contract plan, not the product. Do not begin Phase 1 until the human or bootstrap agent has completed `BOOTSTRAP.md`, including B-000:
 
+- `contracts/domain/` exists and `contracts/README.md` says `Frozen`.
 - `src/PayShield.sln` exists.
 - `apps/web` and `apps/mobile` exist.
 - `tests/PayShield.Tests` exists and contains exactly the VT-001 red test.
@@ -103,6 +104,7 @@ Use this order. The first matching row wins.
 
 | Condition | Phase |
 |---|---|
+| `contracts/domain/` is missing or `contracts/README.md` is not `Frozen` | Stop. B-000 is incomplete. Point to `BOOTSTRAP.md`. |
 | `src/PayShield.sln` is missing | Stop. The product is not bootstrapped. Point to `BOOTSTRAP.md`. |
 | `DECISION.md` exists | Read it, apply it, archive it, resume at the affected phase. |
 | `BLOCKED.md` exists without `DECISION.md` | Stop. Do not touch the repo. |

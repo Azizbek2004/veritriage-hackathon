@@ -41,15 +41,16 @@ PHASE 6 — HUMAN HANDOFF (if blocked)
 
 ## Phase 0 — Preflight (once per session)
 
-1. `src/PayShield.sln` exists. If it is missing, the product is not bootstrapped. Stop and point the human to `BOOTSTRAP.md`. Do not create product code.
-2. `git status --porcelain` is empty. If not, stop and ask the human.
-3. `git log --oneline -10` shows the red test commit for the active task.
-4. `dotnet --version` is 9.x, or `./.dotnet/dotnet --version` is 9.x.
-5. `apps/web/node_modules` exists or `npm ci` succeeds.
-6. `BLOCKED.md` is absent. If present, go to Phase 6.
-7. Read `BACKLOG.md`, select the active task, and confirm its dependencies are `DONE`.
+1. `contracts/domain/` exists and `contracts/README.md` says `Frozen`. If either is missing, B-000 is incomplete. Stop and point the human to `BOOTSTRAP.md`. Do not write contract code.
+2. `src/PayShield.sln` exists. If it is missing, the product is not bootstrapped. Stop and point the human to `BOOTSTRAP.md`. Do not create product code.
+3. `git status --porcelain` is empty. If not, stop and ask the human.
+4. `git log --oneline -10` shows the red test commit for the active task.
+5. `dotnet --version` is 9.x, or `./.dotnet/dotnet --version` is 9.x.
+6. `apps/web/node_modules` exists or `npm ci` succeeds.
+7. `BLOCKED.md` is absent. If present, go to Phase 6.
+8. Read `BACKLOG.md`, select the active task, and confirm its dependencies are `DONE`.
 
-Do not start Phase 1 until preflight passes. The environment-only repository fails at step 1 by design; that is the bootstrap gate, not a bug.
+Do not start Phase 1 until preflight passes. The environment-only repository fails at the bootstrap gate by design, not because of a bug.
 
 ## Phase 1 — ANALYZE
 

@@ -4,12 +4,13 @@ Status: **environment pre-staged; product code changes folded into owning tasks;
 
 This file is the reconciled delta plan for the seven changes in the human-provided Remediation Architect brief. It is not a license to add scope. It is a checklist with acceptance tests.
 
-The environment bootstrap applied the documentation, Q&A, math, and the one approved contract delta. It did not build the product, run tests, or apply UI/infra code changes. Those are folded into the owning tasks in `BACKLOG.md` and verified by VT-031 after the product baseline is green.
+The environment bootstrap applied the documentation, Q&A, math, and the contract delta plan. It did not materialize the contract files, build the product, run tests, or apply UI/infra code changes. B-000 materializes the contracts and applies the approved delta; the UI/infra changes are folded into the owning tasks in `BACKLOG.md` and verified by VT-031 after the product baseline is green.
 
 ## Preconditions
 
 - `BOOTSTRAP.md` is complete.
 - The product scaffold exists: `src/PayShield.sln`, `apps/web`, `apps/mobile`, `tests/PayShield.Tests`.
+- **Contracts are materialized and frozen**: B-000 is complete and `contracts/README.md` says `Frozen`.
 - **Remediation baseline is green**: `dotnet test` passes, `npm test` passes, `npm run build` passes, `git status --porcelain` is empty. This is not the bootstrap state (which intentionally has one failing test). It is the state after the seven owning tasks are green, targeted at H+17.
 - `REMEDIATION_PLAN.md` has been written, listing every file the remediation agent will touch.
 - `fixtures/` is populated. `tests/golden/` contains the approved hero snapshot.
@@ -23,7 +24,7 @@ If baseline is red, write `BLOCKED.md` and stop. Do not "fix it while remediatin
 |---|---|---|---|---|
 | 1 | Replace write-off hook with 21 FTE narrative | VT-023 | `PRE-STAGED` (docs) / `PENDING` (UI) | `apps/web/components/BatchTriageBar.tsx` |
 | 2 | Reframe Gate 2 as scope invariant | VT-003 | `PRE-STAGED` (spec/Q&A) / `PENDING` (code/tests) | `src/PayShield.Verifier/Gates/Gate2_SecondHopPolicy.cs`, `tests/PayShield.Tests/Gate2_SecondHopPolicyTests.cs` |
-| 3 | Three-state regulatory clock badge | VT-024 | `PRE-STAGED` (contract/Q&A) / `PENDING` (UI) | `apps/web/components/RegulatoryClockBadge.tsx`, `apps/web/components/CaseDetailPane.tsx` |
+| 3 | Three-state regulatory clock badge | VT-024 | `DOCUMENTED` (contract delta; B-000 applies) / `PENDING` (UI) | `apps/web/components/RegulatoryClockBadge.tsx`, `apps/web/components/CaseDetailPane.tsx` |
 | 4 | Q&A war room with three traps | docs | `PRE-STAGED` | none |
 | 5 | Deployment story | docs | `PRE-STAGED` | none |
 | 6 | 180-second throughput math | VT-023 | `PRE-STAGED` (math) / `PENDING` (UI) | `apps/web/components/BatchTriageBar.tsx` |
@@ -94,9 +95,9 @@ If baseline is red, write `BLOCKED.md` and stop. Do not "fix it while remediatin
 
 - `apps/web/components/RegulatoryClockBadge.tsx` (new)
 - `apps/web/components/CaseDetailPane.tsx`
-- `contracts/domain/CaseDetail.cs` (approved delta, applied)
-- `contracts/types/api.d.ts` (approved delta, applied)
-- `contracts/api/openapi.yaml` (approved delta, applied)
+- `contracts/domain/CaseDetail.cs` (created in B-000; approved delta applied there)
+- `contracts/types/api.d.ts` (created in B-000; approved delta applied there)
+- `contracts/api/openapi.yaml` (created in B-000; approved delta applied there)
 - `AGENTS.md` (Q&A pre-staged)
 
 **Change**
@@ -124,7 +125,7 @@ Three states:
 
 **Build time:** 25 minutes.
 
-**Contract note:** This is the only approved `contracts/domain` change. The environment bootstrap applied it. Do not add another field.
+**Contract note:** This is the only approved `contracts/domain` change. The environment bootstrap documented it; B-000 applies it when materializing the files. Do not add another field.
 
 ## Change 4 — Q&A War Room with the Three Traps
 
@@ -236,7 +237,7 @@ Display `21.1 FTEs saved · €1.16M/yr` in the metric card.
 Do **not** do any of these:
 
 1. No Mastercard MCC label or virtual card UI. The answer is in `.agents/QA_WAR_ROOM.md`; no product change.
-2. No `contracts/domain/*.cs` change except the already-applied optional `regulatory_clock`.
+2. No `contracts/domain/*.cs` change except the optional `regulatory_clock` applied during B-000.
 3. No change to `fixtures/textract_invoice.json` or `fixtures/invoice_hero.png`. If the Czech prose change is needed, write `PROPOSAL.md` and stop.
 4. No new NuGet or npm package.
 5. No verifier pipeline refactor. Only Gate 2 and the regulatory clock touch existing behavior.
@@ -305,4 +306,4 @@ REMEDIATION COMPLETE.
 - Recommendation: rehearse the OCR drop and QR sign 10 more times each. Do not add scope.
 ```
 
-Environment-only status: Changes 4 and 5, the Change 1 narrative, the Change 2 spec, the Change 3 contract/Q&A, and the Change 6 math are pre-staged. The code/UI changes are folded into VT-003, VT-014, VT-023, VT-024, VT-027, and VT-028. VT-031 is the bounded verification pass. Nothing in this file authorizes a new subsystem, a new package, or a new gate.
+Environment-only status: Changes 4 and 5, the Change 1 narrative, the Change 2 spec, the Change 3 contract-delta plan/Q&A, and the Change 6 math are pre-staged. B-000 materializes the contract files and applies the Change 3 delta. The code/UI changes are folded into VT-003, VT-014, VT-023, VT-024, VT-027, and VT-028. VT-031 is the bounded verification pass. Nothing in this file authorizes a new subsystem, a new package, or a new gate.

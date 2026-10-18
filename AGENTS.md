@@ -69,7 +69,7 @@ Every scope decision serves that moment. If a task does not make that moment mor
 | Path | Rule |
 |---|---|
 | `AGENTS.md` | Canonical agent operating contract. Only humans change the frozen sections. |
-| `contracts/` | Frozen. Agents may read; only a human may write, after `PROPOSAL.md`. The approved `regulatory_clock` delta is recorded in `contracts/README.md`. |
+| `contracts/` | Plan only (`README.md`). B-000 materializes the frozen files. Agents may read after; only a human may change them, after `PROPOSAL.md`. The approved `regulatory_clock` delta is in the README. |
 | `fixtures/` | Frozen when populated. Synthetic fixtures carry `"_synthetic": true`. Currently pending human bootstrap. |
 | `BACKLOG.md` | Orchestrator-owned task order. Agents may read. |
 | `TASK.md` | Analyzer-owned, one active task. Working file, not committed. |
@@ -93,9 +93,7 @@ BOOTSTRAP.md               product scaffold instructions, run once
 REMEDIATION.md             bounded post-baseline delta plan
 .agents/                   orchestrator, four sub-agents, remediation, handoff, war room
 .skills/                   five mandatory skills
-contracts/domain/          frozen C# records
-contracts/types/           frozen TypeScript mirror
-contracts/api/             frozen OpenAPI spec
+contracts/README.md        contract plan + approved delta; files created in B-000
 fixtures/                  frozen demo evidence (pending)
 tests/golden/              approved snapshots (policy only until bootstrap)
 src/                       created by BOOTSTRAP.md; absent today
@@ -108,17 +106,17 @@ evaluation/                evaluation-input status, no fabricated report
 ## Environment State
 
 - Product code is **not built**. `src/`, `apps/`, and `tests/PayShield.Tests` are absent by design.
-- `contracts/` is populated from `blueprint.md` and frozen. It includes the approved optional `regulatory_clock` field.
+- `contracts/` contains `README.md` only. B-000 materializes the C#/TS/OpenAPI files from `blueprint.md` and applies the approved `regulatory_clock` delta.
 - `fixtures/` is empty. See `fixtures/README.md`. Do not invent data.
 - `tests/golden/` contains policy only. Golden files are created after the verifier is implemented and approved.
 - No product test baseline is included. The product scaffold and its generated outputs were removed. The original "expect one failing test" readiness line is superseded by the environment-only scope.
 - The post-remediation narrative and QA are pre-staged in `AGENTS.md`, `pitch/`, and `.agents/QA_WAR_ROOM.md`.
-- The seven product changes are planned in `REMEDIATION.md`; only the documentation and contract deltas are applied.
+- The seven product changes are planned in `REMEDIATION.md`; the documentation, Q&A, math, and contract delta plan are pre-staged. No contract files are materialized yet.
 
 ## Startup Order
 
 1. **Human**: read `REMEDIATION.md`, `evaluation/README.md`, and `contracts/README.md`; populate `fixtures/`; approve the package set.
-2. **AI agent**: read `BOOTSTRAP.md`; create the .NET 9 solution, web shell, mobile shell, test harness, and the first red test; commit.
+2. **AI agent**: read `BOOTSTRAP.md`; materialize the contracts (B-000), then create the .NET 9 solution, web shell, mobile shell, test harness, and the first red test; commit.
 3. **AI agent**: prove the baseline (`dotnet test` one intended failure; `npm test` green) and launch the orchestrator.
 4. **AI agent**: fold the seven remediation deltas into their owning tasks as those tasks land (mapping in `BACKLOG.md`). After VT-027/VT-028/VT-014/VT-023/VT-024/VT-003 are green, run VT-031, the bounded verification pass in `.agents/remediation.md`, and write `EXTENDED_FINDINGS.md`.
 5. **Humans**: rehearse the two fragile moments; no new scope after H+20.
@@ -148,7 +146,7 @@ Do not install packages during environment setup. The human runs package install
 
 ## Domain Contracts
 
-Every type is in `contracts/domain/` under namespace `VeriTriage.Domain`. Required properties use `[JsonRequired]`. The `CaseDetail` contract includes an optional snake_case `regulatory_clock` field with a default of `PRE_EXECUTION_FREEZE`, the one approved post-baseline contract delta.
+When B-000 materializes the contracts, every type is in `contracts/domain/` under namespace `VeriTriage.Domain`. Required properties use `[JsonRequired]`. The `CaseDetail` contract includes an optional snake_case `regulatory_clock` field with a default of `PRE_EXECUTION_FREEZE`, the one approved post-baseline contract delta. No contract files exist today; this table is the frozen plan.
 
 | Type | Purpose |
 |---|---|
@@ -265,7 +263,7 @@ A test that does not fail for the intended reason is not a red test. A skipped t
 7. The circuit breaker is absolute: 3 evaluation failures or 2 review failures on one task → `BLOCKED.md` and stop.
 8. No new features after H+20. Bug fixes only.
 9. No package additions without a human `DECISION.md`.
-10. No contract or fixture edits without a human `DECISION.md`.
+10. No contract or fixture edits without a human `DECISION.md`, except the one-time B-000 materialization from `blueprint.md`.
 11. Every commit message includes the task ID and the test name. The worktree is clean after every commit.
 12. If a file's content is uncertain, write `PROPOSAL.md` and stop. Do not guess.
 13. Do not start Phase 1 before `BOOTSTRAP.md` is complete. Do not apply `REMEDIATION.md` before the baseline is green and the plan is written.
@@ -290,7 +288,7 @@ The original H+2 "environment ready" checkpoint is superseded: the environment i
 
 | Time | Gate |
 |---|---|
-| Pre-H+0 | Environment installed; contracts frozen; seven-change plan pre-staged. |
+| Pre-H+0 | Environment installed; contract plan frozen; seven-change plan pre-staged. |
 | H+0–H+2 | Product scaffold from `BOOTSTRAP.md`; baseline commands; VT-001 red test. |
 | H+2–H+4 | `HeroCase_PassesAllFiveGates` green. |
 | H+4–H+17 | Build features; the seven remediation deltas are folded into VT-003, VT-014, VT-023, VT-024, VT-027, VT-028. |
@@ -333,13 +331,13 @@ The full drill is `.agents/QA_WAR_ROOM.md`. Memorize these three answers.
 
 ## Post-Remediation Product Deltas
 
-The seven changes are specified in `REMEDIATION.md`. The documentation, Q&A, math, and approved contract delta are pre-staged here. The code/UI deltas remain for the AI agent after baseline green.
+The seven changes are specified in `REMEDIATION.md`. The documentation, Q&A, math, and contract delta plan are pre-staged here. The contract files themselves are created in B-000, and the code/UI deltas remain for the AI agent after baseline green.
 
 | # | Change | Owning task | Environment status |
 |---|---|---|---|
 | 1 | Replace write-off hook with 21 FTE narrative | VT-023 | Narrative pre-staged; metric UI pending. |
 | 2 | Reframe Gate 2 as scope invariant | VT-003 | Spec/Q&A pre-staged; code/tests pending. |
-| 3 | Three-state regulatory clock badge | VT-024 | Contract/QA pre-staged; component pending. |
+| 3 | Three-state regulatory clock badge | VT-024 | Contract delta documented; applied in B-000; component pending. |
 | 4 | Q&A war room with three traps | docs | Pre-staged in `.agents/QA_WAR_ROOM.md`. |
 | 5 | Deployment story | docs | Pre-staged here and in `pitch/slide_2.md`. |
 | 6 | 180-second throughput math | VT-023 | Pre-staged in `pitch/throughput_math.md`; UI metric pending. |
@@ -348,9 +346,9 @@ The seven changes are specified in `REMEDIATION.md`. The documentation, Q&A, mat
 
 ## Current Environment State
 
-- No product code, no test project, no `package.json`, no lockfile.
+- No product code, no contract files, no test project, no `package.json`, no lockfile.
 - No product test baseline is included. The environment-only scope intentionally does not claim a green or red suite.
-- `contracts/domain/` and `contracts/types/api.d.ts` and `contracts/api/openapi.yaml` are frozen bootstrap artifacts. The only approved delta is `regulatory_clock`.
+- `contracts/` contains `README.md` only. B-000 creates the C#/TS/OpenAPI files; the only approved delta is `regulatory_clock`.
 - `fixtures/` is empty; see `fixtures/README.md`. Do not fabricate ARES, Textract, invoice, or batch data.
 - `evaluation/EVAL_REPORT.md` and `evaluation/HONEST_AMENDMENTS.md` were not supplied. `REMEDIATION.md` is the reconciled delta plan; do not invent an evaluation report.
 - The next action is `BOOTSTRAP.md`, not `Read .agents/orchestrator.md and begin Phase 1.` The orchestrator launches only after the product scaffold and baseline exist.

@@ -18,9 +18,11 @@ No exceptions. No "small" contract fix. No "temporary" package. No "the backlog 
 ## Pre-Review Read
 
 1. `AGENTS.md` — frozen architecture and rules.
-2. `contracts/domain/`, `contracts/types/api.d.ts`, `contracts/api/openapi.yaml`.
+2. `contracts/domain/`, `contracts/types/api.d.ts`, `contracts/api/openapi.yaml` — materialized in B-000.
 3. The active `BACKLOG.md` row and `TASK.md`.
 4. `git diff --stat` and the full diff.
+
+If `contracts/` contains only `README.md`, the product is not bootstrapped. Stop; do not review a diff against an unmaterialized contract.
 
 If you have not read the contract, you cannot approve a diff that claims to conform to it.
 
