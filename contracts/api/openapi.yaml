@@ -1,0 +1,674 @@
+# FROZEN — changes require PROPOSAL.md and a human DECISION.md.
+openapi: 3.0.3
+info:
+  title: VeriTriage API
+  version: 1.0.0
+  description: Proof layer for agentic fraud triage. The agent proposes, the verifier proves, the human signs.
+servers:
+  - url: http://localhost:5000/api/v1
+security:
+  - demoJwt: []
+tags:
+  - name: health
+  - name: cases
+  - name: approval
+  - name: audit
+  - name: demo
+paths:
+  /health:
+    get:
+      tags: [health]
+      operationId: getHealth
+      security: []
+      responses:
+        "200":
+          description: Liveness
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+  /cases:
+    get:
+      tags: [cases]
+      operationId: listCases
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/CaseStatus"
+      responses:
+        "200":
+          description: Alert queue
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AlertQueueRow"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /cases/{id}:
+    get:
+      tags: [cases]
+      operationId: getCase
+      parameters:
+        - $ref: "#/components/parameters/CaseId"
+      responses:
+        "200":
+          description: Full case detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CaseDetail"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /cases/{id}/triage:
+    post:
+      tags: [cases]
+      operationId: triageCase
+      parameters:
+        - $ref: "#/components/parameters/CaseId"
+      responses:
+        "200":
+          description: Triaged case
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CaseDetail"
+        "409":
+          description: Case is already being triaged
+  /cases/{id}/approve:
+    post:
+      tags: [approval]
+      operationId: approveCase
+      parameters:
+        - $ref: "#/components/parameters/CaseId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApprovalSubmission"
+      responses:
+        "200":
+          description: Signature verified and case closed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CaseDetail"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /cases/{id}/reject:
+    post:
+      tags: [approval]
+      operationId: rejectCase
+      parameters:
+        - $ref: "#/components/parameters/CaseId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RejectRequest"
+      responses:
+        "200":
+          description: Rejected case
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CaseDetail"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  /cases/{id}/receipt:
+    get:
+      tags: [audit]
+      operationId: getReceipt
+      parameters:
+        - $ref: "#/components/parameters/CaseId"
+      responses:
+        "200":
+          description: Proof receipt
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProofReceipt"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /cases/{id}/audit:
+    get:
+      tags: [audit]
+      operationId: getAudit
+      parameters:
+        - $ref: "#/components/parameters/CaseId"
+      responses:
+        "200":
+          description: Hash chain and validity
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditChain"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /exposure:
+    get:
+      tags: [cases]
+      operationId: getExposure
+      responses:
+        "200":
+          description: Aggregate verified exposure
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Exposure"
+  /devices/register:
+    post:
+      tags: [approval]
+      operationId: registerDevice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeviceRegistration"
+      responses:
+        "201":
+          description: Registered device
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeviceRegistrationResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  /verifier/recheck:
+    post:
+      tags: [demo]
+      operationId: recheckVerifier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecheckRequest"
+      responses:
+        "200":
+          description: Case with modified evidence and a fresh verification
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CaseDetail"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  /demo/reset:
+    post:
+      tags: [demo]
+      operationId: resetDemo
+      responses:
+        "200":
+          description: Demo seed reset
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResetResponse"
+  /cases/batch:
+    post:
+      tags: [demo]
+      operationId: runBatch
+      responses:
+        "200":
+          description: Batch triage summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BatchTriageSummary"
+components:
+  securitySchemes:
+    demoJwt:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    CaseId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+    Unauthorized:
+      description: Missing or invalid demo JWT
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+    NotFound:
+      description: Case not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+  schemas:
+    CaseStatus:
+      type: string
+      enum: [NEW, EVIDENCE_GATHERED, VERIFIED, ESCALATED, APPROVED, REJECTED, CLOSED]
+    DecisionOutcome:
+      type: string
+      enum: [AUTO_CLEAR, ESCALATE, BLOCK]
+    AlertQueueRow:
+      type: object
+      additionalProperties: false
+      required: [caseId, supplier, amount, currency, tier, riskScore, llmTokens]
+      properties:
+        caseId:
+          type: string
+          format: uuid
+        supplier:
+          type: string
+        amount:
+          type: number
+          multipleOf: 0.01
+        currency:
+          type: string
+          minLength: 3
+          maxLength: 3
+        tier:
+          type: integer
+          minimum: 1
+          maximum: 3
+        riskScore:
+          type: integer
+          minimum: 0
+          maximum: 100
+        llmTokens:
+          type: integer
+          minimum: 0
+    BatchTriageSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - totalProcessed
+        - tier1AutoCleared
+        - tier2StepUpHold
+        - tier3Escalated
+        - elapsedMilliseconds
+        - llmTokensConsumedByTier1And2
+        - showcaseRows
+      properties:
+        totalProcessed:
+          type: integer
+        tier1AutoCleared:
+          type: integer
+        tier2StepUpHold:
+          type: integer
+        tier3Escalated:
+          type: integer
+        elapsedMilliseconds:
+          type: number
+        llmTokensConsumedByTier1And2:
+          type: integer
+        showcaseRows:
+          type: array
+          items:
+            $ref: "#/components/schemas/AlertQueueRow"
+    AlertDto:
+      type: object
+      additionalProperties: false
+      required: [type, amount, currency, transactionId]
+      properties:
+        type:
+          type: string
+        amount:
+          type: number
+          multipleOf: 0.01
+        currency:
+          type: string
+        transactionId:
+          type: string
+    SupplierDto:
+      type: object
+      additionalProperties: false
+      required: [name, ico, dic, country, ageDays, unreliablePayer, publishedAccounts]
+      properties:
+        name:
+          type: string
+        ico:
+          type: string
+        dic:
+          type: string
+        country:
+          type: string
+        ageDays:
+          type: integer
+        unreliablePayer:
+          type: boolean
+        publishedAccounts:
+          type: array
+          items:
+            type: string
+    RuleHitDto:
+      type: object
+      additionalProperties: false
+      required: [ruleId, severity, legalRef, title, detail]
+      properties:
+        ruleId:
+          type: string
+        severity:
+          type: integer
+          minimum: 0
+          maximum: 100
+        legalRef:
+          type: string
+        title:
+          type: string
+        detail:
+          type: string
+    DecisionDto:
+      type: object
+      additionalProperties: false
+      required: [outcome, riskScore, rulesVersion, agentRecommendation, overriddenByVerifier, reasons]
+      properties:
+        outcome:
+          $ref: "#/components/schemas/DecisionOutcome"
+        riskScore:
+          type: integer
+          minimum: 0
+          maximum: 100
+        rulesVersion:
+          type: string
+        agentRecommendation:
+          type: string
+        overriddenByVerifier:
+          type: boolean
+        reasons:
+          type: array
+          items:
+            $ref: "#/components/schemas/RuleHitDto"
+    ApprovalDto:
+      type: object
+      additionalProperties: false
+      required: [required, signatureVerified, signatureB64, payloadHash]
+      properties:
+        required:
+          type: boolean
+        signatureVerified:
+          type: boolean
+        signatureB64:
+          type: string
+          nullable: true
+        payloadHash:
+          type: string
+          nullable: true
+    ProofStep:
+      type: object
+      additionalProperties: false
+      required: [valid]
+      properties:
+        claim:
+          type: string
+          nullable: true
+        computed:
+          type: number
+          nullable: true
+        baseline:
+          type: number
+          nullable: true
+        ratio:
+          type: number
+          nullable: true
+        constraint:
+          type: string
+          nullable: true
+        condition:
+          type: string
+          nullable: true
+        satisfied:
+          type: boolean
+          nullable: true
+        valid:
+          type: boolean
+        legalRef:
+          type: string
+          nullable: true
+    VerificationResult:
+      type: object
+      additionalProperties: false
+      required: [valid, engines, proofSteps, receiptHash, failureReason]
+      properties:
+        valid:
+          type: boolean
+        engines:
+          type: object
+          additionalProperties:
+            type: integer
+        proofSteps:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProofStep"
+        receiptHash:
+          type: string
+        failureReason:
+          type: string
+          nullable: true
+    ServerAttestation:
+      type: object
+      additionalProperties: false
+      required: [algorithm, publicKeyThumbprint, keyCustodyMode, signatureBase64]
+      properties:
+        algorithm:
+          type: string
+        publicKeyThumbprint:
+          type: string
+        keyCustodyMode:
+          type: string
+        signatureBase64:
+          type: string
+    CaseDetail:
+      type: object
+      additionalProperties: false
+      required: [id, status, alert, supplier, evidence, verification, decision, approval]
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          $ref: "#/components/schemas/CaseStatus"
+        alert:
+          $ref: "#/components/schemas/AlertDto"
+        supplier:
+          $ref: "#/components/schemas/SupplierDto"
+        evidence:
+          type: object
+          additionalProperties: true
+        verification:
+          $ref: "#/components/schemas/VerificationResult"
+        decision:
+          $ref: "#/components/schemas/DecisionDto"
+        approval:
+          $ref: "#/components/schemas/ApprovalDto"
+        regulatory_clock:
+          $ref: "#/components/schemas/RegulatoryClock"
+    RegulatoryClock:
+      type: string
+      enum: [PRE_EXECUTION_FREEZE, UNAUTHORIZED_REFUND, IMPERSONATION_DISPUTE]
+    ProofReceipt:
+      type: object
+      additionalProperties: false
+      required:
+        - receiptId
+        - caseId
+        - decision
+        - riskScore
+        - rulesVersion
+        - verification
+        - agentRecommendation
+        - overriddenByVerifier
+        - receiptHash
+        - prevHash
+        - serverAttestation
+        - createdAt
+      properties:
+        receiptId:
+          type: string
+        caseId:
+          type: string
+          format: uuid
+        decision:
+          $ref: "#/components/schemas/DecisionOutcome"
+        riskScore:
+          type: integer
+        rulesVersion:
+          type: string
+        verification:
+          $ref: "#/components/schemas/VerificationResult"
+        agentRecommendation:
+          type: string
+        overriddenByVerifier:
+          type: boolean
+        receiptHash:
+          type: string
+        prevHash:
+          type: string
+        serverAttestation:
+          $ref: "#/components/schemas/ServerAttestation"
+        createdAt:
+          type: string
+          format: date-time
+    AuditEvent:
+      type: object
+      additionalProperties: false
+      required: [seq, caseId, eventType, payload, prevHash, hash, createdAt]
+      properties:
+        seq:
+          type: integer
+        caseId:
+          type: string
+        eventType:
+          type: string
+        payload:
+          type: object
+          additionalProperties: true
+        prevHash:
+          type: string
+          nullable: true
+        hash:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    AuditChain:
+      type: object
+      additionalProperties: false
+      required: [events, valid]
+      properties:
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuditEvent"
+        valid:
+          type: boolean
+    Exposure:
+      type: object
+      additionalProperties: false
+      required: [totalAmount, currency, verifiedCount, pendingCount]
+      properties:
+        totalAmount:
+          type: number
+          multipleOf: 0.01
+        currency:
+          type: string
+        verifiedCount:
+          type: integer
+        pendingCount:
+          type: integer
+    HealthResponse:
+      type: object
+      additionalProperties: false
+      required: [status, mode, deps]
+      properties:
+        status:
+          type: string
+        mode:
+          type: string
+        deps:
+          type: object
+          additionalProperties:
+            type: string
+    ApprovalSubmission:
+      type: object
+      additionalProperties: false
+      required: [canonical, signatureB64, publicKeyB64, deviceId]
+      properties:
+        canonical:
+          type: string
+        signatureB64:
+          type: string
+        publicKeyB64:
+          type: string
+        deviceId:
+          type: string
+    RejectRequest:
+      type: object
+      additionalProperties: false
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          minLength: 1
+    DeviceRegistration:
+      type: object
+      additionalProperties: false
+      required: [publicKeyB64, deviceId]
+      properties:
+        publicKeyB64:
+          type: string
+        deviceId:
+          type: string
+    DeviceRegistrationResponse:
+      type: object
+      additionalProperties: false
+      required: [deviceId, registered]
+      properties:
+        deviceId:
+          type: string
+        registered:
+          type: boolean
+    RecheckRequest:
+      type: object
+      additionalProperties: false
+      required: [ocrConfidence]
+      properties:
+        ocrConfidence:
+          type: number
+          minimum: 0
+          maximum: 100
+    ResetResponse:
+      type: object
+      additionalProperties: false
+      required: [reset]
+      properties:
+        reset:
+          type: boolean
+    ProblemDetails:
+      type: object
+      additionalProperties: true
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string

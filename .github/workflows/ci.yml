@@ -1,0 +1,28 @@
+name: ci
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: '9.0.x' }
+      - if: ${{ hashFiles('src/PayShield.sln') != '' }}
+        run: dotnet test src/PayShield.sln -c Release
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - if: ${{ hashFiles('apps/web/package-lock.json') != '' }}
+        run: npm ci && npm test
+        working-directory: apps/web
+  ponytail:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - run: |
+          base="origin/${{ github.base_ref }}"
+          added=$(git diff --numstat "$base"...HEAD | awk '{a+=$1} END {print a+0}')
+          deleted=$(git diff --numstat "$base"...HEAD | awk '{d+=$2} END {print d+0}')
+          echo "added=$added deleted=$deleted"
+          if [ "$added" -gt 200 ] && [ "$deleted" -lt 20 ]; then exit 1; fi
