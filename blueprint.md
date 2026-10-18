@@ -772,11 +772,7 @@ CI runs `dotnet test` on every push. Green = commit. Red = the agent iterates.
 | **H+24–H+28** | **Sleep 4 hours. Non-negotiable.** | **Sleep 4 hours. Non-negotiable.** | Rest |
 | **H+28–H+30** | 6–8 timed rehearsals. Opening 30s rehearsed 15×. OCR drop 10×. QR sign 10×. | Same. | **Stage ready** |
 
-**H+14 cut list** (agreed before H+0, screenshot in Slack/Notes):
-
-- 2+ hours behind at H+14 → drop two-hop agent, use single-hop with cached VR response labeled `"CACHED FOR DEMO STABILITY"`
-- 4+ hours behind at H+14 → drop mobile signing ceremony, use server-side signing with UI badge `"SERVER-SIDE ENCLAVE (Simulated Mobile Pairing)"`. Keep audit trail and hash chain.
-- 6+ hours behind at H+14 → drop cockpit, pitch with PDF proof receipt + 2-minute video walkthrough.
+**H+14 cut list:** the active, protected list is in `AGENTS.md` under "H+14 Cut List (Protected)". It supersedes this historical list. The protected tasks are Gate 2, the Bedrock two-hop, the cassette, the 21 FTE metric, QR signing, the E2E test, and the remediation verification pass.
 
 **No renegotiation at H+14.** Whichever threshold is hit, the cut executes.
 

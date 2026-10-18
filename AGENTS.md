@@ -292,13 +292,36 @@ The original H+2 "environment ready" checkpoint is superseded: the environment i
 | H+0–H+2 | Product scaffold from `BOOTSTRAP.md`; baseline commands; VT-001 red test. |
 | H+2–H+4 | `HeroCase_PassesAllFiveGates` green. |
 | H+4–H+17 | Build features; the seven remediation deltas are folded into VT-003, VT-014, VT-023, VT-024, VT-027, VT-028. |
-| H+14 | Cut-list decision. No renegotiation. |
+| H+14 | Execute the protected cut list below. No renegotiation. |
 | H+17–H+19 | VT-031 remediation verification pass and `EXTENDED_FINDINGS.md`; pitch/Q&A locked. |
 | H+18 | Pitch deck frozen. |
 | H+19–H+20 | Final bug fixes and rehearsal. No new scope. |
 | H+20 | Feature freeze. Bug fixes only. |
 | H+24–H+28 | Sleep 4 hours. Non-negotiable. |
 | H+28–H+30 | Rehearse: opening 30s ×15, OCR drop ×10, QR sign ×10, F9 failover ×5. |
+
+## H+14 Cut List (Protected)
+
+★ = do not cut. These IDs are reconciled to `BACKLOG.md`; the Night Ops brief's IDs were stale.
+
+**2+ hours behind at H+14**
+- Cut: VT-026 (PDF bounding-box overlay), VT-024 (regulatory clock badge — Q&A-only, not on the demo screen).
+- Keep: ★ VT-003 (Gate 2 scope invariant), ★ VT-013 (Bedrock two-hop), ★ VT-014 (cassette fallback), ★ VT-023 (21 FTE metric card), ★ VT-027 (QR signing), ★ VT-030 (E2E), ★ VT-031 (remediation verification).
+- Note: cutting VT-024 does not remove the three-clock Q&A answer.
+
+**4+ hours behind at H+14**
+- Cut: the mobile signing ceremony per the original plan (VT-028); use server-side signing with the `SERVER-SIDE ENCLAVE (Simulated Mobile Pairing)` badge.
+- Keep: ★ VT-003, ★ VT-013, ★ VT-014, ★ VT-023, ★ VT-030, ★ VT-031.
+- Note: VT-027 becomes optional if the mobile ceremony is cut. Do not cut VT-014; the cassette is the demo survivability path.
+
+**6+ hours behind at H+14**
+- Cut: the full cockpit; pitch from the PDF proof receipt plus a 2-minute video walkthrough.
+- Keep: ★ VT-023 (the 21 FTE metric card must appear in the video and the PDF), ★ VT-003, ★ VT-030, ★ VT-031.
+- Note: the video must still show the verifier override; Gate 3 and the pipeline must be green even without the cockpit.
+
+**No renegotiation.** Whichever threshold is hit at H+14 executes immediately.
+
+**Reconciliation:** The Night Ops brief listed VT-014 as Bedrock and VT-028 as cassette, and VT-031 as the E2E test. In this repo, VT-013 is Bedrock, VT-014 is cassette, VT-028 is mobile, VT-030 is E2E, and VT-031 is the remediation verification pass. This list protects the intent: the 21 FTE hook, Gate 2, QR signing, cassette, and the E2E proof.
 
 ## Honesty Rules
 
