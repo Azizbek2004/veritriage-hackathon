@@ -144,7 +144,7 @@ public static class ForensicBuilder
                 id = row.ClientId,
                 name = row.ClientId == "K005397" ? "Ing. Pavel Dvořák (PEP)" : $"Client {row.ClientId}",
                 risk_score = client?.RiskScore?.ToUpperInvariant() ?? "HIGH",
-                pep_flag = client?.Pep ?? row.Reason.Contains("§ 21(5)"),
+                pep_flag = client?.Pep ?? row.Reason.Contains("§ 9a(2)(c)"),
                 contract_date = "2025-03-12",
                 declared_expected_vol_2q26_czk = client?.ExpectedVolume ?? 39819m,
                 actual_vol_2q26_czk = client?.ActualVolume ?? 68262m,

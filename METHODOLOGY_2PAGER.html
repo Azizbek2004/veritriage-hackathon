@@ -16,7 +16,7 @@ th{background:#e9f0eb;font-family:monospace;font-size:8.2px}.num{text-align:righ
 <table><tr><th>Component</th><th class="num">Points</th><th>Rule</th><th class="num">ALERT-045</th></tr>
 <tr><td>Base risk</td><td class="num">10/25/40</td><td>low / medium / high client risk</td><td class="num">40</td></tr>
 <tr><td>Velocity</td><td class="num">0–30</td><td><code>clamp(round((Actual/Expected − 1) × 15), 0, 30)</code></td><td class="num">11 (1.71x)</td></tr>
-<tr><td>PEP</td><td class="num">0/25</td><td>PEP flag, § 21(5) Act 253/2008</td><td class="num">25</td></tr>
+<tr><td>PEP</td><td class="num">0/25</td><td>PEP flag, § 9a(2)(c) Act 253/2008</td><td class="num">25</td></tr>
 <tr><td>Structuring / typology</td><td class="num">0–20</td><td>72h sub-threshold + HHI + round amount</td><td class="num">20 (13 tx)</td></tr>
 <tr><td>Channel</td><td class="num">0/10</td><td>remote onboarding + velocity, Decree 67/2018 § 8(2)</td><td class="num">0</td></tr>
 <tr><th colspan="3">Total · FP &lt; 40 / REVIEW ≥ 40</th><th class="num">96</th></tr></table>
@@ -31,8 +31,8 @@ th{background:#e9f0eb;font-family:monospace;font-size:8.2px}.num{text-align:righ
 <h2>Table 3 — Statutory Escalation &amp; 4-Eyes Matrix</h2>
 <table><tr><th>Originator</th><th>Required approver</th><th>Statutory basis</th><th>Server behavior</th></tr>
 <tr><td>L1 Analyst</td><td>L2 Senior AML Specialist</td><td>§ 6(1)(a) Act 253/2008; Decree 67/2018 § 7</td><td>4-eyes check</td></tr>
-<tr><td>L2 Senior Specialist</td><td>MLRO / designated contact</td><td>§ 21(5), § 22(1)</td><td>PEP/high-risk → MLRO</td></tr>
-<tr><td>MLRO</td><td>Statutory board member</td><td>§ 21(5), § 18</td><td>senior management approval</td></tr>
+<tr><td>L2 Senior Specialist</td><td>MLRO / designated contact</td><td>§ 9a(2)(c), § 22(1)</td><td>PEP/high-risk → MLRO</td></tr>
+<tr><td>MLRO</td><td>Statutory board member</td><td>§ 9a(2)(c), § 18</td><td>senior management approval</td></tr>
 <tr><td>Any originator</td><td>Same person</td><td>Decree 67/2018 § 12</td><td><strong>HTTP 400 4-EYES VIOLATION</strong></td></tr>
 <tr><td>Any</td><td>Independent approver</td><td>§ 12 separation of duties</td><td>approved + audit event</td></tr></table>
 <p class="small">The invariant is server-side: /approve compares executive_person and approver; the UI self-approval trap cannot bypass it.</p>

@@ -43,7 +43,7 @@ The escalation matrix maps priority bands directly to statutory roles and regula
 | 0–39 (FP) | L1 Analyst | Team Lead | Decree 67/2018 § 7 |
 | 40–74 (REVIEW) | L2 Specialist | Deputy MLRO | AML Act § 6 & § 21(2) |
 | 75–100 (REVIEW) | MLRO | Board Member | AML Act § 18 & § 22 |
-| Any PEP | MLRO | CRO | AML Act § 21(5) |
+| Any PEP | MLRO | CRO | AML Act § 9a(2)(c) |
 
 ### The 4-eyes matrix
 
@@ -53,7 +53,7 @@ The escalation matrix maps priority bands directly to statutory roles and regula
 | L1 Analyst / Triage | Team Lead | No | OK (Decree 67/2018 § 7) |
 | L2 Specialist | Deputy MLRO | No | OK (AML Act § 6 & § 21(2)) |
 | MLRO | Board Member | No | OK (AML Act § 18 & § 22) |
-| MLRO (PEP case) | CRO | No | OK (AML Act § 21(5)) |
+| MLRO (PEP case) | CRO | No | OK (AML Act § 9a(2)(c)) |
 | Any | No named approver | — | OK only for `FP`; `REVIEW` is blocked |
 | Priority 75+ or PEP | Same executive | Yes | **400** — no self-approval on enhanced review |
 
@@ -74,7 +74,7 @@ Field mapping:
 - `triage`: `AUTO_CLEAR` for FP; `MANUAL_REVIEW` for 40–74; `ESCALATE` for 75+.
 - `executive_role`: `L1 AML Analyst` for FP; `L2 Senior AML Specialist` for review.
 - `transaction_id`: the ČNB transaction ID; `alert_id` is the deterministic `ALERT-###` id.
-- `reason`: contains `§ 6(1)(a)` or `§ 21(5)`.
+- `reason`: contains `§ 6(1)(a)` or `§ 9a(2)(c)`.
 - `log`: a JSON string with `{"hash":"sha256:...","ts":"...","rule_version":"v1"}`; the hash is computed over the other 10 row fields plus the timestamp.
 - The 4-eyes status is enforced by the API, not written as a separate column. Every emitted row has independent executive/approver values; the violation is demonstrated by `POST /verify-4-eyes`.
 
@@ -82,11 +82,11 @@ Field mapping:
 
 | C# verifier gate | What it proves | Czech AML anchor | Why the regulator can rely on it |
 |---|---|---|---|
-| Gate 1 — Schema | The alert record has every required field and no invented field. | Act No. 253/2008 Sb. § 6(1)(a); § 21(5) | A record that cannot be deserialized cannot be the basis of a § 20 postponement. |
-| Gate 2 — Scope invariant | At most two hops; the second hop targets the same IČO as the envelope. | § 21(5) (PEP and beneficial-owner scope); § 16 (decision reconstruction) | The investigation stayed inside the declared entity scope; it did not wander into unrelated data. |
+| Gate 1 — Schema | The alert record has every required field and no invented field. | Act No. 253/2008 Sb. § 6(1)(a); § 9a(2)(c) | A record that cannot be deserialized cannot be the basis of a § 20 postponement. |
+| Gate 2 — Scope invariant | At most two hops; the second hop targets the same IČO as the envelope. | § 9a(2)(c) (PEP and beneficial-owner scope); § 16 (decision reconstruction) | The investigation stayed inside the declared entity scope; it did not wander into unrelated data. |
 | Gate 3 — OCR provenance | Textract confidence ≥ 99.0; extracted text matches the resolved value; bounding box in range. | § 6(1)(a) (transaction data); § 16 (retain the evidence) | The number came from the document, at a known location, with a known confidence. |
 | Gate 4 — Arithmetic | Every claimed number is recomputed in `System.Decimal` within ±0.01. | § 6(1)(a) (transaction records); § 16 (reconstruct the decision logic) | The regulator can repeat the arithmetic on paper. |
-| Gate 5 — Claim grounding | Every agent claim resolves through an RFC 6901 pointer and matches the expected value. | § 21(5) (PEP/beneficial owner); § 16 (audit reconstruction) | The narrative cannot contain a claim that is not in the evidence. |
+| Gate 5 — Claim grounding | Every agent claim resolves through an RFC 6901 pointer and matches the expected value. | § 9a(2)(c) (PEP/beneficial owner); § 16 (audit reconstruction) | The narrative cannot contain a claim that is not in the evidence. |
 | Human ECDSA P-256 signature | The § 22 AML contact person signs the receipt; the hash binds the evidence. | § 22 (AML contact person); § 16 (10-year retention) | The signature is the legal record; the hash makes later alteration detectable. |
 
 ### The 4-eyes legal basis

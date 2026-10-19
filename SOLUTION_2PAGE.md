@@ -24,7 +24,7 @@ Every component is returned in the CSV API as `priority_breakdown`; the table sh
 - Structuring: **13 sub-threshold transfers in 72h, 95,511.91 CZK**
 - PEP: **true**; risk: **high**
 - Priority: **96/100 = B40 + V11 + P25 + S20**
-- Legal quotes: `AML-253-2008-S6-1A` (volume), `AML-253-2008-S6-1B` (structuring), `AML-253-2008-S21-5` (PEP)
+- Legal quotes: `AML-253-2008-S6-1A` (volume), `AML-253-2008-S6-1B` (structuring), `AML-253-2008-S9A-2C` (PEP)
 
 The brief’s 8.20x / 4.51M illustration is **not** this client. We do not fabricate it.
 
@@ -33,9 +33,9 @@ The brief’s 8.20x / 4.51M illustration is **not** this client. We do not fabri
 | Originator | Required approver | Statutory basis | Server behavior |
 |---|---|---|---|
 | L1 Analyst | L2 Senior AML Specialist | § 6(1)(a), Decree 67/2018 § 7 | 4-eyes check on approval |
-| L2 Senior AML Specialist | MLRO | § 21(5), § 22 | PEP/high-risk requires MLRO |
-| MLRO | Board/statutory body member | § 21(5), § 22(1) | Senior management approval |
-| Any originator | Same person | § 21(5), Decree 67/2018 § 12 | **400 4-EYES VIOLATION** |
+| L2 Senior AML Specialist | MLRO | § 9a(2)(c), § 22 | PEP/high-risk requires MLRO |
+| MLRO | Board/statutory body member | § 9a(2)(c), § 22(1) | Senior management approval |
+| Any originator | Same person | § 9a(2)(c), Decree 67/2018 § 12 | **400 4-EYES VIOLATION** |
 | Any | Independent approver | § 12 separation of duties | Approved |
 
 The server-side invariant is absolute: `POST /cases/{id}/approve` looks up the case executive and returns 400 when `approver_id` equals the executive. The UI's same-person option is a trap; it cannot bypass the API.
@@ -71,7 +71,7 @@ Every approval appends an `APPROVED` event to `data/audit_ledger.json`; `ledger_
 |---|---|---|
 | Volume deviation | § 6(1)(a) AML Act | `AML-253-2008-S6-1A` |
 | Structuring | § 6(1)(b) AML Act | `AML-253-2008-S6-1B` |
-| PEP approval | § 21(5) AML Act | `AML-253-2008-S21-5` |
+| PEP approval | § 9a(2)(c) AML Act | `AML-253-2008-S9A-2C` |
 | Internal controls / FP triage | § 21(2) AML Act | `AML-253-2008-S21-2` |
 | Conflict of interest | Decree 67/2018 § 12 | `CNB-67-2018-S12` |
 | Retention / reconstruction | § 16 AML Act; § 25 | audit ledger |

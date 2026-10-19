@@ -40,7 +40,7 @@ alert_id,alert_type,client_id,transaction_id,triage,priority,executive_role,exec
 **Click:** close the drawer. Scroll to **ALERT-045**, the PEP REVIEW row (priority 96).
 
 **Say:**
-> “This is a PEP with elevated 24-hour velocity. Priority 96 = B40 + V11 + P25 + S20 + C0. It requires MLRO escalation under § 21(5).”
+> “This is a PEP with elevated 24-hour velocity. Priority 96 = B40 + V11 + P25 + S20 + C0. It requires MLRO escalation under § 9a(2)(c).”
 
 **Scroll:** in the drawer, show **Client transaction cluster**.
 > “This is the real index: 39,819 CZK declared vs 68,262 actual — 1.71x volume, 1.71x count. Thirteen sub-threshold transfers in 72 hours, 95,511.91 CZK total. The brief’s 8.20x is not this client; we show the actual number.”
@@ -115,7 +115,7 @@ Chain Verified: 5/5 events
 > “The agent didn’t guess the section. The pipeline called `lookup_statutory_provision`, retrieved the Czech statutory text, and quoted it. Here is the actual clause: ‘Podezřelým obchodem se rozumí…’. If the corpus has no text, we say ‘section text unavailable’ and do not cite it.”
 
 **Say:**
-> “The Bedrock agent assembled the legal dossier live: § 21(5) for the PEP exposure and § 6(1)(a) for the monitoring duty. If the network falls back, the panel says LIVE_BEDROCK_CACHED — we never relabel the cassette.”
+> “The Bedrock agent assembled the legal dossier live: § 9a(2)(c) for the PEP exposure and § 6(1)(a) for the monitoring duty. If the network falls back, the panel says LIVE_BEDROCK_CACHED — we never relabel the cassette.”
 
 **Close:** stop talking at 5:00. Do not add a new claim.
 

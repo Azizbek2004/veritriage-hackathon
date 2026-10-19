@@ -140,7 +140,7 @@ public sealed class DeepAnalysisService : IDeepAnalysisService
         sb.AppendLine("| Parameter | Value | Reference / Notes |");
         sb.AppendLine("|---|---|---|");
         sb.AppendLine($"| **Alert ID** | `{row.AlertId}` | Track 5 AML FINREG |");
-        sb.AppendLine($"| **Client ID** | `{row.ClientId}` | {(client?.Pep == true ? "⚠️ Politically Exposed Person (§ 21(5))" : "Standard Client")} |");
+        sb.AppendLine($"| **Client ID** | `{row.ClientId}` | {(client?.Pep == true ? "⚠️ Politically Exposed Person (§ 9a(2)(c))" : "Standard Client")} |");
         sb.AppendLine($"| **Transaction ID** | `{row.TransactionId}` | ČNB Transaction Index |");
         sb.AppendLine($"| **Triage Outcome** | **{row.Triage}** | Priority score: {row.Priority}/100 |");
         if (row.Breakdown is { } bd)

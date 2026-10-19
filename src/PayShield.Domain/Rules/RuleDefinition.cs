@@ -21,7 +21,7 @@ public static class RuleRegistry
             "Volume deviation exceeds the configured baseline threshold.", "vol_ratio", ">=", 1.5m),
         new RuleDefinition("R-STRUCT-AML-01", "1.0.0", new DateOnly(2026, 1, 1), "§ 6(1)(b)",
             "Structuring component is present in the deterministic breakdown.", "structuring_component", ">=", 3m),
-        new RuleDefinition("R-PEP-AML-01", "1.0.0", new DateOnly(2026, 1, 1), "§ 21(5)",
+        new RuleDefinition("R-PEP-AML-01", "1.0.0", new DateOnly(2026, 1, 1), "§ 9a(2)(c)",
             "Politically exposed person flag is set.", "pep_flag", "==", 25m),
         new RuleDefinition("R-REVIEW-PRIORITY-01", "1.0.0", new DateOnly(2026, 1, 1), "§ 21(2)",
             "Priority reaches the manual-review threshold.", "priority", ">=", 40m),
@@ -61,7 +61,7 @@ public static class ExplanationBuilder
         var bd = row.Breakdown;
         var volume = new RuleEvaluation("R-VOLUME-AML-01", "1.0.0", "§ 6(1)(a)", bd?.Vol ?? 0, 1.5m, ">=", (bd?.Vol ?? 0) > 0, bd?.Vol ?? 0);
         var structure = new RuleEvaluation("R-STRUCT-AML-01", "1.0.0", "§ 6(1)(b)", bd?.Struct ?? 0, 3m, ">=", (bd?.Struct ?? 0) >= 3, bd?.Struct ?? 0);
-        var pep = new RuleEvaluation("R-PEP-AML-01", "1.0.0", "§ 21(5)", bd?.Pep ?? 0, 25m, "==", (bd?.Pep ?? 0) > 0, bd?.Pep ?? 0);
+        var pep = new RuleEvaluation("R-PEP-AML-01", "1.0.0", "§ 9a(2)(c)", bd?.Pep ?? 0, 25m, "==", (bd?.Pep ?? 0) > 0, bd?.Pep ?? 0);
         var priority = new RuleEvaluation("R-REVIEW-PRIORITY-01", "1.0.0", "§ 21(2)", row.Priority, 40m, ">=", row.Priority >= 40, 0);
         var fourEyes = new RuleEvaluation("R-4EYES-AML-01", "1.0.0", "Decree 67/2018 § 12",
             string.Equals(row.ExecutivePerson, row.Approver, StringComparison.Ordinal) ? 0 : 1, 1m, "==",

@@ -8,7 +8,7 @@ namespace VeriTriage.Domain;
 public static class FinregDeliverableEngine
 {
     public const string CsvHeader = "alert_id,alert_type,client_id,transaction_id,triage,priority,executive_role,executive_person,approver,reason,log";
-    public const string LegalBasis = "AML Act No. 253/2008 Sb. § 6(1)(a); § 21(5)";
+    public const string LegalBasis = "AML Act No. 253/2008 Sb. § 6(1)(a); § 9a(2)(c)";
     public const string FourEyesViolation = "4-EYES VIOLATION [§ 21 AML Act / § 12 Decree 67/2018]";
 
     public static IReadOnlyList<DeliverableCsvRow> ProcessSampleBatch(IReadOnlyList<CnbAlertInput> alerts, PriorityWeights? weights = null)
@@ -88,7 +88,7 @@ public static class FinregDeliverableEngine
         var s21_2 = LegalQuotes.Get("AML-253-2008-S21-2");
         var s6a = LegalQuotes.Get("AML-253-2008-S6-1A");
         var s6b = LegalQuotes.Get("AML-253-2008-S6-1B");
-        var s21_5 = LegalQuotes.Get("AML-253-2008-S21-5");
+        var s9a = LegalQuotes.Get("AML-253-2008-S9A-2C");
         var volumeRule = RuleRegistry.Get("R-VOLUME-AML-01");
         var structRule = RuleRegistry.Get("R-STRUCT-AML-01");
         var pepRule = RuleRegistry.Get("R-PEP-AML-01");
@@ -123,7 +123,7 @@ public static class FinregDeliverableEngine
 
         if (input.Pep || bd.Pep > 0)
         {
-            parts.Add($"{RuleTag(pepRule)}{quote(s21_5)}; PEP flag (client {input.ClientId})");
+            parts.Add($"{RuleTag(pepRule)}{quote(s9a)}; PEP flag (client {input.ClientId})");
         }
 
         if (parts.Count == 0)

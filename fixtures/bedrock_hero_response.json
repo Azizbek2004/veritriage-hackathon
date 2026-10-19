@@ -19,7 +19,7 @@
       "claim": "PEP flag set",
       "jsonPointer": "/client/pep_flag",
       "value": true,
-      "statute": "§ 21(5)"
+      "statute": "§ 9a(2)(c)"
     }
   ],
   "claims": [
@@ -38,7 +38,7 @@
     {
       "claimId": "C-AML-02",
       "claimType": "PEP_EXPOSURE",
-      "narrativeTemplate": "Client is a politically exposed person under § 21(5).",
+      "narrativeTemplate": "Client is a politically exposed person under § 9a(2)(c).",
       "jsonPointers": [
         "/client/pep_flag"
       ],
@@ -68,20 +68,20 @@
       "source": "human_approved"
     },
     {
-      "clause_id": "AML-253-2008-S21-5",
-      "citation": "Act No. 253/2008 Coll. (Czech AML Act) § 21(5)",
-      "title": "Politically Exposed Person (PEP) Senior Management Approval",
-      "quoted_clause": "Pokračování v obchodním vztahu nebo provedení obchodu s politicky exponovanou osobou podléhá souhlasu člena statutárního orgánu nebo osoby pověřené řízením v oblasti AML.",
-      "url": "https://www.zakonyprolidi.cz/cs/2008-253#p21",
-      "retrieved_at": "2026-10-19T17:30:00+02:00",
+      "clause_id": "AML-253-2008-S9A-2C",
+      "citation": "Act No. 253/2008 Coll. (Czech AML Act) § 9a(2)(c)",
+      "title": "Enhanced Due Diligence — PEP transaction / relationship (clause c)",
+      "quoted_clause": "před uskutečněním obchodu nebo při uzavírání obchodního vztahu s politicky exponovanou osobou.",
+      "url": "https://www.zakonyprolidi.cz/cs/2008-253#p9a",
+      "retrieved_at": "2026-10-19T21:20:00+02:00",
       "source": "human_approved"
     }
   ],
-  "action": "Escalate to MLRO under § 21(5)",
+  "action": "Escalate to MLRO under § 9a(2)(c)",
   "recommendedOutcome": "ESCALATE",
   "recommendedRiskScore": 96,
-  "rationale": "Volume deviation 1.71x and 5 sub-threshold transfers within 48h require escalation under § 21(5).",
-  "legalBasis": "AML-253-2008-S6-1A § 6(1)(a); AML-253-2008-S6-1B § 6(1)(b); AML-253-2008-S21-5 § 21(5)",
+  "rationale": "Volume deviation 1.71x and 5 sub-threshold transfers within 48h require escalation under § 9a(2)(c).",
+  "legalBasis": "AML-253-2008-S6-1A § 6(1)(a); AML-253-2008-S6-1B § 6(1)(b); AML-253-2008-S9A-2C § 9a(2)(c)",
   "_note": "Pre-baked demo cassette. Deterministic fallback.",
   "tool_calls": [
     {
@@ -96,7 +96,7 @@
     },
     {
       "name": "lookup_statutory_provision",
-      "clause_id": "AML-253-2008-S21-5",
+      "clause_id": "AML-253-2008-S9A-2C",
       "status": "RETURNED"
     }
   ]

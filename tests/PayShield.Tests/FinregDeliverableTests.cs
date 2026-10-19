@@ -56,7 +56,7 @@ public sealed class FinregDeliverableTests
             Assert.False(string.IsNullOrWhiteSpace(columns[7]));
             Assert.False(string.IsNullOrWhiteSpace(columns[8]));
             Assert.NotEqual(columns[7], columns[8]);
-            Assert.True(columns[9].Contains("§ 6(1)(a)") || columns[9].Contains("§ 21(2)") || columns[9].Contains("§ 21(5)"));
+            Assert.True(columns[9].Contains("§ 6(1)(a)") || columns[9].Contains("§ 21(2)") || columns[9].Contains("§ 9a(2)(c)"));
 
             using var log = JsonDocument.Parse(columns[10]);
             Assert.StartsWith("sha256:", log.RootElement.GetProperty("hash").GetString());
@@ -67,7 +67,7 @@ public sealed class FinregDeliverableTests
         Assert.Equal(30, rows.Count(r => r.AlertType == "FP" && r.Priority < 40));
         Assert.Equal(10, rows.Count(r => r.AlertType == "REVIEW" && r.Priority is >= 40 and < 75));
         Assert.Equal(5, rows.Count(r => r.AlertType == "REVIEW" && r.Priority >= 75));
-        Assert.Contains(rows, r => r.Priority >= 75 && r.Reason.Contains("§ 21(5)"));
+        Assert.Contains(rows, r => r.Priority >= 75 && r.Reason.Contains("§ 9a(2)(c)"));
         Assert.Contains(rows, r => r.Reason.Contains("[R-REVIEW-PRIORITY-01 v1.0.0]"));
         Assert.Contains(rows, r => r.Reason.Contains("[R-VOLUME-AML-01 v1.0.0]"));
     }

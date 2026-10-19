@@ -198,7 +198,7 @@ public sealed class LegalDossierService
     {
         new { section = "§ 6(1)(a)", citation = "Act No. 253/2008 Coll. — unusual transaction pattern", quoted_clause = LegalQuotes.Get("AML-253-2008-S6-1A")?.CzechText },
         new { section = "§ 6(1)(b)", citation = "Act No. 253/2008 Coll. — structuring", quoted_clause = LegalQuotes.Get("AML-253-2008-S6-1B")?.CzechText },
-        new { section = "§ 21(5)", citation = "Act No. 253/2008 Coll. — PEP senior management approval", quoted_clause = LegalQuotes.Get("AML-253-2008-S21-5")?.CzechText },
+        new { section = "§ 9a(2)(c)", citation = "Act No. 253/2008 Coll. — PEP senior management approval", quoted_clause = LegalQuotes.Get("AML-253-2008-S9A-2C")?.CzechText },
         new { section = "§ 18", citation = "Act No. 253/2008 Coll. — FAÚ OPO suspicious transaction report", quoted_clause = "Oznámení podezřelého obchodu Finančnímu analytickému úřadu." },
         new { section = "Decree 67/2018 § 12", citation = "ČNB Decree No. 67/2018 Coll. — separation of duties", quoted_clause = LegalQuotes.Get("CNB-67-2018-S12")?.CzechText },
     };
@@ -225,7 +225,7 @@ public sealed class LegalDossierService
         foreach (var gate in v.Gates) sb.AppendLine($"- **{gate.Gate}**: {(gate.Pass ? "PASS" : "FAIL")} — {gate.Detail}");
         sb.AppendLine();
         sb.AppendLine("## V. Statutory Basis (Act No. 253/2008 Coll. & ČNB Decree No. 67/2018 Coll.)");
-        sb.AppendLine("§ 6(1)(a) and § 6(1)(b) Act No. 253/2008 Coll.; § 21(5) PEP approval; Decree 67/2018 § 12 separation of duties; § 18 FAÚ OPO reporting.");
+        sb.AppendLine("§ 6(1)(a) and § 6(1)(b) Act No. 253/2008 Coll.; § 9a(2)(c) PEP approval; Decree 67/2018 § 12 separation of duties; § 18 FAÚ OPO reporting.");
         sb.AppendLine();
         sb.AppendLine("## VI. 4-Eyes Separation of Duties & Cryptographic Non-Repudiation Receipt");
         sb.AppendLine($"Executive: **{row.ExecutivePerson}** · Approver: **{row.Approver}** · Status: **{(string.Equals(row.ExecutivePerson, row.Approver, StringComparison.Ordinal) ? "FAIL" : "PASS_INDEPENDENT")}**.");

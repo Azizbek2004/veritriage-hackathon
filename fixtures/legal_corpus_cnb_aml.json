@@ -66,17 +66,6 @@
     "source": "human_approved"
   },
   {
-    "clause_id": "AML-253-2008-S21-5",
-    "statute": "Act No. 253/2008 Coll. (Czech AML Act)",
-    "section": "§ 21(5)",
-    "title": "Politically Exposed Person (PEP) Senior Management Approval",
-    "text_cs": "Pokračování v obchodním vztahu nebo provedení obchodu s politicky exponovanou osobou podléhá souhlasu člena statutárního orgánu nebo osoby pověřené řízením v oblasti AML.",
-    "text_en": "Any continuation of business or execution of anomalous transactions involving a PEP requires explicit approval from a statutory body member or designated MLRO.",
-    "url": "https://www.zakonyprolidi.cz/cs/2008-253#p21",
-    "retrieved_at": "2026-10-19T17:30:00+02:00",
-    "source": "human_approved"
-  },
-  {
     "clause_id": "AML-253-2008-S22-1",
     "statute": "Act No. 253/2008 Coll. (Czech AML Act)",
     "section": "§ 22(1)",
@@ -130,5 +119,27 @@
     "url": "https://www.financnisprava.gov.cz/",
     "retrieved_at": "2026-10-19T17:30:00+02:00",
     "source": "human_approved"
+  },
+  {
+    "clause_id": "AML-253-2008-S9A-2C",
+    "statute": "Act No. 253/2008 Coll. (Czech AML Act)",
+    "section": "§ 9a(2)(c)",
+    "title": "Enhanced Due Diligence — PEP transaction / relationship (clause c)",
+    "text_cs": "před uskutečněním obchodu nebo při uzavírání obchodního vztahu s politicky exponovanou osobou.",
+    "text_en": "The obliged entity must always apply enhanced customer due diligence before executing a transaction or establishing a relationship with a politically exposed person.",
+    "url": "https://www.zakonyprolidi.cz/cs/2008-253#p9a",
+    "retrieved_at": "2026-10-19T21:20:00+02:00",
+    "source": "zakonyprolidi_verified"
+  },
+  {
+    "clause_id": "AML-253-2008-S21A",
+    "statute": "Act No. 253/2008 Coll. (Czech AML Act)",
+    "section": "§ 21a",
+    "title": "Risk Assessment (Hodnocení rizik)",
+    "text_cs": "Povinná osoba identifikuje a posoudí rizika legalizace výnosů z trestné činnosti a financování terorismu, která mohou nastat v rámci její činnosti podléhající působnosti tohoto zákona.",
+    "text_en": "The obliged entity identifies and assesses ML/TF risks arising from its activities within the scope of the Act.",
+    "url": "https://www.zakonyprolidi.cz/cs/2008-253#p21a",
+    "retrieved_at": "2026-10-19T21:20:00+02:00",
+    "source": "zakonyprolidi_verified"
   }
 ]

@@ -2,9 +2,9 @@
 
 ## Corpus
 
-- Sections ingested: **12/12**
-- Sections with quoted text: **12/12**
-- Sections marked unavailable: **0/12**
+- Sections ingested: **13/13**
+- Sections with quoted text: **13/13**
+- Sections marked unavailable: **0/13**
 - Source: human-approved exact text in `fixtures/legal_corpus_cnb_aml.json`; each entry has citation, title, `text_cs`, `text_en`, URL, `retrieved_at`, `source: human_approved`.
 - No full-Act scrape; no vector database.
 

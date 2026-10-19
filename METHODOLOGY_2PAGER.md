@@ -8,7 +8,7 @@
 |---|---:|---|---:|
 | Base risk | 10 / 25 / 40 | Low / medium / high client risk | **40** |
 | Velocity | 0–30 | `clamp(round((ActualVol / ExpectedVol − 1) × 15), 0, 30)` | **11** (1.71x) |
-| PEP | 0 / 25 | PEP flag under § 21(5) | **25** |
+| PEP | 0 / 25 | PEP flag under § 9a(2)(c) | **25** |
 | Structuring / typology | 0–20 | 72h sub-threshold cluster + HHI + round-amount | **20** (13 tx) |
 | Channel onboarding | 0 / 10 | Remote onboarding + rapid velocity under Decree 67/2018 § 8(2) | **0** |
 | **Total** | **0–100** | `Math.Clamp(sum, 0, 100)`; FP `< 40`, REVIEW `>= 40` | **96** |
@@ -32,8 +32,8 @@ All values are `System.Decimal`; the C# gates recompute them before any document
 | Originator | Required approver | Statutory basis | Server behavior |
 |---|---|---|---|
 | L1 Analyst | L2 Senior AML Specialist | § 6(1)(a) Act 253/2008; Decree 67/2018 § 7 | 4-eyes check |
-| L2 Senior Specialist | MLRO / designated contact | § 21(5), § 22(1) | PEP/high-risk → MLRO |
-| MLRO | Statutory board member | § 21(5), § 18 | Senior management approval |
+| L2 Senior Specialist | MLRO / designated contact | § 9a(2)(c), § 22(1) | PEP/high-risk → MLRO |
+| MLRO | Statutory board member | § 9a(2)(c), § 18 | Senior management approval |
 | Any originator | Same person | Decree 67/2018 § 12 | **HTTP 400 4-EYES VIOLATION** |
 | Any | Independent approver | § 12 separation of duties | Approved; audit event |
 
