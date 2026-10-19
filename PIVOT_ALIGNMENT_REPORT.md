@@ -15,7 +15,7 @@ Backlog: four new AML tasks (VT-033 through VT-036)
 Compliance: AWS terms + data sources + synthetic rule documented
 Morning commands: Track 5 registration at the top
 
-Build state: backend green — dotnet build PASS, dotnet test 16/16.
+Build state: backend green — dotnet build PASS, dotnet test 18/18.
             Full product build remains blocked on frontend/mobile and Bedrock invoke.
 Git state: clean.
 

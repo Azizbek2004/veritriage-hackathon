@@ -1,63 +1,38 @@
-# BLOCKED — Build Session 2026-10-19
+# BLOCKED — Release Candidate 2026-10-19
 
-The backend slice is green. The full demo is not built. These are the exact blockers.
+The FINREG CSV and 4-eyes gate are implemented and verified. These are the remaining blockers.
 
-## Blocker 1 — Frontend, Mobile, and Most API Endpoints Are Not Built
+## 1. Exact FINREG CSV Template Is Unverified
 
-**Evidence**
+The brief said the exact `FinregDeliverableEngine.cs` was provided; no code was present. The implemented headers are an interpretation:
 
-- `src/PayShield.Api/Program.cs` contains only `/api/v1/health`.
-- `apps/web` and `apps/mobile` do not exist.
-- `dotnet build` is green; `npm run build` cannot run.
-- No frontend/mobile packages are installed. The build prompt says “do not add packages,” and the environment package set was never approved in a `DECISION.md`.
+```
+alert_id,client_id,client_name,triage,priority,role,
+executive_person,approver,four_eyes_status,legal_basis,reason
+```
 
-**Why it stops this phase**
+If FINREG's exact template differs, the 85% score is at risk. Compare before submission. See `PROPOSAL.md` P3.
 
-- Phase 0 requires `npm run build` in both apps. It cannot pass.
-- Phases 4–9 require the API, cockpit, mobile signer, and E2E flow.
+## 2. GitHub Push
 
-**Decision needed**
+The deploy key is not added; HTTPS has no credentials. The repo is committed locally but not pushed. Add `secrets/github_deploy_key.pub` as a write deploy key, or run `git push` from an authenticated machine.
 
-- Authorize B-003/B-004 and the planned Next.js/Expo package set, or explicitly accept a backend-only deliverable.
+## 3. Live Bedrock
 
-## Blocker 2 — Bedrock Invoke Credentials
+The TeamAdmin token is invalid; ReadOnly cannot `InvokeModel`. The build uses the cassette and labels it `LIVE_BEDROCK_CACHED`. If a live model is required, refresh the SSO session. See `WAITING_FOR_CREDENTIALS.md`.
 
-**Evidence**
+## 4. Missing Demo Pieces
 
-- `ai-hackathon-ReadOnly` is valid for S3 and Bedrock listing, but
-  `bedrock-runtime.Converse` returns `AccessDeniedException` for `bedrock:InvokeModel`.
-- The `ai-hackathon-TeamAdmin` token supplied in chat returns `InvalidClientTokenId`.
-- Sonnet 4.5 is available as inference profile
-  `eu.anthropic.claude-sonnet-4-5-20250929-v1:0`.
-- No latency, caching, tool-use, or two-hop result is claimed.
-
-**Decision needed**
-
-- Refresh the TeamAdmin SSO session with invoke permission, or provide another invoke-capable credential. See `WAITING_FOR_CREDENTIALS.md`.
-
-## Blocker 3 — MCC Data Source
-
-**Evidence**
-
-- `CNB/transactions.csv` has 11 columns and no MCC.
-- `CNB/clients.csv` has PEP and AML risk score, but no MCC.
-- `CnbAmlMetadata.MccCode` is required by the frozen contract.
-- No mapping exists in the official data.
-
-**Decision needed**
-
-- See `PROPOSAL.md`: map `MccCode = "UNKNOWN"` for ČNB rows (recommended, no contract change), or derive it from the Tapaya KYB extraction later.
+- Real mobile ECDSA signing and server verification.
+- SignalR approval flow.
+- Audit hash-chain endpoint and view.
+- E2E test.
+- 5-minute rehearsal.
 
 ## What Is Not Blocked
 
-- `dotnet build` is green.
-- `dotnet test` is green: 16 passed, 0 failed, 0 skipped.
-- The five verifier gates and the PSR/AML rule engine are implemented.
-- Official datasets are acquired in `datasets/`.
-- Sonnet 4.5's profile is confirmed; only invoke permission is missing.
-
-## Do Not
-
-- Do not fabricate Bedrock latency.
-- Do not commit the AWS tokens or the downloaded 36 MB CSV.
-- Do not add frontend packages without the human decision above.
+- `dotnet test` 18/18.
+- `npm run build` green.
+- 45-row / 11-column CSV with 30/10/5.
+- 4-eyes 400 with exact text.
+- Cached Bedrock investigation.

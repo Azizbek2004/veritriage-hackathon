@@ -1,0 +1,28 @@
+{
+  "_synthetic": true,
+  "mode": "LIVE_BEDROCK_CACHED",
+  "evidence_summary": "Client K005397: PEP flag, high AML risk score, unusual 24h velocity against a 90-day baseline.",
+  "claims": [
+    {
+      "claimId": "C-AML-01",
+      "claimType": "VELOCITY_RATIO",
+      "narrativeTemplate": "24h transaction count {0} is {1}x the 90-day baseline.",
+      "jsonPointers": ["/transaction/velocity"],
+      "expectedValues": ["3.2"],
+      "documentProvenance": null
+    },
+    {
+      "claimId": "C-AML-02",
+      "claimType": "PEP_EXPOSURE",
+      "narrativeTemplate": "Client is a politically exposed person under § 21(5).",
+      "jsonPointers": ["/client/pep"],
+      "expectedValues": ["true"],
+      "documentProvenance": null
+    }
+  ],
+  "recommendedOutcome": "ESCALATE",
+  "recommendedRiskScore": 96,
+  "rationale": "§ 21(5) AML Act — PEP exposure and unusual velocity require enhanced review.",
+  "legalBasis": "AML Act No. 253/2008 Sb. § 21(5)",
+  "_note": "Pre-baked demo cassette. Not a live Bedrock response."
+}

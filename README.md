@@ -1,6 +1,6 @@
 # VeriTriage — Agent Environment
 
-This repository is the VeriTriage agent environment plus a green backend verifier/rules slice. The frontend, mobile app, most API endpoints, and live Bedrock call are not built. See `FINAL_REPORT.md` and `BUILD_LOG.md` for the exact state.
+This repository is the VeriTriage agent environment plus a green backend verifier/rules slice and a FINREG cockpit. The mobile app, real signing, audit chain, and live Bedrock call are not built. See `FINAL_REPORT.md` and `BUILD_LOG.md` for the exact state.
 
 ## What Is Here
 
@@ -21,12 +21,12 @@ This repository is the VeriTriage agent environment plus a green backend verifie
 ## What Is Intentionally Absent
 
 - `apps/web` and `apps/mobile` — not built.
-- API endpoints beyond `/api/v1/health` — not built.
+- Real mobile signing, audit chain, and live Bedrock — not built.
 - `fixtures/` committed data — official data stays in `datasets/` (gitignored).
 - `tests/golden/` snapshots — not created yet.
 - `node_modules`, build outputs, SDKs.
 
-Backend baseline: `dotnet build` green, `dotnet test` 16/16. Frontend/mobile are not built. See `BUILD_LOG.md` and `FINAL_REPORT.md`.
+Backend baseline: `dotnet build` green, `dotnet test` 18/18. `npm run build` green. FINREG CSV and 4-eyes endpoints are live. See `BUILD_LOG.md` and `FINAL_REPORT.md`.
 
 ## Start Order
 

@@ -38,3 +38,23 @@ The build prompt says “do not add packages.” These were already specified in
 - No rename of `supplier`, `net`, `vat`, `gross`, or `ico`.
 - No change to the verifier gates or the `CnbAmlMetadata` shape.
 - No frontend package set approval; that remains a separate blocker.
+
+## P3 — Exact FINREG Engine Code Missing
+
+The Release Manager brief says the exact `FinregDeliverableEngine.cs` is “provided below”, but no code block or attachment was present. The implemented engine is an interpretation of the stated constraints:
+
+- 11 columns;
+- priority 0–100;
+- 30/10/5 distribution;
+- `executive_person != approver`;
+- `reason` contains `§ 6(1)(a)` or `§ 21(5)`;
+- exact 4-eyes 400 body.
+
+The header names are:
+
+```
+alert_id,client_id,client_name,triage,priority,role,
+executive_person,approver,four_eyes_status,legal_basis,reason
+```
+
+**Risk:** if FINREG's template uses different names or order, the 85% CSV score is at risk. The human must compare this header to the organizer's template before submission. No contract change is proposed; only the CSV writer may need a header-order fix.

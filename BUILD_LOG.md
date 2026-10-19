@@ -138,12 +138,12 @@ This is the honest phase log. It records what was built, what was verified, what
 | Verifier | Five gates implemented, tests green |
 | Infrastructure | Empty project; no Ares/Bedrock/Audit/Crypto |
 | API | Health endpoint only |
-| Frontend | Absent |
+| Frontend | FINREG cockpit built; npm run build green |
 | Mobile | Absent |
-| Backend tests | 16 passed, 0 failed |
+| Backend tests | 18 passed, 0 failed |
 | AWS datasets | Acquired in `datasets/` |
 | Bedrock invoke | Blocked |
-| Demo | Not runnable |
+| Demo | FINREG CSV + 4-eyes demo path; not rehearsed |
 
 ## Next Actions
 
@@ -151,3 +151,32 @@ This is the honest phase log. It records what was built, what was verified, what
 2. Authorize B-003/B-004 and the planned frontend/mobile package set.
 3. Decide the MCC mapping (`PROPOSAL.md`).
 4. Build the ČNB parser/endpoint, fixture seeder, API endpoints, and cockpit.
+
+
+## Release Manager Pass — 2026-10-19
+
+**Built**
+
+- `FinregDeliverableEngine` with 45-row sample calibration, 11-column CSV, priority bands, 4-eyes status, and legal reasons.
+- `GET /api/v1/deliverable/csv` and `/sample`; `POST /api/v1/cases/verify-4-eyes`; cached investigation endpoint.
+- Next.js single-screen cockpit with CSV download, priority colors, 4-eyes drawer, red banner, QR placeholder/F9, cached investigation panel.
+- `fixtures/bedrock_hero_response.json` and `CassetteInterceptor`.
+- `METHODOLOGY.md` with the formula, matrix, and gate mapping.
+
+**Verified**
+
+- `dotnet test` 18/18.
+- `npm run build` green.
+- CSV: 45 rows, 11 columns, 30/10/5, one PEP high, exec != approver, legal reason present.
+- 4-eyes endpoint: 400 with exact `4-EYES VIOLATION [§ 21 AML Act / § 12 Decree 67/2018]`.
+- Cached investigation: `LIVE_BEDROCK_CACHED` JSON returns.
+- `npm test` exits 0.
+
+**Failed / unverified**
+
+- Exact FINREG header order is unverified because the promised engine code was absent. See `PROPOSAL.md` P3.
+- GitHub push still fails: no auth; deploy key not added.
+- No live Bedrock.
+- No real mobile signature, audit chain, E2E, or 5-minute rehearsal.
+
+**Time elapsed:** ~35 minutes.

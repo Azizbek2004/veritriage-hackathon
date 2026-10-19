@@ -18,7 +18,7 @@
 
 ## Status
 
-This repository started as the **agent environment**. B-000 and the backend verifier/rules slice are now implemented and green. The frontend, mobile app, most API endpoints, and live Bedrock call are not built. See `BUILD_LOG.md` and `FINAL_REPORT.md` for the exact state.
+This repository started as the **agent environment**. B-000, the backend verifier/rules slice, the FINREG CSV/4-eyes endpoints, and the Next.js cockpit are implemented and green. The mobile app, real ECDSA signing, audit chain, and live Bedrock call are not built. See `BUILD_LOG.md` and `FINAL_REPORT.md` for the exact state.
 
 FROZEN for the 30-hour build. If it is not in this file or in `contracts/`, it does not go on stage.
 
@@ -115,7 +115,8 @@ contracts/api/             frozen OpenAPI spec
 fixtures/                  demo evidence (official data in datasets/)
 tests/golden/              approved snapshots (policy only until bootstrap)
 src/                       backend solution; Domain/Verifier green
-apps/                      absent; frontend and mobile not built
+apps/web/                  FINREG cockpit; built
+apps/mobile/               absent; real signing not built
 pitch/                     opening, slide 2, throughput math
 evaluation/                evaluation-input status, no fabricated report
 .github/workflows/ci.yml   test + ponytail gate
@@ -123,12 +124,12 @@ evaluation/                evaluation-input status, no fabricated report
 
 ## Environment State
 
-- The backend is built: contracts, Domain, Verifier, Infrastructure, Api shell, and tests. `dotnet build` is green and `dotnet test` is 16/16.
-- `apps/web` and `apps/mobile` are absent. The cockpit and mobile signer are not built.
+- The backend is built: contracts, Domain, Verifier, Infrastructure, Api shell, and tests. `dotnet build` is green and `dotnet test` is 18/18. `npm run build` is green.
+- `apps/web` is built (FINREG cockpit); `apps/mobile` is absent. Real mobile signing is not built.
 - `contracts/` is materialized and frozen. The approved deltas are included.
 - `fixtures/` has no committed data; official datasets are in `datasets/` (gitignored). See `DATASET_INVENTORY.md`.
 - `tests/golden/` contains policy only; no golden files yet.
-- No frontend/mobile test baseline exists. No Bedrock call has been authorized.
+- `npm run build` is green; `npm test` exits 0 (zero Node tests). No Bedrock call has been authorized.
 - The post-remediation narrative and QA are pre-staged in `AGENTS.md`, `pitch/`, and `.agents/QA_WAR_ROOM.md`.
 - The seven remediation changes remain partially pre-staged; the verifier/rules slice landed first.
 - The Track 5 AML additions are queued as VT-033 through VT-036. The `CnbAmlMetadata` delta is materialized.
@@ -394,8 +395,8 @@ The seven changes are specified in `REMEDIATION.md`. The documentation, Q&A, mat
 ## Current Environment State
 
 - Contracts, Domain, Verifier, Infrastructure, Api shell, and tests are built.
-- `dotnet build` is green; `dotnet test` is 16 passed, 0 failed, 0 skipped.
-- `apps/web` and `apps/mobile` are absent. No frontend/mobile package set has been approved.
+- `dotnet build` is green; `dotnet test` is 18 passed, 0 failed, 0 skipped.
+- `apps/web` is built; `apps/mobile` is absent. The FINREG CSV and 4-eyes endpoints are live.
 - Bedrock invoke is blocked: ReadOnly cannot `InvokeModel`; the TeamAdmin token is invalid. See `AWS_PREFLIGHT.md` and `WAITING_FOR_CREDENTIALS.md`.
 - Official datasets are in `datasets/` (gitignored); see `DATASET_INVENTORY.md`. No fixture data is committed.
 - The next action is not `BOOTSTRAP.md`; B-000/B-001/B-002 are complete. See `BUILD_LOG.md` and `FINAL_REPORT.md`.
