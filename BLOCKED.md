@@ -50,3 +50,33 @@ The backend curl rehearsal is 0.0279s. The 5-minute human browser presentation h
 ## Legal Grounding Sprint — APPROVED & COMPLETED
 
 The prior file-mapping blocker is cleared. The 12-section corpus, deterministic legal lookup, quoted CSV reasons, golden test, and pitch artifacts are implemented. See `LEGAL_GROUNDING_REPORT.md`.
+
+## Deterministic Logic & Legal Document Sprint — 2026-10-19
+
+**Status:** BLOCKED before Part 1. No rule registry, determinism endpoint, explanation snapshot, deep-analysis document, PDF, or bundle was created.
+
+### Missing files and capabilities
+
+- `apps/web/components/domain/CaseDetailDrawer.tsx` — the drawer is implemented inline in `apps/web/app/page.tsx`; there is no separate component.
+- `src/PayShield.Api/ICaseRepository.cs` — no repository abstraction exists; endpoints read from `DeliverableState`.
+- `src/PayShield.Api/IDeepAnalysisService.cs` — missing; no document generator exists.
+- No PDF library is present in `src/` or `apps/web/package.json` (no QuestPDF, PdfSharp, iText, or HTML-to-PDF). The sprint requires PDF + Markdown and a ZIP bundle.
+- No `AnalysisDocument` entity, document persistence, `/documents/*` endpoints, or document audit events exist.
+
+### What was completed before this block
+
+- Legal grounding corpus (12/12), deterministic `lookup_statutory_provision`, quoted CSV reasons, golden test, pitch artifacts.
+- Committed and pushed: `f2aa94d`.
+- `dotnet test`: 25/25; `npm run build`: green; CSV header and 4-eyes intact.
+
+### Why stopped
+
+The sprint's hard rule: *“If any file is missing, write BLOCKED.md and stop.”* The missing `CaseDetailDrawer.tsx` is a read-first file; the repository and PDF package are also absent. Implementing a PDF claim without a PDF engine would be fabricated.
+
+### Needed approval
+
+1. Map `CaseDetailDrawer` to the inline drawer in `apps/web/app/page.tsx`, or create the component.
+2. Approve a PDF package (QuestPDF/PdfSharp) or explicitly allow Markdown-only output; the sprint's acceptance requires PDF.
+3. Allow the `ICaseRepository`/`IDeepAnalysisService` abstractions and `AnalysisDocument` entity to be created.
+
+No statutory text or legal conclusion was fabricated in this block.
