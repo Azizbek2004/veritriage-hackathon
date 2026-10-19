@@ -22,3 +22,6 @@ Forensic views:
 
 - `forensic_drawer.png` — client cluster (1.71x actual), sibling ledger with `THIS ALERT`, structuring pattern, shared counterparty, and the 5-row verifier diff.
 - `audit_chain.png` — file-backed ledger `6/6` after approval; no `DEMO_STATIC`.
+
+- `deep_analysis.png` — drawer Deep Analysis tab with dual actions, 5-vector cards, and document history.
+- `dossiers.png` — Legal Dossiers & History tab with seeded counsel archive and printable HTML links.

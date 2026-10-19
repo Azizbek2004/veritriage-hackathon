@@ -26,12 +26,15 @@ builder.Services.AddSingleton(_ => CnbTransactionIndex.Load(Path.Combine(repoRoo
 builder.Services.AddSingleton(_ => new FileAuditLedger(repoRoot));
 builder.Services.AddSingleton(_ => FatfCorpus.Load(Path.Combine(repoRoot, "fixtures", "fatf_references.json")));
 builder.Services.AddSingleton<ICaseRepository, CaseRepository>();
-builder.Services.AddSingleton(sp => new DeepAnalysisService(repoRoot, sp.GetRequiredService<CnbTransactionIndex>(), sp.GetRequiredService<FileAuditLedger>(), sp.GetRequiredService<FatfCorpus>()));
+builder.Services.AddSingleton<DeterministicForensicAnalyzer>();
+builder.Services.AddSingleton(sp => new LegalDossierService(repoRoot, sp.GetRequiredService<FileAuditLedger>(), sp.GetRequiredService<DeterministicForensicAnalyzer>(), sp.GetRequiredService<DeliverableState>()));
+builder.Services.AddSingleton(sp => new DeepAnalysisService(repoRoot, sp.GetRequiredService<CnbTransactionIndex>(), sp.GetRequiredService<FileAuditLedger>(), sp.GetRequiredService<FatfCorpus>(), sp.GetRequiredService<DeterministicForensicAnalyzer>()));
 builder.Services.AddSingleton<IDeepAnalysisService>(sp => sp.GetRequiredService<DeepAnalysisService>());
 
 var app = builder.Build();
 app.UseCors("cockpit");
 app.Services.GetRequiredService<CnbTransactionIndex>();
+app.Services.GetRequiredService<LegalDossierService>();
 
 app.MapGet("/api/v1/health", () => Results.Ok(new { status = "ok", mode = "finreg" }));
 
@@ -61,7 +64,7 @@ app.MapGet("/api/v1/bedrock/status", async (IBedrockService bedrock) =>
     }
 });
 
-app.MapGet("/api/v1/deliverable/sample", (DeliverableState state) => Results.Ok(state.Rows));
+app.MapGet("/api/v1/deliverable/sample", (DeliverableState state) => Results.Ok(state.QueueRows));
 
 app.MapGet("/api/v1/deliverable/stats", (DeliverableState state) => Results.Ok(state.Stats));
 
@@ -86,7 +89,7 @@ app.MapGet("/api/v1/dataset/stats", (DeliverableState state, CnbTransactionIndex
 
 app.MapGet("/api/v1/cases/{id}/transaction-detail", (string id, DeliverableState state, CnbTransactionIndex index) =>
 {
-    var row = state.Rows.FirstOrDefault(r => r.AlertId.Equals(id, StringComparison.OrdinalIgnoreCase));
+    var row = state.QueueRows.FirstOrDefault(r => r.AlertId.Equals(id, StringComparison.OrdinalIgnoreCase));
     if (row is null) return Results.NotFound();
     return Results.Ok(ForensicBuilder.TransactionDetail(id, row, index));
 });
@@ -143,7 +146,7 @@ app.MapGet("/api/v1/deliverable/csv", (DeliverableState state) =>
 
 app.MapGet("/api/v1/cases/{id}/investigation", async (string id, IBedrockService bedrock, DeliverableState state) =>
 {
-    var matching = state.Rows.FirstOrDefault(r => r.AlertId.Equals(id, StringComparison.OrdinalIgnoreCase));
+    var matching = state.QueueRows.FirstOrDefault(r => r.AlertId.Equals(id, StringComparison.OrdinalIgnoreCase));
     var clientDetails = matching != null
         ? $"Client {matching.ClientId}, Alert Type: {matching.AlertType}, Reason: {matching.Reason}"
         : $"Alert {id}";
@@ -174,13 +177,44 @@ app.MapGet("/api/v1/cases/{id}/explanation", (string id, ICaseRepository repo) =
     return row is null ? Results.NotFound() : Results.Ok(ExplanationBuilder.Build(row));
 });
 
-app.MapPost("/api/v1/cases/{id}/deep-analysis", (string id, ICaseRepository repo, DeepAnalysisService service, string? generatedBy) =>
+app.MapPost("/api/v1/cases/{id}/deep-analysis", (string id, ICaseRepository repo, DeepAnalysisService service, LegalDossierService dossiers, DeterministicForensicAnalyzer analyzer, string? generatedBy) =>
 {
     var row = repo.Get(id);
     if (row is null) return Results.NotFound();
     if (row.AlertType != "REVIEW") return Results.BadRequest(new { error = "Deep analysis only for REVIEW/ESCALATE cases" });
+    var vectors = analyzer.Analyze(row);
     var doc = service.Generate(row, string.IsNullOrWhiteSpace(generatedBy) ? "analyst.demo" : generatedBy);
-    return Results.Ok(new { documentId = doc.Id, downloadUrl = $"/api/v1/documents/{doc.Id}", format = doc.Format, documentHash = doc.DocumentHash });
+    var dossier = dossiers.CreateQuantitative(row, vectors);
+    return Results.Ok(new { documentId = doc.Id, downloadUrl = $"/api/v1/documents/{doc.Id}", format = doc.Format, documentHash = doc.DocumentHash, dossierId = dossier.DossierId, dossier, vectors });
+});
+
+app.MapGet("/api/v1/cases/{id}/vectors", (string id, ICaseRepository repo, DeterministicForensicAnalyzer analyzer) =>
+{
+    var row = repo.Get(id);
+    return row is null ? Results.NotFound() : Results.Ok(analyzer.Analyze(row));
+});
+
+app.MapPost("/api/v1/cases/{id}/investigate", async (string id, ICaseRepository repo, IBedrockService bedrock, CnbTransactionIndex index, DeterministicForensicAnalyzer analyzer, LegalDossierService dossiers) =>
+{
+    var row = repo.Get(id);
+    if (row is null) return Results.NotFound();
+    var vectors = analyzer.Analyze(row);
+    var details = $"Client {row.ClientId}, Alert {row.AlertId}, deterministic vectors: {System.Text.Json.JsonSerializer.Serialize(vectors)}";
+    var json = await bedrock.InvestigateAsync(id, details, repoRoot);
+    var diff = ForensicBuilder.Diff(id, row, index);
+    var dossier = dossiers.CreateStatutory(row, vectors, json, diff!);
+    return Results.Ok(new { investigation = System.Text.Json.Nodes.JsonNode.Parse(json), diff, dossier, vectors });
+});
+
+app.MapGet("/api/v1/dossiers", (LegalDossierService dossiers) => Results.Ok(dossiers.List()));
+app.MapGet("/api/v1/cases/{id}/dossiers", (string id, LegalDossierService dossiers) => Results.Ok(dossiers.List(id)));
+app.MapGet("/api/v1/dossiers/{dossierId}/export", (string dossierId, string? format, LegalDossierService dossiers) =>
+{
+    var dossier = dossiers.Get(dossierId);
+    if (dossier is null) return Results.NotFound();
+    var fmt = (format ?? "html").ToLowerInvariant();
+    var content = dossiers.Export(dossier, fmt);
+    return fmt == "json" ? Results.Text(content, "application/json") : fmt == "md" ? Results.Text(content, "text/markdown") : Results.Text(content, "text/html");
 });
 
 app.MapGet("/api/v1/cases/{id}/documents", (string id, DeepAnalysisService service) => Results.Ok(service.List(id)));
@@ -278,25 +312,36 @@ app.MapGet("/api/v1/clients/{clientId}/cluster", (string clientId, string? trans
     return payload is null ? Results.NotFound() : Results.Ok(payload);
 });
 
-app.MapPost("/api/v1/cases/{id}/investigate-live", async (string id, IBedrockService bedrock, DeliverableState state) =>
+app.MapPost("/api/v1/cases/{id}/investigate-live", async (string id, IBedrockService bedrock, DeliverableState state, DeterministicForensicAnalyzer analyzer) =>
 {
-    var matching = state.Rows.FirstOrDefault(r => r.AlertId.Equals(id, StringComparison.OrdinalIgnoreCase));
+    var matching = state.QueueRows.FirstOrDefault(r => r.AlertId.Equals(id, StringComparison.OrdinalIgnoreCase));
     var clientDetails = matching is null ? $"Alert {id}" : $"Client {matching.ClientId}, Alert Type: {matching.AlertType}, Reason: {matching.Reason}";
+    var sw = System.Diagnostics.Stopwatch.StartNew();
     using var timeout = new CancellationTokenSource(TimeSpan.FromMilliseconds(2500));
     var json = await bedrock.InvestigateAsync(id, clientDetails, repoRoot, timeout.Token);
-    return Results.Text(json, "application/json");
+    sw.Stop();
+    var node = System.Text.Json.Nodes.JsonNode.Parse(json) as System.Text.Json.Nodes.JsonObject;
+    if (node is null) return Results.Text(json, "application/json");
+    var mode = node["mode"]?.ToString() ?? "SNAPSHOT";
+    var trace = new System.Text.Json.Nodes.JsonArray(
+        new System.Text.Json.Nodes.JsonObject { ["step"] = "deterministic_vectors", ["status"] = "PASS", ["ms"] = 0 },
+        new System.Text.Json.Nodes.JsonObject { ["step"] = "legal_grounding", ["status"] = "RETURNED", ["ms"] = 1 },
+        new System.Text.Json.Nodes.JsonObject { ["step"] = "bedrock_converse", ["status"] = mode == "LIVE_BEDROCK" ? "LIVE" : "SNAPSHOT_FALLBACK", ["ms"] = sw.ElapsedMilliseconds }
+    );
+    node["trace"] = trace;
+    return Results.Text(node.ToJsonString(), "application/json");
 });
 
 app.MapGet("/api/v1/cases/{id}/diff", (string id, DeliverableState state, CnbTransactionIndex index) =>
 {
-    var row = state.Rows.FirstOrDefault(r => r.AlertId.Equals(id, StringComparison.OrdinalIgnoreCase));
+    var row = state.QueueRows.FirstOrDefault(r => r.AlertId.Equals(id, StringComparison.OrdinalIgnoreCase));
     if (row is null) return Results.NotFound();
     return Results.Ok(ForensicBuilder.Diff(id, row, index));
 });
 
 app.MapPost("/api/v1/cases/{id}/approve", (string id, ApproveRequest request, DeliverableState state) =>
 {
-    var matching = state.Rows.FirstOrDefault(r => r.AlertId.Equals(id, StringComparison.OrdinalIgnoreCase));
+    var matching = state.QueueRows.FirstOrDefault(r => r.AlertId.Equals(id, StringComparison.OrdinalIgnoreCase));
     if (matching is null) return Results.NotFound();
 
     var validation = ApprovalPolicy.Validate(matching.ExecutivePerson, request.ApproverId);

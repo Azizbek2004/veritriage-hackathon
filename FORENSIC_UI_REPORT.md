@@ -5,7 +5,7 @@
 - [x] **Task 1 — aesthetic fixes + debug labels removed + audit persisted**
   - `DEMO_STATIC` removed from the API/UI.
   - Audit is now a real file-backed ledger: `data/audit_ledger.json` via `FileAuditLedger`; `ledger_mode: "FILE_CHAIN"`.
-  - Approving ALERT-045 appends an `APPROVED` event; audit goes 5 → 6 and survives refresh.
+  - Approving ALERT-045 appends an `APPROVED` event; dossier seeding adds 3 legal-dossier events; the chain survives refresh.
   - Two header badges: `ENGINE: C# DETERMINISTIC · <loadMs>ms` and `BEDROCK: LIVE/SNAPSHOT`.
   - No `DEMO_STATIC`, `LIVE_BEDROCK_CACHED`, or uppercase `CACHED` string remains in `apps/web/`.
   - Light Scandinavian system retained; typography is mono/tabular for numerics, tighter cards.
@@ -17,7 +17,7 @@
   - `CnbTransactionIndex` prebuilt at startup over 397,853 transactions / 5,493 clients.
   - `/api/v1/clients/{id}/cluster` returns declared vs actual, sibling ledger, structuring pattern, shared counterparty.
   - Drawer shows baseline bars, highlighted `THIS ALERT`, red pattern banner, shared-counterparty pill.
-  - **Actual hero K005397 is 1.71x volume / 1.71x count, not 8.20x.** The brief's 8.20x/4.5M values are not in the official data; we did not fabricate them. Pattern: 5 sub-threshold transfers in 48h, total 23,778.04 CZK. Shared counterparty across 3 clients.
+  - **Actual hero K005397 is 1.71x volume / 1.71x count, not 8.20x.** The brief's 8.20x/4.5M values are not in the official data; we did not fabricate them. Pattern: 13 sub-threshold transfers in 72h, total 95,511.91 CZK. Shared counterparty across 3 clients.
   - Warm lookup: ~7ms; first request ~21ms.
 - [x] **Task 4 — verifier diff table**
   - `/api/v1/cases/{id}/diff` returns 5 rows.

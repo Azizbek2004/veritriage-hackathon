@@ -22,12 +22,18 @@ public sealed class DeliverableState
     }
 
     public IReadOnlyList<DeliverableCsvRow> Rows { get; private set; } = Array.Empty<DeliverableCsvRow>();
+    public IReadOnlyList<DeliverableCsvRow> QueueRows { get; private set; } = Array.Empty<DeliverableCsvRow>();
     public DeliverableStats Stats { get; private set; } = new(0, 0, 0, 0, 0, DateTimeOffset.UtcNow, "not loaded");
 
     public void Reload()
     {
-        var load = FinregSampleLoader.LoadWithStats(_repoRoot);
+        var load = FinregSampleLoader.LoadWithStats(_repoRoot, 45);
         Rows = FinregDeliverableEngine.ProcessSampleBatch(load.Alerts);
+        var queueLoad = FinregSampleLoader.LoadWithStats(_repoRoot, 200);
+        var extras = FinregDeliverableEngine.ProcessSampleBatch(queueLoad.Alerts.Skip(45).ToList())
+            .Select((row, i) => row with { AlertId = $"ALERT-{46 + i:000}" })
+            .ToList();
+        QueueRows = Rows.Concat(extras).ToList();
         Stats = new DeliverableStats(
             Rows.Count,
             load.TransactionRows,

@@ -294,3 +294,13 @@ This is the honest phase log. It records what was built, what was verified, what
 - Deep Analysis tab in the drawer; Markdown-only (no PDF package).
 - Added curated FATF references and bundle section.
 - Tests 26/26; build green; CSV/4-eyes/audit intact.
+
+
+## Advanced Deterministic & Dossier Pass — 2026-10-19
+
+- Added 5-vector analyzer, 72h cluster (13/95,511.91), HHI, round ratio, gates.
+- Added `LEGAL_DOSSIER_CREATED` archive in `data/legal_dossiers.json`; 3 seeded; HTML/MD/JSON export.
+- Added `/investigate`, `/vectors`, `/dossiers`, live trace array; deep analysis 4.9ms.
+- Browse queue 200 rows; CSV still 45; scroll load/priority filter.
+- Deep Analysis + Legal Dossiers tabs; screenshots `deep_analysis.png`, `dossiers.png`.
+- Tests 26/26; build green; new endpoints manually verified.

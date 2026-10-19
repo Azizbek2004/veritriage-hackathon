@@ -48,8 +48,37 @@ type Investigation = {
   legalBasis: string;
   findings?: Finding[];
   claims?: Claim[];
-  statutes?: string[];
+  statutes?: { clause_id: string; citation: string; title: string; quoted_clause: string; url: string }[];
   action?: string;
+  trace?: { step: string; status: string; ms: number }[];
+};
+
+type VectorProfile = {
+  velocityRatio: number;
+  countRatio: number;
+  actualVolume: number;
+  expectedVolume: number;
+  actualCount: number;
+  expectedCount: number;
+  structuring72h: { count: number; sumCzk: number; windowStart?: string; windowEnd?: string };
+  inOutRatio: number;
+  counterpartyHhi: number;
+  sharedCounterpartyLinks: number;
+  primaryCounterparty?: string;
+  roundAmountRatio: number;
+  fraudNarrative: string;
+  gates: { gate: string; pass: boolean; detail: string }[];
+};
+
+type Dossier = {
+  dossierId: string;
+  caseId: string;
+  documentType: string;
+  title: string;
+  createdAtUtc: string;
+  documentSha256: string;
+  prevAuditSha256: string;
+  markdown: string;
 };
 
 type AuditEvent = {
@@ -181,7 +210,7 @@ type StressTestResult = {
   };
 };
 
-type Tab = "transaction" | "details" | "audit" | "deep";
+type Tab = "transaction" | "details" | "audit" | "deep" | "dossiers";
 type Filter = "ALL" | "FP" | "REVIEW" | "HIGH";
 
 const API = process.env.NEXT_PUBLIC_API_BASE ?? "http://127.0.0.1:5000";
@@ -238,6 +267,8 @@ export default function Home() {
   const [lastLiveAt, setLastLiveAt] = useState("");
   const [filter, setFilter] = useState<Filter>("ALL");
   const [query, setQuery] = useState("");
+  const [minPriority, setMinPriority] = useState(0);
+  const [visibleCount, setVisibleCount] = useState(45);
   const [dataStats, setDataStats] = useState<DataStats | null>(null);
   const [datasetStats, setDatasetStats] = useState<DatasetStats | null>(null);
   const [reprocessing, setReprocessing] = useState(false);
@@ -246,6 +277,10 @@ export default function Home() {
   const [deepBusy, setDeepBusy] = useState(false);
   const [deepError, setDeepError] = useState("");
   const [explanation, setExplanation] = useState<Explanation | null>(null);
+  const [vectors, setVectors] = useState<VectorProfile | null>(null);
+  const [dossiers, setDossiers] = useState<Dossier[]>([]);
+  const [dossierError, setDossierError] = useState("");
+  const [investigationBusy, setInvestigationBusy] = useState(false);
   const [auditLoaded, setAuditLoaded] = useState(false);
   const [verifiedEvents, setVerifiedEvents] = useState<Record<number, boolean>>({});
   const [txDetail, setTxDetail] = useState<TransactionDetailData | null>(null);
@@ -279,10 +314,13 @@ export default function Home() {
         !needle ||
         row.alertId.toLowerCase().includes(needle) ||
         row.clientId.toLowerCase().includes(needle) ||
-        row.transactionId.toLowerCase().includes(needle);
-      return matchesFilter && matchesQuery;
+        row.transactionId.toLowerCase().includes(needle) ||
+        row.reason.toLowerCase().includes(needle);
+      return matchesFilter && matchesQuery && row.priority >= minPriority;
     });
-  }, [rows, filter, query]);
+  }, [rows, filter, query, minPriority]);
+
+  const visibleRows = filteredRows.slice(0, visibleCount);
 
   useEffect(() => {
     fetch(`${API}/api/v1/deliverable/sample`)
@@ -299,8 +337,16 @@ export default function Home() {
         if (row) {
           setSelected(row);
           setApprover(INDEPENDENT);
-          const targetTab = params.get("tab") === "audit" ? "audit" : params.get("tab") === "details" ? "details" : "transaction";
+          const requestedTab = params.get("tab");
+          const targetTab = requestedTab === "audit" ? "audit" : requestedTab === "details" ? "details" : requestedTab === "deep" ? "deep" : requestedTab === "dossiers" ? "dossiers" : "transaction";
           setTab(targetTab);
+          if (targetTab === "deep") {
+            fetch(`${API}/api/v1/cases/${row.alertId}/documents`).then((res) => (res.ok ? res.json() : [])).then(setDocuments).catch(() => setDocuments([]));
+            fetch(`${API}/api/v1/cases/${row.alertId}/vectors`).then((res) => (res.ok ? res.json() : null)).then(setVectors).catch(() => setVectors(null));
+          }
+          if (targetTab === "dossiers") {
+            fetch(`${API}/api/v1/cases/${row.alertId}/dossiers`).then((res) => (res.ok ? res.json() : [])).then(setDossiers).catch(() => setDossiers([]));
+          }
           setTxDetailLoading(true);
           fetch(`${API}/api/v1/cases/${row.alertId}/transaction-detail`)
             .then((res) => (res.ok ? res.json() : null))
@@ -357,9 +403,16 @@ export default function Home() {
     }
   }, [selected, tab, auditLoaded, auditBusy, auditError]);
 
+  useEffect(() => {
+    setVisibleCount(45);
+  }, [filter, query, minPriority]);
+
   function openRow(row: Row) {
     setSelected(row);
     setExplanation(null);
+    setVectors(null);
+    setDossiers([]);
+    setDossierError("");
     void loadExplanation(row.alertId);
     setApprover(INDEPENDENT);
     setBanner("");
@@ -492,8 +545,10 @@ export default function Home() {
       const response = await fetch(`${API}/api/v1/cases/${selected.alertId}/deep-analysis?generatedBy=analyst.demo`, { method: "POST" });
       if (!response.ok) throw new Error(`Deep analysis ${response.status}`);
       const data = await response.json();
-      setToast(`Deep analysis generated · ${data.documentId}`);
+      setVectors(data.vectors);
+      setToast(`Deep analysis generated · ${data.dossierId ?? data.documentId}`);
       await loadDocuments();
+      await loadDossiers();
     } catch {
       setDeepError("Deep analysis generation failed. Retry.");
     } finally {
@@ -521,12 +576,49 @@ export default function Home() {
     void loadDocuments();
   }
 
+  async function loadDossiers() {
+    if (!selected) return;
+    setDossierError("");
+    try {
+      const response = await fetch(`${API}/api/v1/cases/${selected.alertId}/dossiers`);
+      if (!response.ok) throw new Error("Dossiers failed");
+      setDossiers(await response.json());
+    } catch {
+      setDossierError("Counsel archive unavailable.");
+    }
+  }
+
+  async function runStatutoryInvestigation() {
+    if (!selected) return;
+    setInvestigationBusy(true);
+    setInvestigation(null);
+    setVectors(null);
+    try {
+      const response = await fetch(`${API}/api/v1/cases/${selected.alertId}/investigate`, { method: "POST" });
+      if (!response.ok) throw new Error(`Investigation ${response.status}`);
+      const data = await response.json();
+      setInvestigation(data.investigation);
+      setVectors(data.vectors);
+      setToast("Statutory investigation complete · legal memo saved");
+      await loadDossiers();
+    } catch {
+      setToast("Statutory investigation failed. Snapshot fallback is available.");
+    } finally {
+      setInvestigationBusy(false);
+    }
+  }
+
+  function showDossiers() {
+    setTab("dossiers");
+    void loadDossiers();
+  }
+
   async function runLive() {
     if (!selected) return;
     setLiveBusy(true);
     setToast("");
     const controller = new AbortController();
-    const timer = window.setTimeout(() => controller.abort(), 2600);
+    const timer = window.setTimeout(() => controller.abort(), 5000);
     try {
       const response = await fetch(`${API}/api/v1/cases/${selected.alertId}/investigate-live`, {
         method: "POST",
@@ -777,11 +869,20 @@ export default function Home() {
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search alert, client, transaction"
+              placeholder="Search alert, client, transaction, reason"
               aria-label="Search alerts"
             />
           </label>
-          <span className="brand-subtitle">{filteredRows.length} shown</span>
+          <label className="search-box priority-filter">
+            <span>≥</span>
+            <select value={minPriority} onChange={(event) => setMinPriority(Number(event.target.value))} aria-label="Minimum priority">
+              <option value={0}>any priority</option>
+              <option value={40}>40+</option>
+              <option value={75}>75+</option>
+              <option value={90}>90+</option>
+            </select>
+          </label>
+          <span className="brand-subtitle">{visibleRows.length} of {filteredRows.length} shown</span>
         </div>
       </section>
 
@@ -799,7 +900,12 @@ export default function Home() {
       )}
 
       <div className="table-card">
-        <div className="table-wrap">
+        <div className="table-wrap" onScroll={(event) => {
+          const el = event.currentTarget;
+          if (el.scrollTop + el.clientHeight >= el.scrollHeight - 48) {
+            setVisibleCount((count) => Math.min(count + 40, filteredRows.length));
+          }
+        }}>
           <table>
             <thead>
               <tr>
@@ -810,11 +916,11 @@ export default function Home() {
             </thead>
             <tbody>
               {rowsLoading ? (
-                <tr><td colSpan={10} className="loading-row">Loading 45 FINREG alerts…</td></tr>
+                <tr><td colSpan={10} className="loading-row">Loading FINREG alert queue…</td></tr>
               ) : !Array.isArray(filteredRows) || filteredRows.length === 0 ? (
                 <tr><td colSpan={10} className="loading-row">No alerts match this filter.</td></tr>
               ) : (
-                filteredRows.map((row) => {
+                visibleRows.map((row) => {
                   const isPep = row.reason.includes("§ 21(5)");
                   const isSelected = selected?.alertId === row.alertId;
                   return (
@@ -890,6 +996,7 @@ export default function Home() {
               <button role="tab" aria-selected={tab === "details"} className={tab === "details" ? "drawer-tab active" : "drawer-tab"} onClick={() => setTab("details")}>Details</button>
               <button role="tab" aria-selected={tab === "audit"} className={tab === "audit" ? "drawer-tab active" : "drawer-tab"} onClick={showAudit}>Audit Chain</button>
               <button role="tab" aria-selected={tab === "deep"} className={tab === "deep" ? "drawer-tab active" : "drawer-tab"} onClick={showDeepAnalysis}>Deep Analysis</button>
+              <button role="tab" aria-selected={tab === "dossiers"} className={tab === "dossiers" ? "drawer-tab active" : "drawer-tab"} onClick={showDossiers}>Legal Dossiers</button>
             </div>
             <div className="drawer-body">
               {banner && (
@@ -1122,6 +1229,27 @@ export default function Home() {
                             <strong>{investigation.action}</strong>
                           </div>
                         )}
+                        {Array.isArray(investigation.trace) && investigation.trace.length > 0 && (
+                          <div className="trace-list">
+                            {investigation.trace.map((step, idx) => (
+                              <div className="trace-row" key={`${step.step}-${idx}`}>
+                                <span>{step.step}</span>
+                                <strong className={step.status === "SNAPSHOT_FALLBACK" ? "trace-warn" : "trace-ok"}>{step.status}</strong>
+                                <span>{step.ms}ms</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {Array.isArray(investigation.statutes) && investigation.statutes.length > 0 && (
+                          <div className="legal-list">
+                            {investigation.statutes.map((statute) => (
+                              <div className="legal-item" key={statute.clause_id}>
+                                <div className="legal-head"><strong>{statute.clause_id}</strong><span>{statute.citation}</span></div>
+                                <p>“{statute.quoted_clause}”</p>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                         <div className="legal-citation" style={{ marginTop: 8 }}>{investigation.legalBasis}</div>
                         {investigation.model && (
                           <div className="timeline-meta">
@@ -1207,15 +1335,30 @@ export default function Home() {
                   )}
                   <p className="brand-subtitle">Each event hash is computed over the previous hash plus the event data.</p>
                 </div>
-              ) : (
+              ) : tab === "deep" ? (
                 <div className="deep-panel">
                   <div className="detail-card">
                     <div className="detail-label">Deep analysis</div>
                     <div className="brand-subtitle">Markdown document · persisted under the case folder · approved Markdown-only for this sprint.</div>
-                    <button className="btn-primary" onClick={generateDeepAnalysis} disabled={deepBusy || selected.alertType !== "REVIEW"}>
-                      {deepBusy ? "Generating…" : "Generate Deep Analysis"}
-                    </button>
+                    <div className="dual-actions">
+                      <button className="btn-primary" onClick={generateDeepAnalysis} disabled={deepBusy || selected.alertType !== "REVIEW"}>
+                        {deepBusy ? "Generating…" : "⚡ Run Deterministic Deep Analysis (0 Tokens · C# Decimal)"}
+                      </button>
+                      <button className="btn-outline" onClick={runStatutoryInvestigation} disabled={investigationBusy || selected.alertType !== "REVIEW"}>
+                        {investigationBusy ? "Investigating…" : "🧠 Run Statutory Investigation (Bedrock + C# Diff)"}
+                      </button>
+                    </div>
                     {selected.alertType !== "REVIEW" && <p className="brand-subtitle">Only REVIEW/ESCALATE cases can generate a legal document.</p>}
+                    {vectors && (
+                      <div className="vector-grid">
+                        <div><span>VELOCITY</span><strong>{vectors.velocityRatio.toFixed(2)}x</strong></div>
+                        <div><span>COUNT</span><strong>{vectors.countRatio.toFixed(2)}x</strong></div>
+                        <div><span>72H CLUSTER</span><strong>{vectors.structuring72h.count} / {new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(vectors.structuring72h.sumCzk)}</strong></div>
+                        <div><span>HHI</span><strong>{Math.round(vectors.counterpartyHhi)}</strong></div>
+                        <div><span>ROUND</span><strong>{vectors.roundAmountRatio.toFixed(1)}%</strong></div>
+                      </div>
+                    )}
+                    {vectors && <p className="brand-subtitle">{vectors.fraudNarrative}</p>}
                   </div>
                   {deepError && (
                     <div className="banner-violation"><strong>{deepError}</strong><button className="btn-outline" onClick={loadDocuments}>Retry</button></div>
@@ -1241,6 +1384,34 @@ export default function Home() {
                     </div>
                   )}
                   <p className="brand-subtitle">Bundle contains analysis.md, evidence.json, audit_chain.json, rule_registry.json, fatf_references.json, and signatures.json.</p>
+                </div>
+              ) : (
+                <div className="deep-panel">
+                  <div className="detail-card">
+                    <div className="detail-label">Legal Dossiers & History (Counsel Archive)</div>
+                    <div className="brand-subtitle">Freeze-on-write legal artifacts bound to the SHA-256 audit chain. Seeded counsel archive is loaded from `data/legal_dossiers.json`.</div>
+                    <button className="btn-outline" onClick={loadDossiers}>Refresh archive</button>
+                  </div>
+                  {dossierError && <div className="banner-violation"><strong>{dossierError}</strong><button className="btn-outline" onClick={loadDossiers}>Retry</button></div>}
+                  {dossiers.length === 0 ? (
+                    <p className="brand-subtitle">No legal dossiers for this case yet.</p>
+                  ) : (
+                    <div className="document-list">
+                      {dossiers.map((dossier) => (
+                        <div className="document-item" key={dossier.dossierId}>
+                          <div>
+                            <div className="detail-label">{dossier.documentType === "STATUTORY_FAU_OPO_LEGAL_MEMO" ? "FAÚ § 18 LEGAL MEMO" : "QUANTITATIVE BRIEF"} · {dossier.createdAtUtc.slice(0, 19)}</div>
+                            <div className="mono doc-id">{dossier.dossierId}</div>
+                            <div className="brand-subtitle">SHA-256 {dossier.documentSha256.slice(0, 22)}…</div>
+                          </div>
+                          <div className="doc-actions">
+                            <a className="btn-outline" href={`${API}/api/v1/dossiers/${dossier.dossierId}/export?format=html`} target="_blank" rel="noreferrer">Open Lawyer-Ready Brief</a>
+                            <a className="btn-outline" href={`${API}/api/v1/dossiers/${dossier.dossierId}/export?format=md`} target="_blank" rel="noreferrer">Markdown</a>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

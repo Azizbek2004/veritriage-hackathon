@@ -38,7 +38,7 @@ public static class ForensicBuilder
             structuring_pattern = new
             {
                 detected = pattern.Detected,
-                window_hours = 48,
+                window_hours = 72,
                 threshold_czk = 25000,
                 count = pattern.Rows.Count,
                 total_czk = pattern.Total,
@@ -211,18 +211,16 @@ public static class ForensicBuilder
 
     private static (bool Detected, IReadOnlyList<CnbTransactionRow> Rows, decimal Total) FindStructuring(IReadOnlyList<CnbTransactionRow> all)
     {
-        var ascending = all.OrderBy(x => x.Date).ThenBy(x => x.Id).ToList();
+        var ascending = all.Where(x => x.AmountCzk > 0m && x.AmountCzk < 25000m)
+            .OrderBy(x => x.Date).ThenBy(x => x.Id).ToList();
+        IReadOnlyList<CnbTransactionRow> best = Array.Empty<CnbTransactionRow>();
         for (var i = 0; i < ascending.Count; i++)
         {
             var start = ascending[i].Date;
-            var group = ascending
-                .Where(x => x.AmountCzk < 25000m && x.Date >= start && x.Date <= start.AddDays(2))
-                .Take(6)
-                .ToList();
-            if (group.Count >= 4)
-                return (true, group, group.Sum(x => x.AmountCzk));
+            var window = ascending.Where(x => x.Date >= start && x.Date <= start.AddDays(3)).ToList();
+            if (window.Count > best.Count) best = window;
         }
-        return (false, Array.Empty<CnbTransactionRow>(), 0m);
+        return best.Count >= 4 ? (true, best, best.Sum(x => x.AmountCzk)) : (false, Array.Empty<CnbTransactionRow>(), 0m);
     }
 
     private static object? FindShared(IReadOnlyList<CnbTransactionRow> all, string clientId, CnbTransactionIndex index)

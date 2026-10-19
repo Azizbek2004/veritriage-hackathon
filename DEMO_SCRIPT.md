@@ -26,7 +26,7 @@
 alert_id,alert_type,client_id,transaction_id,triage,priority,executive_role,executive_person,approver,reason,log
 ```
 
-**If asked:** 45 rows, 30 FP, 10 REVIEW 40–74, 5 REVIEW 75+.
+**If asked:** 45 CSV rows; the browse queue shows 200 alerts with scroll-load and priority filters. Core hero ALERT-045 remains.
 
 ---
 
@@ -43,7 +43,7 @@ alert_id,alert_type,client_id,transaction_id,triage,priority,executive_role,exec
 > “This is a PEP with elevated 24-hour velocity. Priority 96. It requires MLRO escalation under § 21(5).”
 
 **Scroll:** in the drawer, show **Client transaction cluster**.
-> “This is the real index: 39,819 CZK declared vs 68,262 actual — 1.71x volume, 1.71x count. Five sub-threshold transfers in 48 hours, 23,778 CZK total. The brief’s 8.20x is not this client; we show the actual number.”
+> “This is the real index: 39,819 CZK declared vs 68,262 actual — 1.71x volume, 1.71x count. Thirteen sub-threshold transfers in 72 hours, 95,511.91 CZK total. The brief’s 8.20x is not this client; we show the actual number.”
 
 **Scroll:** show **Neuro-symbolic check**.
 > “The representative LLM proposed priority 74. The C# verifier recomputed 96 and marked it OVERRIDDEN. It also fail-closed the same-person approval.”

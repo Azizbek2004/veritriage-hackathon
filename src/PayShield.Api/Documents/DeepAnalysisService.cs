@@ -40,14 +40,16 @@ public sealed class DeepAnalysisService : IDeepAnalysisService
     private readonly CnbTransactionIndex _index;
     private readonly FileAuditLedger _ledger;
     private readonly FatfCorpus _fatf;
+    private readonly DeterministicForensicAnalyzer _analyzer;
     private readonly object _gate = new();
 
-    public DeepAnalysisService(string repoRoot, CnbTransactionIndex index, FileAuditLedger ledger, FatfCorpus fatf)
+    public DeepAnalysisService(string repoRoot, CnbTransactionIndex index, FileAuditLedger ledger, FatfCorpus fatf, DeterministicForensicAnalyzer analyzer)
     {
         _root = repoRoot;
         _index = index;
         _ledger = ledger;
         _fatf = fatf;
+        _analyzer = analyzer;
     }
 
     public AnalysisDocument Generate(DeliverableCsvRow row, string generatedBy)
@@ -142,6 +144,16 @@ public sealed class DeepAnalysisService : IDeepAnalysisService
         sb.AppendLine("## Priority breakdown");
         if (row.Breakdown is { } bd)
             sb.AppendLine($"`B{bd.Base} + V{bd.Vol} + P{bd.Pep} + S{bd.Struct} + C{bd.Channel} = {row.Priority.ToString(CultureInfo.InvariantCulture)}`");
+        var vector = _analyzer.Analyze(row);
+        sb.AppendLine();
+        sb.AppendLine("## Quantitative typology vectors");
+        sb.AppendLine($"- Velocity: **{vector.VelocityRatio:0.00}x**; count: **{vector.CountRatio:0.00}x**");
+        sb.AppendLine($"- 72h sub-threshold cluster: **{vector.Structuring72h.Count} / {vector.Structuring72h.SumCzk.ToString("N2", CultureInfo.InvariantCulture)} CZK**");
+        sb.AppendLine($"- HHI: **{vector.CounterpartyHhi:0}**; shared links: **{vector.SharedCounterpartyLinks}**; primary: `{vector.PrimaryCounterparty}`");
+        sb.AppendLine($"- Round-amount ratio: **{vector.RoundAmountRatio:0.00}%**; in/out: **{vector.InOutRatio:0.0000}**");
+        sb.AppendLine();
+        sb.AppendLine("## Why the score is high");
+        sb.AppendLine(vector.FraudNarrative);
         sb.AppendLine();
         sb.AppendLine("## Rules");
         foreach (var rule in explanation.RulesFired)
