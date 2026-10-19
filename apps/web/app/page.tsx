@@ -2,25 +2,25 @@
 
 import { useEffect, useState } from "react";
 
+type Row = {
+  alertId: string;
+  alertType: "FP" | "REVIEW";
+  clientId: string;
+  transactionId: string;
+  triage: string;
+  priority: number;
+  executiveRole: string;
+  executivePerson: string;
+  approver: string;
+  reason: string;
+  log: string;
+};
+
 type Investigation = {
   mode: string;
   evidence_summary: string;
   rationale: string;
   legalBasis: string;
-};
-
-type Row = {
-  alertId: string;
-  clientId: string;
-  clientName: string;
-  triage: "FP" | "REVIEW";
-  priority: number;
-  role: string;
-  executivePerson: string;
-  approver: string;
-  fourEyesStatus: string;
-  legalBasis: string;
-  reason: string;
 };
 
 const API = process.env.NEXT_PUBLIC_API_BASE ?? "http://127.0.0.1:5000";
@@ -38,11 +38,12 @@ export default function Home() {
   const [selected, setSelected] = useState<Row | null>(null);
   const [approver, setApprover] = useState(INDEPENDENT);
   const [banner, setBanner] = useState("");
-  const [qrOpen, setQrOpen] = useState(false);
-  const [signed, setSigned] = useState(false);
+  const [toast, setToast] = useState("");
   const [apiError, setApiError] = useState("");
   const [investigation, setInvestigation] = useState<Investigation | null>(null);
   const [bedrockBusy, setBedrockBusy] = useState(false);
+  const [signingBusy, setSigningBusy] = useState(false);
+  const [approved, setApproved] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetch(`${API}/api/v1/deliverable/sample`)
@@ -54,23 +55,10 @@ export default function Home() {
       .catch((error: unknown) => setApiError(String(error)));
   }, []);
 
-  useEffect(() => {
-    if (!qrOpen) return;
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "F9") {
-        setSigned(true);
-        setQrOpen(false);
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [qrOpen]);
-
   function openRow(row: Row) {
     setSelected(row);
     setApprover(INDEPENDENT);
     setBanner("");
-    setSigned(false);
     setInvestigation(null);
   }
 
@@ -103,10 +91,29 @@ export default function Home() {
     }
   }
 
-  function requestSignature() {
-    if (approver === SAME) return;
-    setSigned(false);
-    setQrOpen(true);
+  async function signAndApprove() {
+    if (!selected || approver === SAME) return;
+    setSigningBusy(true);
+    try {
+      const response = await fetch(`${API}/api/v1/cases/${selected.alertId}/approve`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          signature_b64: "mock_sig_123",
+          approver_id: approver === SAME ? selected.executivePerson : "Ing. Jana Dvořáková",
+        }),
+      });
+      const body = await response.json();
+      if (!response.ok) {
+        setBanner(body.error ?? "APPROVAL FAILED");
+        return;
+      }
+      setApproved((current) => new Set(current).add(selected.alertId));
+      setToast(`APPROVED · ${body.audit_hash}`);
+      setBanner("");
+    } finally {
+      setSigningBusy(false);
+    }
   }
 
   return (
@@ -137,24 +144,40 @@ export default function Home() {
         </div>
       )}
 
+      {toast && (
+        <div className="toast">
+          <span>{toast}</span>
+          <button onClick={() => setToast("")} aria-label="Dismiss">×</button>
+        </div>
+      )}
+
       <section className="table-wrap">
         <table>
           <thead>
             <tr>
-              <th>ID</th><th>Client</th><th>Triage</th><th>Priority</th>
-              <th>Role</th><th>Exec</th><th>Approver</th>
+              <th>alert_id</th><th>alert_type</th><th>client_id</th><th>transaction_id</th>
+              <th>triage</th><th>priority</th><th>executive_role</th><th>executive_person</th>
+              <th>approver</th><th>reason</th><th>log</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((row) => (
               <tr key={row.alertId} onClick={() => openRow(row)}>
                 <td className="mono">{row.alertId}</td>
-                <td>{row.clientName}</td>
-                <td><span className={row.triage === "FP" ? "pill fp" : "pill review"}>{row.triage}</span></td>
+                <td><span className={row.alertType === "FP" ? "pill fp" : "pill review"}>{row.alertType}</span></td>
+                <td className="mono">{row.clientId}</td>
+                <td className="mono">{row.transactionId}</td>
+                <td>
+                  {approved.has(row.alertId)
+                    ? <span className="pill approved">APPROVED</span>
+                    : <span className="mono">{row.triage}</span>}
+                </td>
                 <td><span className={priorityClass(row.priority)}>{row.priority}</span></td>
-                <td className="mono">{row.role}</td>
+                <td>{row.executiveRole}</td>
                 <td>{row.executivePerson}</td>
                 <td>{row.approver}</td>
+                <td className="reason-cell">{row.reason}</td>
+                <td className="mono log" title={row.log}>{row.log}</td>
               </tr>
             ))}
           </tbody>
@@ -163,15 +186,15 @@ export default function Home() {
 
       <footer className="footer">
         <div><strong>21.1 FTEs saved</strong> · €1.16M/yr · 45-alert FINREG sample</div>
-        <div className="muted">Deterministic priority · 4-eyes enforced · audit-ready</div>
+        <div className="muted">Deterministic priority · 4-eyes enforced · hash-logged</div>
       </footer>
 
       {selected && (
         <aside className="drawer">
           <button className="close" onClick={() => setSelected(null)}>×</button>
-          <div className="kicker">{selected.alertId} · {selected.triage}</div>
-          <h2>{selected.clientName}</h2>
-          <p className="muted">{selected.legalBasis}</p>
+          <div className="kicker">{selected.alertId} · {selected.alertType}</div>
+          <h2>{selected.clientId}</h2>
+          <p className="muted">{selected.executiveRole} · priority {selected.priority}</p>
           <div className="reason">{selected.reason}</div>
           <button className="ghost" onClick={runInvestigation} disabled={bedrockBusy}>
             {bedrockBusy ? "Loading cached investigation…" : "Run Bedrock Investigation (Cached)"}
@@ -181,6 +204,7 @@ export default function Home() {
               <div className="kicker">{investigation.mode}</div>
               <p>{investigation.evidence_summary}</p>
               <p className="muted">{investigation.rationale}</p>
+              <p className="legal">{investigation.legalBasis}</p>
             </div>
           )}
           <label className="label" htmlFor="approver">Assign Approver</label>
@@ -189,34 +213,11 @@ export default function Home() {
             <option>{SAME}</option>
           </select>
           {banner && <div className="banner danger small">{banner}</div>}
-          <button className="primary" disabled={approver === SAME} onClick={requestSignature}>
-            Request Signature
+          <button className="primary" disabled={approver === SAME || signingBusy} onClick={signAndApprove}>
+            {signingBusy ? "Signing…" : "Sign & Approve (Mock)"}
           </button>
           <p className="muted small">4-eyes rule: the approver must differ from the executive. The same-person option is the demo trap.</p>
         </aside>
-      )}
-
-      {qrOpen && (
-        <div className="modal" onClick={() => setQrOpen(false)}>
-          <div className="modal-card" onClick={(event) => event.stopPropagation()}>
-            <div className="kicker">ECDSA P-256 · bound to receipt hash</div>
-            <h2>Scan to sign</h2>
-            <div className="qr" aria-label="demo QR">
-              {Array.from({ length: 225 }).map((_, index) => (
-                <span key={index} className={index % 3 === 0 || index % 7 === 0 ? "on" : ""} />
-              ))}
-            </div>
-            <p className="muted">F9 injects the pre-computed rehearsal signature.</p>
-            <button className="primary" onClick={() => { setSigned(true); setQrOpen(false); }}>
-              F9 · Inject signature
-            </button>
-            {signed && <div className="banner ok">Signature verified · server-side check passed</div>}
-          </div>
-        </div>
-      )}
-
-      {signed && !qrOpen && (
-        <div className="banner ok">Signature verified · receipt bound · audit chain valid</div>
       )}
     </main>
   );

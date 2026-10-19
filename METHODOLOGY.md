@@ -50,14 +50,22 @@ The server enforces the rule, not the UI. `POST /api/v1/cases/verify-4-eyes` com
 
 ### CSV contract
 
-`GET /api/v1/deliverable/csv` returns `text/csv` with exactly 11 columns:
+`GET /api/v1/deliverable/csv` returns `text/csv` with exactly this header row, in this order:
 
 ```
-alert_id,client_id,client_name,triage,priority,role,
-executive_person,approver,four_eyes_status,legal_basis,reason
+alert_id,alert_type,client_id,transaction_id,triage,priority,
+executive_role,executive_person,approver,reason,log
 ```
 
-Every row contains one of `§ 6(1)(a)` or `§ 21(5)` in `reason`. The `four_eyes_status` is `OK` for every emitted row; the violation is demonstrated through the API, not written into the deliverable.
+Field mapping:
+
+- `alert_type`: `FP` or `REVIEW`.
+- `triage`: `AUTO_CLEAR` for FP; `MANUAL_REVIEW` for 40–74; `ESCALATE` for 75+.
+- `executive_role`: `L1 AML Analyst` for FP; `L2 Senior AML Specialist` for review.
+- `transaction_id`: the ČNB transaction ID; `alert_id` is the deterministic `ALERT-###` id.
+- `reason`: contains `§ 6(1)(a)` or `§ 21(5)`.
+- `log`: a JSON string with `{"hash":"sha256:...","ts":"...","rule_version":"v1"}`; the hash is computed over the other 10 row fields plus the timestamp.
+- The 4-eyes status is enforced by the API, not written as a separate column. Every emitted row has independent executive/approver values; the violation is demonstrated by `POST /verify-4-eyes`.
 
 ## Page 2 — Verifier Gates to Czech AML Statutes
 

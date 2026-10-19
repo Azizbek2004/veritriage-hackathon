@@ -1,38 +1,47 @@
-# BLOCKED — Release Candidate 2026-10-19
+# BLOCKED — Fixer Pass 2026-10-19
 
-The FINREG CSV and 4-eyes gate are implemented and verified. These are the remaining blockers.
+The FINREG CSV header, 4-eyes gate, mock signing, and frontend are implemented and verified. These are the remaining blockers.
 
-## 1. Exact FINREG CSV Template Is Unverified
+## 1. GitHub Push
 
-The brief said the exact `FinregDeliverableEngine.cs` was provided; no code was present. The implemented headers are an interpretation:
+`gh` is installed but its token is invalid. `secrets/github_token.txt` is absent. The deploy key is not added. Both pushes fail:
 
+- SSH: `Permission denied (publickey)`.
+- HTTPS: `could not read Username`.
+
+**Human action:**
+
+```bash
+gh auth login -h github.com
+git push -u origin main
 ```
-alert_id,client_id,client_name,triage,priority,role,
-executive_person,approver,four_eyes_status,legal_basis,reason
+
+Or add `secrets/github_deploy_key.pub` as a write deploy key and run:
+
+```bash
+git remote set-url origin git@github.com:Azizbek2004/veritriage-hackathon.git
+git push -u origin main
 ```
 
-If FINREG's exact template differs, the 85% score is at risk. Compare before submission. See `PROPOSAL.md` P3.
+## 2. Live Bedrock
 
-## 2. GitHub Push
+The `TeamAdmin` token is invalid; ReadOnly cannot `InvokeModel`. The demo uses the `LIVE_BEDROCK_CACHED` cassette. Refresh the SSO session to test live. See `WAITING_FOR_CREDENTIALS.md`.
 
-The deploy key is not added; HTTPS has no credentials. The repo is committed locally but not pushed. Add `secrets/github_deploy_key.pub` as a write deploy key, or run `git push` from an authenticated machine.
+## 3. Human Rehearsal
 
-## 3. Live Bedrock
-
-The TeamAdmin token is invalid; ReadOnly cannot `InvokeModel`. The build uses the cassette and labels it `LIVE_BEDROCK_CACHED`. If a live model is required, refresh the SSO session. See `WAITING_FOR_CREDENTIALS.md`.
+The backend curl rehearsal is 0.0279s. The 5-minute human browser presentation has not been run. See `REHEARSAL.md`.
 
 ## 4. Missing Demo Pieces
 
 - Real mobile ECDSA signing and server verification.
-- SignalR approval flow.
-- Audit hash-chain endpoint and view.
+- Audit chain endpoint and view.
+- Live Bedrock two-hop agent.
 - E2E test.
-- 5-minute rehearsal.
 
 ## What Is Not Blocked
 
+- Exact 11-column CSV header and 45-row deliverable.
+- 4-eyes 400 with exact body.
+- Mock sign/approve with audit hash.
+- Next.js cockpit build.
 - `dotnet test` 18/18.
-- `npm run build` green.
-- 45-row / 11-column CSV with 30/10/5.
-- 4-eyes 400 with exact text.
-- Cached Bedrock investigation.

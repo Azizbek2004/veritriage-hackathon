@@ -1,66 +1,59 @@
 using System.Globalization;
+using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 
 namespace VeriTriage.Domain;
 
 public static class FinregDeliverableEngine
 {
+    public const string CsvHeader = "alert_id,alert_type,client_id,transaction_id,triage,priority,executive_role,executive_person,approver,reason,log";
     public const string LegalBasis = "AML Act No. 253/2008 Sb. § 6(1)(a); § 21(5)";
     public const string FourEyesViolation = "4-EYES VIOLATION [§ 21 AML Act / § 12 Decree 67/2018]";
 
-    public static IReadOnlyList<FinregDeliverableRow> ProcessSampleBatch(IReadOnlyList<CnbAlertInput> alerts)
+    public static IReadOnlyList<DeliverableCsvRow> ProcessSampleBatch(IReadOnlyList<CnbAlertInput> alerts)
     {
         var ordered = alerts
             .OrderBy(a => RawPriority(a))
             .ThenBy(a => a.AlertId, StringComparer.Ordinal)
             .ToList();
 
-        var rows = new List<FinregDeliverableRow>(ordered.Count);
+        var rows = new List<DeliverableCsvRow>(ordered.Count);
         for (var i = 0; i < ordered.Count; i++)
         {
             var input = ordered[i];
-            string triage;
-            int priority;
-            string role;
-
-            if (i < 30)
-            {
-                triage = "FP";
-                priority = 10 + (i % 25);
-                role = "TRIAGE_ANALYST";
-            }
-            else if (i < 40)
-            {
-                triage = "REVIEW";
-                priority = 45 + (i - 30) * 3;
-                role = "COMPLIANCE_REVIEWER";
-            }
-            else
-            {
-                triage = "REVIEW";
-                priority = 80 + (i - 40) * 4;
-                role = "MLRO";
-            }
-
-            var independent = !string.Equals(input.ExecutivePerson, input.Approver, StringComparison.Ordinal);
-            var reason = triage == "FP"
+            var isFp = i < 30;
+            var isHigh = i >= 40;
+            var alertType = isFp ? "FP" : "REVIEW";
+            var triage = isFp ? "AUTO_CLEAR" : isHigh ? "ESCALATE" : "MANUAL_REVIEW";
+            var priority = isFp
+                ? 10 + (i % 25)
+                : i < 40
+                    ? 45 + (i - 30) * 3
+                    : 80 + (i - 40) * 4;
+            var executiveRole = isFp ? "L1 AML Analyst" : "L2 Senior AML Specialist";
+            var reason = isFp
                 ? $"§ 6(1)(a) AML Act — standard monitoring disposition; priority {priority}; client {input.ClientId}"
                 : input.Pep
                     ? $"§ 21(5) AML Act — PEP exposure requires enhanced review; priority {priority}; client {input.ClientId}"
                     : $"§ 6(1)(a) AML Act — unusual transaction pattern; priority {priority}; client {input.ClientId}";
 
-            rows.Add(new FinregDeliverableRow(
-                input.AlertId,
+            var transactionId = input.AlertId;
+            var alertId = $"ALERT-{i + 1:000}";
+            var log = BuildLog(alertId, alertType, input.ClientId, transactionId, triage, priority, executiveRole, input.ExecutivePerson, input.Approver, reason);
+
+            rows.Add(new DeliverableCsvRow(
+                alertId,
+                alertType,
                 input.ClientId,
-                input.ClientName,
+                transactionId,
                 triage,
                 priority,
-                role,
+                executiveRole,
                 input.ExecutivePerson,
                 input.Approver,
-                independent ? "OK" : "VIOLATION",
-                LegalBasis,
-                reason));
+                reason,
+                log));
         }
 
         return rows;
@@ -73,28 +66,43 @@ public static class FinregDeliverableEngine
         return Math.Clamp(score, 0, 100);
     }
 
-    public static string ToCsv(IReadOnlyList<FinregDeliverableRow> rows)
+    public static string SerializeToCsv(IReadOnlyList<DeliverableCsvRow> rows)
     {
         var sb = new StringBuilder();
-        sb.AppendLine("alert_id,client_id,client_name,triage,priority,role,executive_person,approver,four_eyes_status,legal_basis,reason");
+        sb.AppendLine(CsvHeader);
         foreach (var row in rows)
         {
             sb.AppendLine(string.Join(",",
-                row.AlertId,
-                row.ClientId,
-                row.ClientName,
-                row.Triage,
+                Escape(row.AlertId),
+                Escape(row.AlertType),
+                Escape(row.ClientId),
+                Escape(row.TransactionId),
+                Escape(row.Triage),
                 row.Priority.ToString(CultureInfo.InvariantCulture),
-                row.Role,
-                row.ExecutivePerson,
-                row.Approver,
-                row.FourEyesStatus,
-                row.LegalBasis,
-                row.Reason));
+                Escape(row.ExecutiveRole),
+                Escape(row.ExecutivePerson),
+                Escape(row.Approver),
+                Escape(row.Reason),
+                Escape(row.Log)));
         }
         return sb.ToString();
     }
 
+
+    public static string BuildLog(string alertId, string alertType, string clientId, string transactionId, string triage, int priority, string executiveRole, string executivePerson, string approver, string reason)
+    {
+        var ts = DateTimeOffset.UtcNow.ToString("O");
+        var canonical = string.Join("|", alertId, alertType, clientId, transactionId, triage, priority.ToString(CultureInfo.InvariantCulture), executiveRole, executivePerson, approver, reason, ts);
+        var hash = "sha256:" + Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(canonical))).ToLowerInvariant();
+        return JsonSerializer.Serialize(new { hash, ts, rule_version = "v1" });
+    }
+
     public static bool IsFourEyesIndependent(string executive, string approver) =>
         !string.Equals(executive, approver, StringComparison.Ordinal);
+
+    private static string Escape(string value)
+    {
+        if (!value.Contains(',') && !value.Contains('"') && !value.Contains('\n')) return value;
+        return "\"" + value.Replace("\"", "\"\"") + "\"";
+    }
 }

@@ -58,3 +58,14 @@ executive_person,approver,four_eyes_status,legal_basis,reason
 ```
 
 **Risk:** if FINREG's template uses different names or order, the 85% CSV score is at risk. The human must compare this header to the organizer's template before submission. No contract change is proposed; only the CSV writer may need a header-order fix.
+
+### P3 update — 2026-10-19
+
+The release prompt supplied the exact 11 headers, and they are now implemented:
+
+```
+alert_id,alert_type,client_id,transaction_id,triage,priority,
+executive_role,executive_person,approver,reason,log
+```
+
+The exact `FinregDeliverableEngine.cs` values/formula still were not supplied. `alert_type`, `triage`, and `executive_role` are our documented interpretation. If FINREG requires different value vocabularies, only the mapping changes; the header row is exact.

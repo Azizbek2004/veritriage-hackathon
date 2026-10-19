@@ -180,3 +180,29 @@ This is the honest phase log. It records what was built, what was verified, what
 - No real mobile signature, audit chain, E2E, or 5-minute rehearsal.
 
 **Time elapsed:** ~35 minutes.
+
+## Fixer Pass — 2026-10-19
+
+**Built**
+
+- `DeliverableCsvRow` with the exact 11 properties and header row:
+  `alert_id,alert_type,client_id,transaction_id,triage,priority,executive_role,executive_person,approver,reason,log`.
+- Per-row SHA-256 `log` JSON with `hash`, `ts`, and `rule_version`.
+- `POST /api/v1/cases/{id}/approve` returning `APPROVED` + `audit_hash`.
+- Cockpit updated to the exact 11 columns, green `APPROVED` row status, audit-hash toast, and cached legal citations.
+- `REHEARSAL.md` and `rehearsal_output.csv`.
+
+**Verified**
+
+- `dotnet test` 18/18.
+- `npm run build` green.
+- CSV header exact; 45 rows; 30/10/5; exec != approver; legal reason; valid log JSON.
+- 4-eyes exact 400; independent 200.
+- Approve 200 with `audit_hash`.
+- Automated backend rehearsal total 0.0279s.
+
+**Failed / unverified**
+
+- GitHub push blocked (invalid gh token, no token file, deploy key not added).
+- No live Bedrock, real mobile signing, audit chain, or human 5-minute rehearsal.
+- The exact FINREG engine values beyond headers are an interpretation; the promised code was absent.
