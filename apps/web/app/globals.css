@@ -1511,3 +1511,17 @@ tbody td { white-space: nowrap; }
 .two-axis-grid div { border: 1px solid var(--outline-variant); border-radius: 6px; padding: 6px; background: var(--surface-container-low); }
 .two-axis-grid span { display: block; font: 700 8px var(--font-mono); color: var(--secondary); }
 .two-axis-grid strong { display: block; font: 700 13px var(--font-mono); color: var(--primary); margin-top: 3px; }
+.sensitivity-panel { margin: 0 0 10px; border: 1px solid var(--outline-variant); background: var(--surface-container-low); border-radius: 10px; padding: 10px 12px; }
+.sensitivity-head { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+.sensitivity-head strong { display: block; font: 700 11px var(--font-mono); color: var(--primary); }
+.sensitivity-head span { display: block; font: 9px var(--font-mono); color: var(--secondary); }
+.sensitivity-meta { display: flex; align-items: center; gap: 10px; font: 9px var(--font-mono); color: var(--secondary); }
+.sensitivity-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 9px; }
+.sensitivity-grid label { display: flex; flex-direction: column; gap: 2px; font: 700 9px var(--font-mono); color: var(--secondary); }
+.sensitivity-grid output { color: var(--primary); }
+.sensitivity-grid input[type="range"] { width: 100%; accent-color: var(--primary); }
+.top-badge { display: inline-block; margin-left: 5px; font: 700 8px var(--font-mono); padding: 1px 4px; border-radius: 4px; vertical-align: middle; }
+.top-badge.robust { color: var(--success); background: var(--success-container); }
+.top-badge.new { color: var(--warning); background: var(--warning-container); }
+.top-badge.drop { color: var(--danger); background: var(--danger-container); }
+.raw-pill { display: inline-block; margin-left: 4px; font: 700 8px var(--font-mono); color: var(--secondary); }

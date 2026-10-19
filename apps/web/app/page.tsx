@@ -17,11 +17,6 @@ type Row = {
   approver: string;
   reason: string;
   log: string;
-  priority_raw?: number;
-  rank?: number;
-  rank_total?: number;
-  evidence_score?: number;
-  confidence_score?: number;
   priority_breakdown?: {
     base: number;
     vol: number;
@@ -30,6 +25,37 @@ type Row = {
     channel: number;
     overridden?: boolean;
   };
+  priority_raw?: number;
+  rank?: number;
+  rank_total?: number;
+  evidence_score?: number;
+  confidence_score?: number;
+  inputs?: PriorityInputs;
+  topBadge?: string;
+  jsRaw?: number;
+};
+
+type PriorityInputs = {
+  base_tier: string;
+  vol_ratio: number;
+  count_ratio: number;
+  is_pep: boolean;
+  has_structuring: boolean;
+  is_new_remote: boolean;
+  base_score: number;
+  vol_score: number;
+  pep_score: number;
+  struct_score: number;
+  channel_score: number;
+};
+
+type PriorityWeights = {
+  base: { low: number; medium: number; high: number; source: string; rationale: string };
+  volume: { per_unit_ratio: number; cap: number; source: string; rationale: string };
+  pep: { weight: number; source: string; rationale: string };
+  structuring: { weight: number; source: string; rationale: string };
+  channel: { weight: number; source: string; rationale: string };
+  max_raw: number;
 };
 
 type Finding = {
@@ -279,6 +305,12 @@ export default function Home() {
   const [query, setQuery] = useState("");
   const [minPriority, setMinPriority] = useState(0);
   const [visibleCount, setVisibleCount] = useState(45);
+  const [weights, setWeights] = useState<PriorityWeights | null>(null);
+  const [sensitivity, setSensitivity] = useState({ pep: 25, perUnit: 10, struct: 20, cap: 30 });
+  const [sensitivityRows, setSensitivityRows] = useState<Row[] | null>(null);
+  const [parityError, setParityError] = useState("");
+  const [parityMismatches, setParityMismatches] = useState(0);
+  const [sensitivityMs, setSensitivityMs] = useState(0);
   const [dataStats, setDataStats] = useState<DataStats | null>(null);
   const [datasetStats, setDatasetStats] = useState<DatasetStats | null>(null);
   const [reprocessing, setReprocessing] = useState(false);
@@ -316,10 +348,87 @@ export default function Home() {
     };
   }, [rows, approved]);
 
+  function roundHalfAwayFromZero(value: number) {
+    return value >= 0 ? Math.floor(value + 0.5) : Math.ceil(value - 0.5);
+  }
+
+  function computeRawPriority(inputs: PriorityInputs, active: { pep: number; perUnit: number; struct: number; cap: number }) {
+    const maxRatio = Math.max(inputs.vol_ratio ?? 0, inputs.count_ratio ?? 0);
+    const base = inputs.base_score ?? 0;
+    const defaultVol = inputs.vol_score ?? 0;
+    const vol = Math.min(active.cap, Math.max(0, roundHalfAwayFromZero(defaultVol + (active.perUnit - 10) * Math.max(0, maxRatio - 1))));
+    const pep = inputs.is_pep ? active.pep : 0;
+    const struct = inputs.struct_score > 0 ? Math.max(0, inputs.struct_score + (active.struct - 20)) : 0;
+    const channel = inputs.channel_score ?? 0;
+    return roundHalfAwayFromZero(base + vol + pep + struct + channel);
+  }
+
+  function baselineTop10(source: Row[]) {
+    return new Set([...source]
+      .sort((a, b) => (b.priority_raw ?? b.priority) - (a.priority_raw ?? a.priority)
+        || (b.confidence_score ?? 0) - (a.confidence_score ?? 0)
+        || a.alertId.localeCompare(b.alertId))
+      .slice(0, 10)
+      .map((r) => r.alertId));
+  }
+
+  function applySensitivity(next: { pep: number; perUnit: number; struct: number; cap: number }) {
+    if (!weights || parityError) return;
+    const started = performance.now();
+    const baseline = baselineTop10(rows);
+    const scored = rows.map((row) => {
+      const jsRaw = row.inputs ? computeRawPriority(row.inputs, next) : (row.priority_raw ?? row.priority);
+      return { ...row, jsRaw, priority: Math.min(100, jsRaw) } as Row;
+    });
+    scored.sort((a, b) => (b.jsRaw ?? 0) - (a.jsRaw ?? 0)
+      || (b.confidence_score ?? 0) - (a.confidence_score ?? 0)
+      || a.alertId.localeCompare(b.alertId));
+    const currentTop = new Set(scored.slice(0, 10).map((r) => r.alertId));
+    scored.forEach((row, index) => {
+      row.priority = Math.min(100, row.jsRaw ?? row.priority);
+      row.topBadge = currentTop.has(row.alertId) && baseline.has(row.alertId) ? "◆ ROBUST"
+        : currentTop.has(row.alertId) ? "↑ NEW"
+        : baseline.has(row.alertId) ? "↓ DROP" : undefined;
+      row.rank = index + 1;
+    });
+    setSensitivityRows(scored);
+    setSensitivity(next);
+    setSensitivityMs(Math.round((performance.now() - started) * 10) / 10);
+  }
+
+  function resetSensitivity() {
+    setSensitivityRows(null);
+    setSensitivity({ pep: 25, perUnit: 10, struct: 20, cap: 30 });
+    setSensitivityMs(0);
+  }
+
+  useEffect(() => {
+    fetch(`${API}/api/v1/priority/weights`)
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data: PriorityWeights | null) => {
+        if (!data) return;
+        setWeights(data);
+        setSensitivity({ pep: data.pep.weight, perUnit: data.volume.per_unit_ratio, struct: data.structuring.weight, cap: data.volume.cap });
+      })
+      .catch(() => setParityError("Sensitivity disabled — weights endpoint unavailable."));
+  }, []);
+
+  useEffect(() => {
+    if (!weights || rows.length === 0) return;
+    const mismatches = rows.filter((row) => {
+      if (!row.inputs) return false;
+      const jsRaw = computeRawPriority(row.inputs, { pep: weights.pep.weight, perUnit: weights.volume.per_unit_ratio, struct: weights.structuring.weight, cap: weights.volume.cap });
+      return jsRaw !== row.priority_raw;
+    });
+    setParityMismatches(mismatches.length);
+    setParityError(mismatches.length > 0 ? `⚠ SENSITIVITY DISABLED — parity drift detected (${mismatches.length} cases, see console)` : "");
+    if (mismatches.length > 0) console.error("Priority parity mismatches", mismatches);
+  }, [rows, weights]);
+
   const filteredRows = useMemo(() => {
-    if (!Array.isArray(rows)) return [];
+    if (!Array.isArray(sensitivityRows ?? rows)) return [];
     const needle = query.trim().toLowerCase();
-    return rows.filter((row) => {
+    return (sensitivityRows ?? rows).filter((row) => {
       const matchesFilter =
         filter === "ALL" || (filter === "HIGH" ? row.priority >= 75 : row.alertType === filter);
       const matchesQuery =
@@ -330,7 +439,7 @@ export default function Home() {
         row.reason.toLowerCase().includes(needle);
       return matchesFilter && matchesQuery && row.priority >= minPriority;
     });
-  }, [rows, filter, query, minPriority]);
+  }, [rows, sensitivityRows, filter, query, minPriority]);
 
   const visibleRows = filteredRows.slice(0, visibleCount);
 
@@ -972,6 +1081,25 @@ export default function Home() {
         </div>
       </section>
 
+      <section className="sensitivity-panel" aria-label="Priority sensitivity">
+        <div className="sensitivity-head">
+          <div><strong>Priority sensitivity</strong><span>Client-side replay · 3-level tiebreaker · statutory defaults</span></div>
+          <div className="sensitivity-meta">
+            <span>{parityMismatches === 0 ? "PARITY 0 MISMATCHES" : `PARITY ${parityMismatches} MISMATCHES`}</span>
+            <span>{sensitivityMs}ms</span>
+            <button className="btn-outline" onClick={resetSensitivity}>Reset to Statutory Defaults</button>
+          </div>
+        </div>
+        <div className="sensitivity-grid">
+          <label>PEP weight <output>{sensitivity.pep}</output><input type="range" min={0} max={40} value={sensitivity.pep} disabled={!!parityError || !weights} onChange={(e) => applySensitivity({ ...sensitivity, pep: Number(e.target.value) })} /></label>
+          <label>Volume per-unit <output>{sensitivity.perUnit}</output><input type="range" min={5} max={15} value={sensitivity.perUnit} disabled={!!parityError || !weights} onChange={(e) => applySensitivity({ ...sensitivity, perUnit: Number(e.target.value) })} /></label>
+          <label>Structuring weight <output>{sensitivity.struct}</output><input type="range" min={0} max={30} value={sensitivity.struct} disabled={!!parityError || !weights} onChange={(e) => applySensitivity({ ...sensitivity, struct: Number(e.target.value) })} /></label>
+          <label>Volume cap <output>{sensitivity.cap}</output><input type="range" min={20} max={40} value={sensitivity.cap} disabled={!!parityError || !weights} onChange={(e) => applySensitivity({ ...sensitivity, cap: Number(e.target.value) })} /></label>
+        </div>
+      </section>
+
+      {parityError && <div className="banner-violation" role="alert"><strong>{parityError}</strong></div>}
+
       {apiError && (
         <div className="banner-violation">
           <strong>API unavailable:</strong> {apiError}. Start `dotnet run --project src/PayShield.Api` on :5000.
@@ -1018,7 +1146,7 @@ export default function Home() {
                       onClick={() => openRow(row)}
                       onKeyDown={(event) => onRowKey(event, row)}
                     >
-                      <td className="mono-cell">{row.alertId}</td>
+                      <td className="mono-cell">{row.alertId}{row.topBadge && <span className={`top-badge ${row.topBadge.includes("NEW") ? "new" : row.topBadge.includes("DROP") ? "drop" : "robust"}`}>{row.topBadge}</span>}</td>
                       <td>
                         <span className={`status-pill ${row.alertType === "FP" ? "fp" : "review"}`}>{row.alertType}</span>
                         {isPep && <span className="status-pill pep">PEP</span>}
@@ -1033,6 +1161,7 @@ export default function Home() {
                       <td>
                         <div className="priority-stack">
                           <span className={`priority-badge ${priorityTone(row.priority)}`}>{row.priority}</span>
+                          {(row.jsRaw ?? 0) > 100 && <span className="raw-pill">raw {row.jsRaw}</span>}
                           {row.priority_breakdown && (
                             <span
                               className="breakdown"
