@@ -132,3 +132,21 @@ public sealed class AuditChainTests
         Assert.False(AuditChainBuilder.Verify("ALERT-045", events));
     }
 }
+
+public sealed class ApprovalPolicyTests
+{
+    [Fact]
+    public void ApproveEndpoint_RejectsSamePerson()
+    {
+        var error = ApprovalPolicy.Validate("Ing. Jan Novák", "Ing. Jan Novák");
+        Assert.NotNull(error);
+        Assert.Contains("4-EYES VIOLATION", error);
+        Assert.Contains("§ 21", error);
+    }
+
+    [Fact]
+    public void ApproveEndpoint_AcceptsIndependentApprover()
+    {
+        Assert.Null(ApprovalPolicy.Validate("Ing. Jan Novák", "Marie Svobodová"));
+    }
+}

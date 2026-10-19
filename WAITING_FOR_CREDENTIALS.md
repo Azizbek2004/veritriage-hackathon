@@ -1,32 +1,37 @@
-# Credentials Status: RESOLVED & VERIFIED
+# Credentials Status: BLOCKED — CASSETTE IN USE
 
-The `ai-hackathon-TeamAdmin` credentials for account **129898826668** are configured and verified.
-Live Bedrock Claude Sonnet 4.5 (`eu.anthropic.claude-sonnet-4-5-20250929-v1:0`) in `eu-central-1` is active, connected, and returning live dossiers.
+**Do not claim live Bedrock.** The current runtime returns `LIVE_BEDROCK_CACHED`.
 
-## How to Refresh
+## Evidence
 
-SSO start URL: `https://identitycenter.amazonaws.com/ssoins-65082905651820f1`
-SSO region: `eu-north-1`
+`GET /api/v1/bedrock/status` performs a real `Converse` probe. It returns:
 
-On a machine with the AWS CLI:
-
-```bash
-aws configure sso --profile ai-hackathon-TeamAdmin
-aws sso login --profile ai-hackathon-TeamAdmin
-aws sts get-caller-identity --profile ai-hackathon-TeamAdmin --region eu-central-1
+```json
+{
+  "mode": "LIVE_BEDROCK_CACHED",
+  "model": "eu.anthropic.claude-sonnet-4-5-20250929-v1:0",
+  "region": "eu-central-1",
+  "latency_ms": 1550,
+  "error": "The SSL connection could not be established, see inner exception."
+}
 ```
 
-Then export fresh credentials or write a local, gitignored profile. Do not paste the session token into a tracked file.
+- AWS CLI is not installed, so the `aws bedrock-runtime converse` command could not be run.
+- `~/.aws/config` contains `[default]` and `[profile 129898826668_ai-hackathon-TeamAdmin]`.
+- `~/.aws/credentials` contains both profiles.
+- The API was restarted with `AWS_PROFILE=129898826668_ai-hackathon-TeamAdmin`; the same SSL error occurred.
+- No live response was returned. The cassette is the actual mode.
 
-## What Will Be Done Immediately After
+## What Is Needed
 
-1. `aws sts get-caller-identity` — record account ID.
-2. `bedrock-runtime converse` with
-   `eu.anthropic.claude-sonnet-4-5-20250929-v1:0` — measure wall-clock time.
-3. Prompt-caching test — confirm `cacheReadInputTokens` on the second call.
-4. Tool-use test — confirm a `toolUse` block for `get_ares_basic_profile`.
-5. If the model fails, try the next available profile (Haiku 4.5, Sonnet 4, Nova Lite) and report the exact error. Do not invent a working model.
+1. Working TLS/network access from the API host to `bedrock-runtime.eu-central-1.amazonaws.com`.
+2. A credential with `bedrock:InvokeModel` on the Sonnet 4.5 inference profile.
+3. A successful probe that returns `mode: "LIVE_BEDROCK"` with a measured latency.
 
-## No Secrets Here
+The exact policy is in [AWS_BLOCKED.md](AWS_BLOCKED.md).
 
-No access key, session token, or secret is stored in this repository. `secrets/`, `datasets/`, and `tools/` are gitignored.
+## Do Not
+
+- Do not change the badge to LIVE by hand.
+- Do not claim the cassette is a live call.
+- Do not paste credentials into a tracked file.

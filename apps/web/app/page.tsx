@@ -31,11 +31,21 @@ type AuditEvent = {
   hash: string;
 };
 
-type AuditVerification = {
+type AuditResponse = {
+  events: AuditEvent[];
   chain_valid: boolean;
+  mode: "DEMO_STATIC" | "PERSISTENT";
+};
+
+type AuditVerification = AuditResponse & {
   verified_events: number;
   total_events: number;
-  events: AuditEvent[];
+};
+
+type BedrockStatus = {
+  mode: "LIVE_BEDROCK" | "LIVE_BEDROCK_CACHED";
+  latency_ms?: number;
+  error?: string;
 };
 
 type Tab = "details" | "audit";
@@ -66,7 +76,8 @@ export default function Home() {
   const [auditBusy, setAuditBusy] = useState(false);
   const [chainValid, setChainValid] = useState(true);
   const [chainStatus, setChainStatus] = useState("");
-  const [bedrockOnline, setBedrockOnline] = useState(false);
+  const [bedrockMode, setBedrockMode] = useState<"LIVE_BEDROCK" | "LIVE_BEDROCK_CACHED">("LIVE_BEDROCK_CACHED");
+  const [auditMode, setAuditMode] = useState<"DEMO_STATIC" | "PERSISTENT">("DEMO_STATIC");
 
   useEffect(() => {
     fetch(`${API}/api/v1/deliverable/sample`)
@@ -79,10 +90,10 @@ export default function Home() {
 
     fetch(`${API}/api/v1/bedrock/status`)
       .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (data?.status === "connected") setBedrockOnline(true);
+      .then((data: BedrockStatus | null) => {
+        setBedrockMode(data?.mode === "LIVE_BEDROCK" ? "LIVE_BEDROCK" : "LIVE_BEDROCK_CACHED");
       })
-      .catch(() => setBedrockOnline(false));
+      .catch(() => setBedrockMode("LIVE_BEDROCK_CACHED"));
   }, []);
 
   function openRow(row: Row) {
@@ -94,6 +105,7 @@ export default function Home() {
     setAudit([]);
     setChainStatus("");
     setChainValid(true);
+    setAuditMode("DEMO_STATIC");
   }
 
   async function chooseApprover(value: string) {
@@ -155,9 +167,10 @@ export default function Home() {
     setAuditBusy(true);
     try {
       const response = await fetch(`${API}/api/v1/cases/${selected.alertId}/audit`);
-      const data: AuditEvent[] = await response.json();
-      setAudit(data);
-      setChainValid(true);
+      const data: AuditResponse = await response.json();
+      setAudit(data.events);
+      setChainValid(data.chain_valid);
+      setAuditMode(data.mode);
     } finally {
       setAuditBusy(false);
     }
@@ -171,6 +184,7 @@ export default function Home() {
       const data: AuditVerification = await response.json();
       setAudit(data.events);
       setChainValid(data.chain_valid);
+      setAuditMode(data.mode);
       setChainStatus(
         data.chain_valid
           ? `Chain Verified: ${data.verified_events}/${data.total_events} events`
@@ -194,8 +208,8 @@ export default function Home() {
           <div className="sub">FINREG Track 5 · AML deliverable cockpit</div>
         </div>
         <div className="actions">
-          <span className={bedrockOnline ? "badge live" : "badge"}>
-            Bedrock: {bedrockOnline ? "LIVE (Sonnet 4.5)" : "LIVE_BEDROCK_CACHED"}
+          <span className={bedrockMode === "LIVE_BEDROCK" ? "badge live" : "badge cached"}>
+            Bedrock: {bedrockMode === "LIVE_BEDROCK" ? "LIVE · Sonnet 4.5" : "CACHED · Bedrock offline"}
           </span>
           <a className="download" href={`${API}/api/v1/deliverable/csv`}>
             Download FINREG Deliverable CSV
@@ -281,7 +295,7 @@ export default function Home() {
               <button className="ghost" onClick={runInvestigation} disabled={bedrockBusy}>
                 {bedrockBusy
                   ? "Querying Bedrock Sonnet 4.5…"
-                  : bedrockOnline
+                  : bedrockMode === "LIVE_BEDROCK"
                   ? "Investigate (Live Bedrock Sonnet 4.5)"
                   : "Investigate (Cached)"}
               </button>
@@ -309,6 +323,9 @@ export default function Home() {
             </>
           ) : (
             <div className="audit-panel">
+              {auditMode === "DEMO_STATIC" && (
+                <div className="badge demo">Demo chain · Production appends events at write time</div>
+              )}
               <div className="timeline">
                 {audit.map((event) => (
                   <div className="event" key={event.hash}>

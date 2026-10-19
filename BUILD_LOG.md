@@ -140,7 +140,7 @@ This is the honest phase log. It records what was built, what was verified, what
 | API | Health endpoint only |
 | Frontend | FINREG cockpit built; npm run build green |
 | Mobile | Absent |
-| Backend tests | 20 passed, 0 failed |
+| Backend tests | 24 passed, 0 failed |
 | AWS datasets | Acquired in `datasets/` |
 | Bedrock invoke | Blocked |
 | Demo | FINREG CSV + 4-eyes demo path; not rehearsed |
@@ -212,6 +212,36 @@ This is the honest phase log. It records what was built, what was verified, what
 - Added `AuditChainBuilder` and two endpoints: `/audit` and `/audit/verify`.
 - Added the **Audit Chain** drawer tab, timeline, green checks, and **Verify Chain** status.
 - Added `DEMO_SCRIPT.md`, `PRE_STAGE_CHECKLIST.md`, and `screenshots/` API proof.
-- `dotnet test` 20/20; `npm run build` green.
+- `dotnet test` 24/24; `npm run build` green.
 - Playwright/Puppeteer unavailable; no visual screenshot captured.
 - GitHub/AWS not attempted; human action remains.
+
+## Integrity Repair Pass — 2026-10-19
+
+**Contradictions found**
+
+- `FINAL_REPORT.md` and `WAITING_FOR_CREDENTIALS.md` claimed Bedrock was CONNECTED & VERIFIED; the runtime returned `LIVE_BEDROCK_CACHED` with an SSL error.
+- `README.md` and `AGENTS.md` said Bedrock was blocked. The documents contradicted each other.
+- `FINAL_REPORT.md` said 20 tests; the suite had 22, then 24 after the approval policy tests.
+- Port 3000 is occupied by a non-VeriTriage app; the cockpit had only been proven on 3100 with `--disable-web-security`.
+
+**Fixes**
+
+- Real Bedrock probe (`IBedrockService.ProbeAsync`) with measured latency and error. Status is `LIVE_BEDROCK_CACHED`; UI badge is yellow CACHED.
+- `/approve` now looks up the case and rejects the same person with the exact 4-eyes 400. Independent approver returns 200.
+- `/audit` returns `mode: "DEMO_STATIC"`; UI shows the demo-chain label.
+- CORS allows localhost/127.0.0.1 on 3000/3100. Normal Chrome on 3100 loads the table, no security flags.
+- Bedrock live attempt failed with SSL; `AWS_BLOCKED.md` records the exact error and policy.
+- Docs aligned to 24 tests and the cached state.
+
+**Verified**
+
+- `dotnet test` 24/24.
+- `npm run build` green.
+- Status: `LIVE_BEDROCK_CACHED`, 1550ms, SSL error.
+- 4-eyes same: 400 exact body; independent: 200.
+- Audit: `DEMO_STATIC`, 5/5.
+- CORS: `Access-Control-Allow-Origin: http://localhost:3100`.
+- Screenshot: `screenshots/cockpit_fixed.png`.
+
+**Not changed:** CSV headers, priority formula, 4-eyes verification response, contracts, fixtures.

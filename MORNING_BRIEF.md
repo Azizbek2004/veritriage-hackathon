@@ -1,4 +1,4 @@
-> **Build update 2026-10-19:** B-000/B-001/B-002 are complete; the backend is 20/20 green. The FINREG web cockpit is built; mobile and live Bedrock are still blocked. Read `BUILD_LOG.md` and `FINAL_REPORT.md` before running the morning sequence.
+> **Build update 2026-10-19:** B-000/B-001/B-002 are complete; the backend is 24/24 green. The FINREG web cockpit is built; mobile and live Bedrock are still blocked. Read `BUILD_LOG.md` and `FINAL_REPORT.md` before running the morning sequence.
 
 # Morning Brief — 2026-10-19
 

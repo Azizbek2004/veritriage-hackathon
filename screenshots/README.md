@@ -1,12 +1,14 @@
 # Screenshot / Proof Status
 
-Playwright and Puppeteer are **not installed**. `npx --no-install playwright` fails with a missing-package error, and `puppeteer` is absent. No package was added.
+Visual screenshot:
 
-Per the stage-readiness brief, API proof was captured with `curl`:
+- `cockpit_fixed.png` — normal Chrome (no `--disable-web-security`) on `http://127.0.0.1:3100`, showing the **CACHED · Bedrock offline** badge and the 11-column table.
 
-- `4_eyes_violation_headers.txt` — HTTP headers (expect 400).
-- `4_eyes_violation_body.txt` — exact violation body.
-- `audit_chain_verify.json` — five events, `chain_valid: true`, `verified_events: 5`.
+API proof (no 4-eyes PNG; Playwright/Puppeteer are not installed):
+
+- `4_eyes_violation_headers.txt` — HTTP 400 from `/approve` with the same person.
+- `4_eyes_violation_body.txt` — exact 4-eyes body.
+- `audit_chain_verify.json` — 5/5, `mode: DEMO_STATIC`.
 - `csv_header.txt` — the exact 11-column header.
 
-There is no `4_eyes_violation.png` because no browser automation was available. A real visual screenshot would require the human to run the app and capture it, or to install Playwright (out of scope).
+The fixed screenshot is the visual proof that CORS and the honest badge work in a normal browser.

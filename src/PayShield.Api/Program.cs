@@ -6,7 +6,14 @@ using VeriTriage.Infrastructure.Bedrock;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddCors(options => options.AddPolicy("cockpit", policy =>
-    policy.WithOrigins("http://localhost:3000").AllowAnyHeader().AllowAnyMethod()));
+    policy.WithOrigins(
+        "http://localhost:3000",
+        "http://localhost:3100",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:3100"
+    ).AllowAnyHeader().AllowAnyMethod()));
+
+builder.Services.AddSingleton<IBedrockService>(_ => new LiveBedrockService());
 
 var app = builder.Build();
 app.UseCors("cockpit");
@@ -14,23 +21,40 @@ app.UseCors("cockpit");
 var repoRoot = Path.GetFullPath(Path.Combine(app.Environment.ContentRootPath, "..", ".."));
 var rows = FinregDeliverableEngine.ProcessSampleBatch(FinregSampleLoader.Load(repoRoot));
 
-var bedrock = new LiveBedrockService();
-
 app.MapGet("/api/v1/health", () => Results.Ok(new { status = "ok", mode = "finreg" }));
 
-app.MapGet("/api/v1/bedrock/status", () => Results.Ok(new
+app.MapGet("/api/v1/bedrock/status", async (IBedrockService bedrock) =>
 {
-    status = "connected",
-    model = LiveBedrockService.DefaultModelId,
-    region = LiveBedrockService.Region
-}));
+    try
+    {
+        var result = await bedrock.ProbeAsync();
+        return Results.Ok(new
+        {
+            mode = result.Success ? "LIVE_BEDROCK" : "LIVE_BEDROCK_CACHED",
+            model = LiveBedrockService.DefaultModelId,
+            region = LiveBedrockService.Region,
+            latency_ms = result.LatencyMs,
+            error = result.Error
+        });
+    }
+    catch (Exception ex)
+    {
+        return Results.Ok(new
+        {
+            mode = "LIVE_BEDROCK_CACHED",
+            model = LiveBedrockService.DefaultModelId,
+            region = LiveBedrockService.Region,
+            error = ex.Message
+        });
+    }
+});
 
 app.MapGet("/api/v1/deliverable/sample", () => Results.Ok(rows));
 
 app.MapGet("/api/v1/deliverable/csv", () =>
     Results.Text(FinregDeliverableEngine.SerializeToCsv(rows), "text/csv", Encoding.UTF8));
 
-app.MapGet("/api/v1/cases/{id}/investigation", async (string id) =>
+app.MapGet("/api/v1/cases/{id}/investigation", async (string id, IBedrockService bedrock) =>
 {
     var matching = rows.FirstOrDefault(r => r.AlertId.Equals(id, StringComparison.OrdinalIgnoreCase));
     var clientDetails = matching != null
@@ -46,7 +70,15 @@ app.MapPost("/api/v1/cases/verify-4-eyes", (FourEyesRequest request) =>
         : Results.Json(new { error = FinregDeliverableEngine.FourEyesViolation }, statusCode: 400));
 
 app.MapGet("/api/v1/cases/{id}/audit", (string id) =>
-    Results.Ok(AuditChainBuilder.Build(id)));
+{
+    var events = AuditChainBuilder.Build(id);
+    return Results.Ok(new
+    {
+        events,
+        chain_valid = AuditChainBuilder.Verify(id, events),
+        mode = "DEMO_STATIC",
+    });
+});
 
 app.MapGet("/api/v1/cases/{id}/audit/verify", (string id) =>
 {
@@ -58,14 +90,30 @@ app.MapGet("/api/v1/cases/{id}/audit/verify", (string id) =>
         verified_events = valid ? events.Count : 0,
         total_events = events.Count,
         events,
+        mode = "DEMO_STATIC",
     });
 });
 
 app.MapPost("/api/v1/cases/{id}/approve", (string id, ApproveRequest request) =>
 {
-    if (string.IsNullOrWhiteSpace(request.ApproverId) || request.SignatureB64 is null || !request.SignatureB64.StartsWith("mock_sig_", StringComparison.Ordinal))
+    var matching = rows.FirstOrDefault(r => r.AlertId.Equals(id, StringComparison.OrdinalIgnoreCase));
+    if (matching is null) return Results.NotFound();
+
+    var validation = ApprovalPolicy.Validate(matching.ExecutivePerson, request.ApproverId);
+    if (validation is not null)
     {
-        return Results.BadRequest(new { error = "signature_b64 must start with mock_sig_ and approver_id is required" });
+        return Results.Json(new
+        {
+            error = validation,
+            detail = validation == FinregDeliverableEngine.FourEyesViolation
+                ? "Approver must be independent of the executive person."
+                : null,
+        }, statusCode: 400);
+    }
+
+    if (string.IsNullOrWhiteSpace(request.SignatureB64))
+    {
+        return Results.BadRequest(new { error = "signature_b64 is required" });
     }
 
     var ts = DateTimeOffset.UtcNow.ToString("O");

@@ -1,14 +1,14 @@
 # 5-Minute FINREG Demo Script
 
 **Target:** 4:30. **Hard stop:** 5:00.
-**App:** `http://localhost:3000` · API on `:5000`.
+**App:** `http://localhost:3100` · API on `:5000`.
 **Rule:** never say “live Bedrock.” Say **“cached for demo stability.”**
 
 ## Pre-roll (before the timer)
 
 - API is running: `dotnet run --project src/PayShield.Api --configuration Release`
-- Web is running: `cd apps/web && npm run dev`
-- Browser is at `http://localhost:3000`; zoom 100%; no other tabs.
+- Web is running: `cd apps/web && npm run dev -- -p 3100`
+- Browser is at `http://localhost:3100`; zoom 100%; no other tabs.
 - The table is sorted; **ALERT-009** is the FP at priority 18; **ALERT-045** is the PEP REVIEW at priority 96.
 
 ---

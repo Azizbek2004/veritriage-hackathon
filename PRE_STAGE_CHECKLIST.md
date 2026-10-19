@@ -47,10 +47,10 @@ dotnet run --project src/PayShield.Api --configuration Release
 Terminal 2:
 
 ```bash
-cd apps/web && npm run dev
+cd apps/web && npm run dev -- -p 3100
 ```
 
-Open `http://localhost:3000`.
+Open `http://localhost:3100`.
 
 Walk through [DEMO_SCRIPT.md](DEMO_SCRIPT.md) with a timer. Aim for **4:30**. Do it **3 times**.
 
@@ -83,7 +83,7 @@ dotnet test src/PayShield.sln --configuration Release
 cd apps/web && npm run build
 ```
 
-Expected: `20 passed, 0 failed`; web build green.
+Expected: `24 passed, 0 failed`; web build green.
 
 Have these open on the desktop:
 

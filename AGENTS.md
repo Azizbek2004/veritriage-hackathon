@@ -18,7 +18,7 @@
 
 ## Status
 
-This repository started as the **agent environment**. B-000, the backend verifier/rules slice, the FINREG CSV/4-eyes endpoints, and the Next.js cockpit are implemented and green. The mobile app, real ECDSA signing, persistent audit storage, and live Bedrock call are not built. A visible 5-event mock audit chain is built. See `BUILD_LOG.md` and `FINAL_REPORT.md` for the exact state.
+This repository started as the **agent environment**. B-000, the backend verifier/rules slice, the FINREG CSV/4-eyes endpoints, and the Next.js cockpit are implemented and green. The mobile app, real ECDSA signing, persistent audit storage, and live Bedrock call are not built. A visible 5-event demo audit chain is built; Bedrock is cached because real probes fail with an SSL error. See `BUILD_LOG.md` and `FINAL_REPORT.md` for the exact state.
 
 FROZEN for the 30-hour build. If it is not in this file or in `contracts/`, it does not go on stage.
 
@@ -124,12 +124,12 @@ evaluation/                evaluation-input status, no fabricated report
 
 ## Environment State
 
-- The backend is built: contracts, Domain, Verifier, Infrastructure, Api shell, and tests. `dotnet build` is green and `dotnet test` is 20/20. `npm run build` is green.
+- The backend is built: contracts, Domain, Verifier, Infrastructure, Api shell, and tests. `dotnet build` is green and `dotnet test` is 24/24. `npm run build` is green.
 - `apps/web` is built (FINREG cockpit); `apps/mobile` is absent. Real mobile signing is not built.
 - `contracts/` is materialized and frozen. The approved deltas are included.
 - `fixtures/` has no committed data; official datasets are in `datasets/` (gitignored). See `DATASET_INVENTORY.md`.
 - `tests/golden/` contains policy only; no golden files yet.
-- `npm run build` is green; `npm test` exits 0 (zero Node tests). No Bedrock call has been authorized.
+- `npm run build` is green; `npm test` exits 0 (zero Node tests). The Bedrock probe is real and returns `LIVE_BEDROCK_CACHED` with an SSL error.
 - The post-remediation narrative and QA are pre-staged in `AGENTS.md`, `pitch/`, and `.agents/QA_WAR_ROOM.md`.
 - The seven remediation changes remain partially pre-staged; the verifier/rules slice landed first.
 - The Track 5 AML additions are queued as VT-033 through VT-036. The `CnbAmlMetadata` delta is materialized.
@@ -395,9 +395,9 @@ The seven changes are specified in `REMEDIATION.md`. The documentation, Q&A, mat
 ## Current Environment State
 
 - Contracts, Domain, Verifier, Infrastructure, Api shell, and tests are built.
-- `dotnet build` is green; `dotnet test` is 20 passed, 0 failed, 0 skipped.
+- `dotnet build` is green; `dotnet test` is 24 passed, 0 failed, 0 skipped.
 - `apps/web` is built; `apps/mobile` is absent. The FINREG CSV and 4-eyes endpoints are live.
-- Bedrock invoke is blocked: ReadOnly cannot `InvokeModel`; the TeamAdmin token is invalid. See `AWS_PREFLIGHT.md` and `WAITING_FOR_CREDENTIALS.md`.
+- Bedrock invoke is blocked by a TLS/credential failure; the status probe returns `LIVE_BEDROCK_CACHED`. See `AWS_BLOCKED.md`.
 - Official datasets are in `datasets/` (gitignored); see `DATASET_INVENTORY.md`. No fixture data is committed.
 - The next action is not `BOOTSTRAP.md`; B-000/B-001/B-002 are complete. See `BUILD_LOG.md` and `FINAL_REPORT.md`.
 

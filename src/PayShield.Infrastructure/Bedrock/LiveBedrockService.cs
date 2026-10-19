@@ -7,7 +7,15 @@ using Amazon.BedrockRuntime.Model;
 
 namespace VeriTriage.Infrastructure.Bedrock;
 
-public sealed class LiveBedrockService
+public sealed record BedrockProbeResult(bool Success, long LatencyMs, string? Error);
+
+public interface IBedrockService
+{
+    Task<BedrockProbeResult> ProbeAsync(CancellationToken ct = default);
+    Task<string> InvestigateAsync(string caseId, string clientDetails, string repoRoot, CancellationToken ct = default);
+}
+
+public sealed class LiveBedrockService : IBedrockService
 {
     public const string DefaultModelId = "eu.anthropic.claude-sonnet-4-5-20250929-v1:0";
     public const string Region = "eu-central-1";
@@ -20,6 +28,37 @@ public sealed class LiveBedrockService
     {
         _modelId = modelId ?? Environment.GetEnvironmentVariable("BEDROCK_MODEL_ID") ?? DefaultModelId;
         _client = new AmazonBedrockRuntimeClient(RegionEndpoint.GetBySystemName(Region));
+    }
+
+    public async Task<BedrockProbeResult> ProbeAsync(CancellationToken ct = default)
+    {
+        var sw = Stopwatch.StartNew();
+        try
+        {
+            using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, timeoutCts.Token);
+            var response = await _client.ConverseAsync(new ConverseRequest
+            {
+                ModelId = _modelId,
+                Messages = new List<Message>
+                {
+                    new Message
+                    {
+                        Role = ConversationRole.User,
+                        Content = new List<ContentBlock> { new ContentBlock { Text = "ping" } }
+                    }
+                },
+                InferenceConfig = new InferenceConfiguration { MaxTokens = 1, Temperature = 0.0f }
+            }, linkedCts.Token);
+            sw.Stop();
+            var text = response.Output?.Message?.Content?.FirstOrDefault()?.Text;
+            return new BedrockProbeResult(!string.IsNullOrWhiteSpace(text), sw.ElapsedMilliseconds, null);
+        }
+        catch (Exception ex)
+        {
+            sw.Stop();
+            return new BedrockProbeResult(false, sw.ElapsedMilliseconds, ex.Message);
+        }
     }
 
     public async Task<string> InvestigateAsync(string caseId, string clientDetails, string repoRoot, CancellationToken ct = default)
