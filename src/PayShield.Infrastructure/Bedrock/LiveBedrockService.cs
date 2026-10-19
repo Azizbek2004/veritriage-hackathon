@@ -41,10 +41,13 @@ public sealed class LiveBedrockService : IBedrockService
     private readonly LegalCorpus? _legal;
     private readonly string _modelId;
 
-    public LiveBedrockService(string? modelId = null, LegalCorpus? legal = null)
+    public LiveBedrockService(string? modelId = null, LegalCorpus? legal = null, string? repoRoot = null)
     {
         _modelId = modelId ?? Environment.GetEnvironmentVariable("BEDROCK_MODEL_ID") ?? DefaultModelId;
         _legal = legal;
+
+        EnsureCredentialsLoaded(repoRoot);
+
         var config = new AmazonBedrockRuntimeConfig
         {
             RegionEndpoint = RegionEndpoint.GetBySystemName(Region),
@@ -52,7 +55,60 @@ public sealed class LiveBedrockService : IBedrockService
             Timeout = TimeSpan.FromSeconds(30),
             MaxErrorRetry = 2
         };
-        _client = new AmazonBedrockRuntimeClient(config);
+
+        var accessKey = Environment.GetEnvironmentVariable("AWS_ACCESS_KEY_ID");
+        var secretKey = Environment.GetEnvironmentVariable("AWS_SECRET_ACCESS_KEY");
+        var token = Environment.GetEnvironmentVariable("AWS_SESSION_TOKEN");
+
+        if (!string.IsNullOrEmpty(accessKey) && !string.IsNullOrEmpty(secretKey))
+        {
+            Amazon.Runtime.AWSCredentials creds = string.IsNullOrEmpty(token)
+                ? new Amazon.Runtime.BasicAWSCredentials(accessKey, secretKey)
+                : new Amazon.Runtime.SessionAWSCredentials(accessKey, secretKey, token);
+            _client = new AmazonBedrockRuntimeClient(creds, config);
+        }
+        else
+        {
+            _client = new AmazonBedrockRuntimeClient(config);
+        }
+    }
+
+    private static void EnsureCredentialsLoaded(string? repoRoot)
+    {
+        if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AWS_ACCESS_KEY_ID")))
+            return;
+
+        var searchDirs = new List<string>();
+        if (!string.IsNullOrEmpty(repoRoot)) searchDirs.Add(repoRoot);
+        searchDirs.Add(Directory.GetCurrentDirectory());
+        searchDirs.Add(AppContext.BaseDirectory);
+
+        foreach (var dir in searchDirs)
+        {
+            var curr = new DirectoryInfo(dir);
+            while (curr != null)
+            {
+                var envFile = Path.Combine(curr.FullName, "secrets", "aws_credentials.env");
+                if (File.Exists(envFile))
+                {
+                    foreach (var line in File.ReadAllLines(envFile))
+                    {
+                        var trimmed = line.Trim();
+                        if (trimmed.StartsWith("export "))
+                            trimmed = trimmed[7..].Trim();
+                        var eqIdx = trimmed.IndexOf('=');
+                        if (eqIdx > 0)
+                        {
+                            var key = trimmed[..eqIdx].Trim();
+                            var val = trimmed[(eqIdx + 1)..].Trim().Trim('"').Trim('\'');
+                            Environment.SetEnvironmentVariable(key, val);
+                        }
+                    }
+                    return;
+                }
+                curr = curr.Parent;
+            }
+        }
     }
 
     public async Task<BedrockProbeResult> ProbeAsync(CancellationToken ct = default)

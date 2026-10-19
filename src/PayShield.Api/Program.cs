@@ -64,7 +64,7 @@ var corpusPath = Directory.Exists(Path.Combine(repoRoot, "legal", "corpus"))
     ? Path.Combine(repoRoot, "legal", "corpus")
     : Path.Combine(repoRoot, "fixtures", "legal_corpus_cnb_aml.json");
 builder.Services.AddSingleton(_ => LegalCorpus.Load(corpusPath));
-builder.Services.AddSingleton<IBedrockService>(sp => new LiveBedrockService(null, sp.GetRequiredService<LegalCorpus>()));
+builder.Services.AddSingleton<IBedrockService>(sp => new LiveBedrockService(null, sp.GetRequiredService<LegalCorpus>(), repoRoot));
 var priorityWeights = builder.Configuration.GetSection("Priority").Get<PriorityWeights>() ?? PriorityWeights.StatutoryDefaults;
 builder.Services.AddSingleton(priorityWeights);
 builder.Services.AddSingleton(_ => new DeliverableState(repoRoot, priorityWeights));
