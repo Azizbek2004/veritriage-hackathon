@@ -4,25 +4,27 @@ Read this in 5 minutes. Then start.
 
 ## The state of the world
 
-The environment is ready. The product is not: contracts, source, apps, and fixtures are intentionally absent, and the bootstrap gate is working as designed. The first action is B-000, not the orchestrator.
+The environment is ready. The product is not: contracts, source, apps, and fixtures are intentionally absent, and the bootstrap gate is working as designed. The pivot is now Track 5 AML: register the team first, download the ČNB and Tapaya datasets, then start B-000. The first product action is B-000, not the orchestrator.
 
-Tonight's audit found **no code blockers**. There are four planned gates: B-000 contracts, HUMAN-001 fixtures, HUMAN-002 package approval, and one-orchestrator discipline. There is one 1-minute narrative fix at `pitch/opening.md:15`; see [NARRATIVE_FIX.md](NARRATIVE_FIX.md). Do not add a sixth framing.
+Tonight's audit found **no code blockers**. There are four planned gates: B-000 contracts, HUMAN-001 fixtures, HUMAN-002 package approval, and one-orchestrator discipline. There is one 1-minute narrative fix at `pitch/opening.md:27`; see [NARRATIVE_FIX.md](NARRATIVE_FIX.md). Do not add a sixth framing.
 
 ## The first 90 minutes
 
-**0:00–0:10 — both read this brief.** Approve the package set (HUMAN-002). Write `DECISION.md`. Do not install anything before it.
+**0:00–0:15 — split.**
+- Person B: Track 5 registration Steps 0A–0C in [MORNING_COMMANDS.md](MORNING_COMMANDS.md). Register under Track 5 AML, claim Apify credits, and download the ČNB CSV + Tapaya PDFs. This is time-sensitive.
+- Person A: read this brief, approve the package set (HUMAN-002), and write `DECISION.md`. Do not install anything before it.
 
-**0:10–0:35 — parallel.**
-- Person A: B-000. Materialize the contracts from `blueprint.md` section 3 using [BOOTSTRAP.md](BOOTSTRAP.md) Step 0. Commit B-000.
+**0:15–0:40 — parallel.**
+- Person A: B-000. Materialize the contracts from `blueprint.md` section 3 using [BOOTSTRAP.md](BOOTSTRAP.md) Step 0. Apply both approved additive deltas. Commit B-000.
 - Person B: B-003. Create the `apps/web` shell from `BOOTSTRAP.md` Step 3. Do not run `npm install` until packages are approved.
 
-**0:35–1:05 — parallel.**
+**0:40–1:05 — parallel.**
 - Person A: B-001 and B-002. Create the .NET solution, link the contracts, add the test harness, and add the VT-001 red test.
-- Person B: B-004. Create the `apps/mobile` shell. Then run `npm install` in `apps/web` and `apps/mobile` and `npm run build` in `apps/web`.
+- Person B: B-004. Create the `apps/mobile` shell. Then run `npm install` in `apps/web` and `apps/mobile` and `npm run build` in `apps/web`. Book 15 minutes with the FINREG mentor (Step 0D) if the desk is open.
 
 **1:05–1:20 — fixtures.**
 - Person A: run the ARES curls, filter active directors, generate the P-256 key, and start the Textract command if AWS is ready.
-- Person B: render `fixtures/invoice_hero.png`. Leave `alert_hero.json` and `alerts_batch_100.json` as HUMAN-001 TODOs; do not invent them.
+- Person B: render `fixtures/invoice_hero.png`. Leave `alert_hero.json`, `alerts_batch_100.json`, and the Tapaya/Apify fixtures as explicit TODOs; do not invent them.
 
 **1:20–1:30 — meet and verify.**
 - `dotnet test src/PayShield.sln --configuration Release` shows **exactly one failure**, VT-001.
@@ -42,24 +44,26 @@ Full commands: [MORNING_COMMANDS.md](MORNING_COMMANDS.md).
 
 The cut list also protects ★ VT-030 (E2E) and ★ VT-031 (remediation verification). Those are the proof that the demo works.
 
+**Track 5 path:** ★ VT-033 (ČNB parser), ★ VT-034 (Tapaya extraction), and ★ VT-035 (Apify offline fixture) are protected. Without VT-033, the Track 5 video has no dataset. Without VT-034, the AML proof receipt has no document evidence.
+
 ## The H+14 cut list
 
 ★ = do not cut. This is the active list; it is reconciled to [BACKLOG.md](BACKLOG.md).
 
 **2+ hours behind at H+14**
 - Cut: VT-026 (PDF bounding-box overlay), VT-024 (regulatory clock badge — Q&A-only, not on the demo screen).
-- Keep: ★ VT-003, ★ VT-013, ★ VT-014, ★ VT-023, ★ VT-027, ★ VT-030, ★ VT-031.
+- Keep: ★ VT-003, ★ VT-013, ★ VT-014, ★ VT-023, ★ VT-027, ★ VT-030, ★ VT-031, ★ VT-033, ★ VT-034, ★ VT-035.
 - Note: cutting VT-024 does not remove the three-clock Q&A answer.
 
 **4+ hours behind at H+14**
 - Cut: the mobile signing ceremony (VT-028); use server-side signing with the `SERVER-SIDE ENCLAVE (Simulated Mobile Pairing)` badge.
-- Keep: ★ VT-003, ★ VT-013, ★ VT-014, ★ VT-023, ★ VT-030, ★ VT-031.
-- Note: VT-027 becomes optional if the mobile ceremony is cut. Do not cut VT-014; the cassette is the demo survivability path.
+- Keep: ★ VT-003, ★ VT-013, ★ VT-014, ★ VT-023, ★ VT-030, ★ VT-031, ★ VT-033, ★ VT-034.
+- Note: VT-027 becomes optional if the mobile ceremony is cut. Do not cut VT-014; the cassette is the demo survivability path. VT-035 may be folded into VT-034 if the Apify fixture is not on screen.
 
 **6+ hours behind at H+14**
 - Cut: the full cockpit; pitch from the PDF proof receipt plus a 2-minute video walkthrough.
-- Keep: ★ VT-023 (the 21 FTE metric must appear in the video and PDF), ★ VT-003, ★ VT-030, ★ VT-031.
-- Note: the video must still show the verifier override; Gate 3 and the pipeline must be green even without the cockpit.
+- Keep: ★ VT-023 (the 21 FTE metric must appear in the video and PDF), ★ VT-003, ★ VT-030, ★ VT-031, ★ VT-033.
+- Note: the video must still show the verifier override; Gate 3 and the pipeline must be green even without the cockpit. Track 5 registration is already done, so the CZK 40,000 bonus remains claimable even if the demo becomes a video.
 
 **No renegotiation.** Whichever threshold is hit at H+14 executes immediately.
 
@@ -82,6 +86,8 @@ The cut list also protects ★ VT-030 (E2E) and ★ VT-031 (remediation verifica
 
 Full drill: [.agents/QA_WAR_ROOM.md](.agents/QA_WAR_ROOM.md).
 
+**Track 5 additions:** four AML answers and the VC judge answer are in the same file. Memorize the VC judge answer verbatim. The § 109 / CFO angle is Q&A-only; do not put it in the demo, slides, or opening.
+
 ## The two fragile moments to rehearse
 
 1. **OCR confidence drop — 10 times.** All five gates green, toggle to 94.2%, Gate 3 flips red, decision becomes ESCALATE.
@@ -91,7 +97,7 @@ Rehearse both until they are boring. Also rehearse the F9 failover 5 times.
 
 ## Narrative status
 
-**One fix pending.** `pitch/opening.md:15` shows `PSR Art. 59` on the phone for the B2B hero. The hero's clock is `PRE_EXECUTION_FREEZE` under Article 83, with AI Act Article 14 human oversight. The exact one-line replacement is in [NARRATIVE_FIX.md](NARRATIVE_FIX.md). Do not apply it without human approval, and do not add a sixth framing.
+**One fix pending.** `pitch/opening.md:27` shows `PSR Art. 59` on the phone for the B2B hero. The hero's clock is `PRE_EXECUTION_FREEZE` under Article 83, with AI Act Article 14 human oversight. The exact one-line replacement is in [NARRATIVE_FIX.md](NARRATIVE_FIX.md). Do not apply it without human approval, and do not add a sixth framing.
 
 ## What "done" looks like at H+24
 
@@ -99,8 +105,10 @@ Rehearse both until they are boring. Also rehearse the F9 failover 5 times.
 - `npm test` and `npm run build` green.
 - Demo runs 3× without failure.
 - VT-031 remediation verification and `EXTENDED_FINDINGS.md` complete.
+- VT-033 returns a 5,000-row ČNB slice in under 100ms; VT-034 extraction and VT-035 fixture are green.
+- Track 5 Q&A drill (VT-036) complete; VC answer verbatim.
 - 4 hours of sleep. Non-negotiable.
 
 ## Start now
 
-Run [MORNING_COMMANDS.md](MORNING_COMMANDS.md), Person A section, **A0 (package approval), then A1 (`dotnet --version`)**. Person B starts B0 then B1. The first 90 minutes are mechanical; do not improvise.
+Run [MORNING_COMMANDS.md](MORNING_COMMANDS.md). **Person B starts with Track 5 registration Steps 0A–0D**; Person A starts with **A0 (package approval), then A1 (`dotnet --version`)**. Then both run the first 90 minutes. Do not improvise.

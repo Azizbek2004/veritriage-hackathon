@@ -56,7 +56,23 @@ The pre-remediation €48,000 hook is deleted. It is not in any UI, pitch, or Q&
 **Deployment:**
 > "VeriTriage deploys as a containerized service alongside the bank's existing case management system. It consumes alerts via webhook or batch export from Actimize, NICE, or Fiserv, and writes the proof receipt back to the case management audit log. No changes to the core ledger. No PISP licence. No funds held."
 
-**Honest ceiling:** 68–72% post-remediation, not 81%. The difference is rehearsal discipline, not more code.
+**Honest ceiling:** 68–72% post-remediation; with the Track 5 AML partial pivot, 72–78%, ceiling 78%. The difference is rehearsal discipline, not more code.
+
+## Regulatory Regimes (Two, Not One)
+
+VeriTriage serves two regulatory regimes with one architecture:
+
+PRIMARY HOOK (payment suspension): PSR Article 83 requires transaction monitoring; Articles 55/56 reverse the burden of proof. When a PSP suspends a payment or refuses a refund, it has a bounded window to produce a defensible dossier.
+
+SECOND HOOK (merchant risk): Czech AML Act No. 253/2008 Sb. § 20 requires the obliged entity to postpone suspicious transactions and log the statutory grounds. § 16 requires 10-year retention and reconstruction of decision logic. § 22 designates the AML contact person whose signature is the legal record.
+
+The same verifier serves both: evidence gathering, deterministic proof, human signature. One architecture, two compliance regimes.
+
+## Track Registration
+
+Track: Track 5 — AML (FINREG Partners Challenge)
+Bonus eligibility: CZK 40,000 in FINREG legal services (conditional on 1st place)
+Datasets: ČNB 400k synthetic transactions, Tapaya KYB filled forms
 
 ## Win Condition
 
@@ -69,7 +85,7 @@ Every scope decision serves that moment. If a task does not make that moment mor
 | Path | Rule |
 |---|---|
 | `AGENTS.md` | Canonical agent operating contract. Only humans change the frozen sections. |
-| `contracts/` | Plan only (`README.md`). B-000 materializes the frozen files. Agents may read after; only a human may change them, after `PROPOSAL.md`. The approved `regulatory_clock` delta is in the README. |
+| `contracts/` | Plan only (`README.md`). B-000 materializes the frozen files. Agents may read after; only a human may change them, after `PROPOSAL.md`. The approved `regulatory_clock` and `CnbAmlMetadata` deltas are in the README. |
 | `fixtures/` | Frozen when populated. Synthetic fixtures carry `"_synthetic": true`. Currently pending human bootstrap. |
 | `BACKLOG.md` | Orchestrator-owned task order. Agents may read. |
 | `TASK.md` | Analyzer-owned, one active task. Working file, not committed. |
@@ -106,19 +122,20 @@ evaluation/                evaluation-input status, no fabricated report
 ## Environment State
 
 - Product code is **not built**. `src/`, `apps/`, and `tests/PayShield.Tests` are absent by design.
-- `contracts/` contains `README.md` only. B-000 materializes the C#/TS/OpenAPI files from `blueprint.md` and applies the approved `regulatory_clock` delta.
-- `fixtures/` is empty. See `fixtures/README.md`. Do not invent data.
+- `contracts/` contains `README.md` only. B-000 materializes the C#/TS/OpenAPI files from `blueprint.md` and applies the approved `regulatory_clock` and `CnbAmlMetadata` deltas.
+- `fixtures/` is empty. See `fixtures/README.md`. Track 5 ČNB/Tapaya datasets are pending HUMAN-001. Do not invent data.
 - `tests/golden/` contains policy only. Golden files are created after the verifier is implemented and approved.
 - No product test baseline is included. The product scaffold and its generated outputs were removed. The original "expect one failing test" readiness line is superseded by the environment-only scope.
 - The post-remediation narrative and QA are pre-staged in `AGENTS.md`, `pitch/`, and `.agents/QA_WAR_ROOM.md`.
 - The seven product changes are planned in `REMEDIATION.md`; the documentation, Q&A, math, and contract delta plan are pre-staged. No contract files are materialized yet.
+- The Track 5 AML additions are queued as VT-033 through VT-036; the `CnbAmlMetadata` contract delta is in `contracts/README.md`.
 
 ## Startup Order
 
 1. **Human**: read `REMEDIATION.md`, `evaluation/README.md`, and `contracts/README.md`; populate `fixtures/`; approve the package set.
 2. **AI agent**: read `BOOTSTRAP.md`; materialize the contracts (B-000), then create the .NET 9 solution, web shell, mobile shell, test harness, and the first red test; commit.
 3. **AI agent**: prove the baseline (`dotnet test` one intended failure; `npm test` green) and launch the orchestrator.
-4. **AI agent**: fold the seven remediation deltas into their owning tasks as those tasks land (mapping in `BACKLOG.md`). After VT-027/VT-028/VT-014/VT-023/VT-024/VT-003 are green, run VT-031, the bounded verification pass in `.agents/remediation.md`, and write `EXTENDED_FINDINGS.md`.
+4. **AI agent**: fold the seven remediation deltas into their owning tasks as those tasks land (mapping in `BACKLOG.md`). Start VT-033 through VT-036 at H+2. After VT-027/VT-028/VT-014/VT-023/VT-024/VT-003 are green, run VT-031, the bounded verification pass in `.agents/remediation.md`, and write `EXTENDED_FINDINGS.md`.
 5. **Humans**: rehearse the two fragile moments; no new scope after H+20.
 
 The orchestrator must not start Phase 1 against an empty product repo. If `src/PayShield.sln` is missing, run `BOOTSTRAP.md` first.
@@ -146,7 +163,7 @@ Do not install packages during environment setup. The human runs package install
 
 ## Domain Contracts
 
-When B-000 materializes the contracts, every type is in `contracts/domain/` under namespace `VeriTriage.Domain`. Required properties use `[JsonRequired]`. The `CaseDetail` contract includes an optional snake_case `regulatory_clock` field with a default of `PRE_EXECUTION_FREEZE`, the one approved post-baseline contract delta. No contract files exist today; this table is the frozen plan.
+When B-000 materializes the contracts, every type is in `contracts/domain/` under namespace `VeriTriage.Domain`. Required properties use `[JsonRequired]`. The materialized contracts include two approved additive deltas: the optional snake_case `regulatory_clock` field with a default of `PRE_EXECUTION_FREEZE`, and the optional `CnbAmlMetadata? CnbAml` field on `CaseDetail` and `AlertQueueRow`. No contract files exist today; this table is the frozen plan.
 
 | Type | Purpose |
 |---|---|
@@ -157,9 +174,10 @@ When B-000 materializes the contracts, every type is in `contracts/domain/` unde
 | `VerificationResult` | Valid flag, per-engine counts, proof steps, receipt hash. |
 | `ProofStep` | One recomputation or constraint check. |
 | `BatchTriageSummary` | 82/14/4 batch counters and showcase rows. |
-| `AlertQueueRow` | One row in the analyst queue. |
+| `AlertQueueRow` | One row in the analyst queue; optional `CnbAml` metadata. |
 | `ServerAttestation` | Server key thumbprint and receipt signature. |
-| `CaseDetail` | Full case view; includes alert, supplier, decision, approval, regulatory clock. |
+| `CaseDetail` | Full case view; includes alert, supplier, decision, approval, regulatory clock, and optional `CnbAml`. |
+| `CnbAmlMetadata` | Optional ČNB/AML metadata: transaction id, client id, MCC, PEP flag, risk rating, regulatory path. |
 | `PaymentSlip` | Human-readable payment instruction. |
 
 Money is `decimal` in C#, `numeric(18,2)` in Postgres, and never `double`. Rounding is `MidpointRounding.AwayFromZero` at order level. Assert `Σ orders == gross` within 0.01.
@@ -268,6 +286,7 @@ A test that does not fail for the intended reason is not a red test. A skipped t
 12. If a file's content is uncertain, write `PROPOSAL.md` and stop. Do not guess.
 13. Do not start Phase 1 before `BOOTSTRAP.md` is complete. Do not apply `REMEDIATION.md` before the baseline is green and the plan is written.
 14. The remediation agent is bounded to the seven changes. It does not add a sixth gate, a new tool, a Mastercard UI, or a package.
+15. All demo data must be synthetic or from the official hackathon datasets (ČNB, Tapaya). No real personal data, no real payment information. See `COMPLIANCE.md`.
 
 ## Definition of Done
 
@@ -288,10 +307,10 @@ The original H+2 "environment ready" checkpoint is superseded: the environment i
 
 | Time | Gate |
 |---|---|
-| Pre-H+0 | Environment installed; contract plan frozen; seven-change plan pre-staged. |
+| Pre-H+0 | Environment installed; contract plan frozen; seven-change and Track 5 plans pre-staged. |
 | H+0–H+2 | Product scaffold from `BOOTSTRAP.md`; baseline commands; VT-001 red test. |
 | H+2–H+4 | `HeroCase_PassesAllFiveGates` green. |
-| H+4–H+17 | Build features; the seven remediation deltas are folded into VT-003, VT-014, VT-023, VT-024, VT-027, VT-028. |
+| H+2–H+17 | Build features; fold the seven remediation deltas into VT-003, VT-014, VT-023, VT-024, VT-027, VT-028, and start VT-033 through VT-036. |
 | H+14 | Execute the protected cut list below. No renegotiation. |
 | H+17–H+19 | VT-031 remediation verification pass and `EXTENDED_FINDINGS.md`; pitch/Q&A locked. |
 | H+18 | Pitch deck frozen. |
@@ -302,26 +321,26 @@ The original H+2 "environment ready" checkpoint is superseded: the environment i
 
 ## H+14 Cut List (Protected)
 
-★ = do not cut. These IDs are reconciled to `BACKLOG.md`; the Night Ops brief's IDs were stale.
+★ = do not cut. These IDs are reconciled to `BACKLOG.md`; the Night Ops and Pivot briefs' IDs were stale.
 
 **2+ hours behind at H+14**
 - Cut: VT-026 (PDF bounding-box overlay), VT-024 (regulatory clock badge — Q&A-only, not on the demo screen).
-- Keep: ★ VT-003 (Gate 2 scope invariant), ★ VT-013 (Bedrock two-hop), ★ VT-014 (cassette fallback), ★ VT-023 (21 FTE metric card), ★ VT-027 (QR signing), ★ VT-030 (E2E), ★ VT-031 (remediation verification).
+- Keep: ★ VT-003 (Gate 2 scope invariant), ★ VT-013 (Bedrock two-hop), ★ VT-014 (cassette fallback), ★ VT-023 (21 FTE metric card), ★ VT-027 (QR signing), ★ VT-030 (E2E), ★ VT-031 (remediation verification), ★ VT-033 (ČNB parser), ★ VT-034 (Tapaya extraction), ★ VT-035 (Apify offline fixture).
 - Note: cutting VT-024 does not remove the three-clock Q&A answer.
 
 **4+ hours behind at H+14**
 - Cut: the mobile signing ceremony per the original plan (VT-028); use server-side signing with the `SERVER-SIDE ENCLAVE (Simulated Mobile Pairing)` badge.
-- Keep: ★ VT-003, ★ VT-013, ★ VT-014, ★ VT-023, ★ VT-030, ★ VT-031.
-- Note: VT-027 becomes optional if the mobile ceremony is cut. Do not cut VT-014; the cassette is the demo survivability path.
+- Keep: ★ VT-003, ★ VT-013, ★ VT-014, ★ VT-023, ★ VT-030, ★ VT-031, ★ VT-033, ★ VT-034.
+- Note: VT-027 becomes optional if the mobile ceremony is cut. Do not cut VT-014; the cassette is the demo survivability path. VT-035 may be folded into VT-034 if the Apify fixture is not on screen.
 
 **6+ hours behind at H+14**
 - Cut: the full cockpit; pitch from the PDF proof receipt plus a 2-minute video walkthrough.
-- Keep: ★ VT-023 (the 21 FTE metric card must appear in the video and the PDF), ★ VT-003, ★ VT-030, ★ VT-031.
-- Note: the video must still show the verifier override; Gate 3 and the pipeline must be green even without the cockpit.
+- Keep: ★ VT-023 (the 21 FTE metric card must appear in the video and the PDF), ★ VT-003, ★ VT-030, ★ VT-031, ★ VT-033 (the ČNB parser must work for the video).
+- Note: the video must still show the verifier override; Gate 3 and the pipeline must be green even without the cockpit. Track 5 registration is already done, so the CZK 40,000 bonus remains claimable even if the demo becomes a video.
 
 **No renegotiation.** Whichever threshold is hit at H+14 executes immediately.
 
-**Reconciliation:** The Night Ops brief listed VT-014 as Bedrock and VT-028 as cassette, and VT-031 as the E2E test. In this repo, VT-013 is Bedrock, VT-014 is cassette, VT-028 is mobile, VT-030 is E2E, and VT-031 is the remediation verification pass. This list protects the intent: the 21 FTE hook, Gate 2, QR signing, cassette, and the E2E proof.
+**Reconciliation:** The Night Ops and Pivot briefs listed stale task IDs. In this repo, VT-013 is Bedrock, VT-014 is cassette, VT-025 is the verifier gates/override panel, VT-026 is the PDF overlay, VT-028 is mobile, VT-030 is E2E, and VT-031 is the remediation verification pass. VT-025 is protected because cutting it would remove the override moment. This list protects the intent: the 21 FTE hook, Gate 2, QR signing, cassette, the E2E proof, and the new AML tasks VT-033/VT-034/VT-035.
 
 ## Honesty Rules
 
@@ -350,6 +369,8 @@ The full drill is `.agents/QA_WAR_ROOM.md`. Memorize these three answers.
 **Mastercard, no UI:**
 > "We are not a card product. The Mastercard rail is V1 for the 18% of cases where the supplier refuses split settlement. What we built is the proof layer above any rail."
 
+**Track 5 AML:** four AML answers and the VC judge answer are in `.agents/QA_WAR_ROOM.md`. The § 109 / CFO answer is Q&A-only; it must not appear in the demo, slides, or opening.
+
 **NEVER SAY:** `€48,000`, `540,000 CZK`, `PSD3 makes you liable`, `25-second sign`, `100% of liability`, `VCN cures VAT`.
 
 ## Post-Remediation Product Deltas
@@ -371,7 +392,7 @@ The seven changes are specified in `REMEDIATION.md`. The documentation, Q&A, mat
 
 - No product code, no contract files, no test project, no `package.json`, no lockfile.
 - No product test baseline is included. The environment-only scope intentionally does not claim a green or red suite.
-- `contracts/` contains `README.md` only. B-000 creates the C#/TS/OpenAPI files; the only approved delta is `regulatory_clock`.
+- `contracts/` contains `README.md` only. B-000 creates the C#/TS/OpenAPI files; the approved deltas are `regulatory_clock` and `CnbAmlMetadata`.
 - `fixtures/` is empty; see `fixtures/README.md`. Do not fabricate ARES, Textract, invoice, or batch data.
 - `evaluation/EVAL_REPORT.md` and `evaluation/HONEST_AMENDMENTS.md` were not supplied. `REMEDIATION.md` is the reconciled delta plan; do not invent an evaluation report.
 - The next action is `BOOTSTRAP.md`, not `Read .agents/orchestrator.md and begin Phase 1.` The orchestrator launches only after the product scaffold and baseline exist.

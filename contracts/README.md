@@ -17,15 +17,18 @@ If `contracts/domain/`, `contracts/types/`, or `contracts/api/` are missing, the
 | `domain/BatchTriageSummary.cs` | `blueprint.md` section 3 | 82/14/4 counters and showcase rows. |
 | `domain/ServerAttestation.cs` | `blueprint.md` section 3 | Algorithm, thumbprint, custody label, signature. |
 | `domain/CaseDetail.cs` | `blueprint.md` section 3 | Full case view and the alert/supplier/decision/approval DTOs. |
+| `domain/CnbAmlMetadata.cs` | Track 5 pivot | ČNB/AML additive metadata for the case and queue row. |
 | `domain/PaymentSlip.cs` | `blueprint.md` section 3 | Human-readable payment instruction. |
 | `types/api.d.ts` | `blueprint.md` sections 8–10, `project.md` section 10 | TypeScript mirror of the wire format. |
 | `api/openapi.yaml` | `blueprint.md` section 8 | 12-endpoint HTTP contract plus health. |
 
 The planned namespace is `VeriTriage.Domain`; the planned verifier namespace is `VeriTriage.Verifier`.
 
-## Approved Post-Remediation Delta
+## Approved Additive Deltas
 
-The remediation brief approves exactly one contract change. It must be included when B-000 materializes the files:
+Two additive deltas are approved. Both must be included when B-000 materializes the files. Neither renames an existing field.
+
+### Delta A — `regulatory_clock` (remediation)
 
 - Field: optional `regulatory_clock` on the case detail payload.
 - C#: `CaseDetail.RegulatoryClock`, `[JsonPropertyName("regulatory_clock")]`, nullable, default `"PRE_EXECUTION_FREEZE"`.
@@ -33,15 +36,68 @@ The remediation brief approves exactly one contract change. It must be included 
 - Allowed values: `PRE_EXECUTION_FREEZE`, `UNAUTHORIZED_REFUND`, `IMPERSONATION_DISPUTE`.
 - OpenAPI: optional property, nullable enum, not in the schema's `required` list.
 
+### Delta B — `CnbAmlMetadata` (Track 5 AML pivot)
+
+Add `domain/CnbAmlMetadata.cs`:
+
+```csharp
+public sealed record CnbAmlMetadata(
+    [property: JsonRequired] string CnbTransactionId,
+    [property: JsonRequired] string ClientId,
+    [property: JsonRequired] string MccCode,
+    [property: JsonRequired] bool PepFlag,
+    [property: JsonRequired] string AmlRiskRating,
+    [property: JsonRequired] string RegulatoryPath);
+```
+
+Add the nullable field to `CaseDetail` and `AlertQueueRow` without changing their positional constructors:
+
+```csharp
+public CnbAmlMetadata? CnbAml { get; init; }
+```
+
+TypeScript mirror:
+
+```ts
+export interface CnbAmlMetadata {
+  cnbTransactionId: string;
+  clientId: string;
+  mccCode: string;
+  pepFlag: boolean;
+  amlRiskRating: "HIGH" | "MEDIUM" | "LOW";
+  regulatoryPath: "PSR_ART83_AND_CZECH_AML_S20";
+}
+
+// add to CaseDetail and AlertQueueRow
+cnbAml?: CnbAmlMetadata | null;
+```
+
+OpenAPI: add a `CnbAmlMetadata` schema with all six fields required, then add an optional `cnbAml` property to `CaseDetail` and `AlertQueueRow`:
+
+```yaml
+cnbAml:
+  allOf:
+    - $ref: "#/components/schemas/CnbAmlMetadata"
+  nullable: true
+```
+
+Rules:
+
+- `amlRiskRating` is one of `HIGH`, `MEDIUM`, `LOW`.
+- `regulatoryPath` is `PSR_ART83_AND_CZECH_AML_S20`.
+- The ČNB merchant stays in the existing `supplier` field. Do not rename it.
+- `net`, `vat`, `gross`, and `ico` stay unchanged.
+- Existing tests must still compile; runtime population of `cnbAml` is a product task.
+
 No other contract change is approved. Do not add fields for the demo, the pitch, or a "future" integration.
 
 ## Materialization Rules
 
 1. Read `blueprint.md` section 3 for the C# records and sections 8–10 for the HTTP/TypeScript shapes.
 2. Transcribe the records exactly, including `[JsonRequired]` and the namespace.
-3. Apply the approved `regulatory_clock` delta.
+3. Apply Delta A (`regulatory_clock`) and Delta B (`CnbAmlMetadata`).
 4. Do not add validation, business logic, comments longer than one line, packages, or helpers.
-5. Do not rename a type to make the UI easier. The contract is the coordination surface.
+5. Do not rename a type or an existing field to make the UI easier. The contract is the coordination surface.
 6. Compile the C# records before declaring B-000 done.
 7. Commit the materialized files as one B-000 commit.
 
@@ -53,7 +109,7 @@ After B-000, these files are frozen.
 - Only a human may change them, after `PROPOSAL.md` and `DECISION.md`.
 - A diff touching `contracts/` is an automatic reviewer rejection.
 - A missing field is not a reason to edit the contract; it is a reason to stop and propose.
-- The only pre-approved delta is `regulatory_clock`.
+- The pre-approved deltas are `regulatory_clock` and `CnbAmlMetadata`.
 
 ## Why It Is Empty Now
 

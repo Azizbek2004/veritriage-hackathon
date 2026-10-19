@@ -4,6 +4,36 @@ Orchestrator-owned. One active task per workstream. No two active tasks may touc
 
 Status: `TODO` = not started. `RED` = failing test committed. `DONE` = committed and green. `BLOCKED` = human decision required. `CUT` = removed by the H+14 cut list.
 
+## Track 5 AML Additions (Pivot, H+2)
+
+These are product tasks added by the Track 5 partial pivot. Do not start before B-006. The H+14 cut list protects VT-033, VT-034, and VT-035.
+
+| ID | Owner | Priority | Task | Files | Acceptance | Depends |
+|---|---|---|---|---|---|---|
+| VT-033 | Dev A | HIGH | ČNB CSV parser and 5,000-row slice endpoint | `src/PayShield.Infrastructure/Data/Cnb/CnbCsvReader.cs`, `src/PayShield.Api/Endpoints/CnbEndpoints.cs`, `tests/PayShield.Tests/CnbEndpointTests.cs` | `GET /api/v1/cnb/transactions?count=5000` returns in <100ms with `totalScanned`, `datasetTotal`, `tier1Cleared`, `tier2Hold`, `tier3Escalated`, `bedrockTokensUsed`, `elapsedMs`, and top 4 rows. Streams; never loads 400k into EF Core. | B-001, B-006 |
+| VT-034 | Dev A | HIGH | Tapaya KYB extraction fixture | `fixtures/tapaya_kyb_extracted.json`, `fixtures/tapaya_kyb_form_1.pdf`, `fixtures/tapaya_kyb_form_2.pdf` | Textract output from one filled Tapaya form is saved with an official-dataset header. Replaces `textract_invoice.json` in the Track 5 flow. | B-000, HUMAN-001 |
+| VT-035 | Dev B | HIGH | Apify offline fixture | `fixtures/apify_web_footprint.json` | Shape includes `domain_age_days`, `similar_domains`, `mcc_categories_detected`, `contradiction_score`, `_synthetic: true`, and the offline note. Never called live. | B-003 |
+| VT-036 | Both | HIGH | Two-regime Q&A drill | none | Four AML answers plus the VC judge answer delivered verbatim, ≤30 seconds each, no notes for the VC answer. | VT-033, VT-034 |
+
+**VT-033 detail:** download the official ČNB 400k synthetic transactions CSV; parse with `File.ReadLines().Take(5000)`; expose the summary counters and top four escalated rows. The full 400k must not be loaded into memory or EF Core.
+
+**VT-034 detail:** run Textract on one filled Tapaya KYB form; save the extraction as `fixtures/tapaya_kyb_extracted.json`; label it as an official hackathon dataset. Do not fabricate the extraction.
+
+**VT-035 detail:** build the fixture offline from the approved shape, mark `_synthetic: true`, label it in the UI. Do not integrate the Apify API.
+
+```json
+{
+  "domain_age_days": 12,
+  "similar_domains": 3,
+  "mcc_categories_detected": ["7995", "5967"],
+  "contradiction_score": 0.87,
+  "_synthetic": true,
+  "_note": "Simulated Apify Web-Footprint Actor output. Not called live."
+}
+```
+
+**VT-036 detail:** rehearse the four AML answers in `.agents/QA_WAR_ROOM.md` and the VC judge answer. The § 109 / CFO answer is Q&A-only; do not put it in the demo, slides, or opening.
+
 ## Phase 0 — Product Bootstrap (before VT-001)
 
 These tasks create structure, not features. They are specified in `BOOTSTRAP.md`. The orchestrator does not start until all are `DONE`.

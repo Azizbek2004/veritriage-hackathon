@@ -18,20 +18,25 @@ If any is false, stop and write `BLOCKED.md`. Do not install packages or SDKs yo
 
 The environment intentionally ships `contracts/README.md` only. Materialize the frozen contract files from `blueprint.md` before any product shell:
 
-- `contracts/domain/*.cs` — the ten records from section 3, namespace `VeriTriage.Domain`, with `[JsonRequired]` on the required properties.
+- `contracts/domain/*.cs` — the blueprint records from section 3, namespace `VeriTriage.Domain`, with `[JsonRequired]` on the required properties.
+- `contracts/domain/CnbAmlMetadata.cs` — the Track 5 additive record.
 - `contracts/types/api.d.ts` — the TypeScript mirror of the wire format.
 - `contracts/api/openapi.yaml` — the HTTP contract from section 8.
 
-Apply the one approved delta from `contracts/README.md`: optional `regulatory_clock` on `CaseDetail`, snake_case on the wire, default `PRE_EXECUTION_FREEZE`, values `PRE_EXECUTION_FREEZE` / `UNAUTHORIZED_REFUND` / `IMPERSONATION_DISPUTE`.
+Apply both approved additive deltas from `contracts/README.md`:
+
+1. `regulatory_clock`: optional on `CaseDetail`, snake_case on the wire, default `PRE_EXECUTION_FREEZE`, values `PRE_EXECUTION_FREEZE` / `UNAUTHORIZED_REFUND` / `IMPERSONATION_DISPUTE`.
+2. `CnbAmlMetadata`: a new record with `CnbTransactionId`, `ClientId`, `MccCode`, `PepFlag`, `AmlRiskRating`, and `RegulatoryPath`; add nullable `CnbAml` to `CaseDetail` and `AlertQueueRow`; mirror it in TypeScript and OpenAPI.
 
 Rules:
 
 - Transcribe, do not redesign.
+- Do not rename `supplier`, `net`, `vat`, `gross`, or `ico`.
 - No business logic, validation helpers, packages, or comments longer than one line.
-- No field, endpoint, or type beyond `blueprint.md` plus the approved delta.
+- No field, endpoint, or type beyond `blueprint.md` plus the two approved additive deltas.
 - After Step 1, `PayShield.Domain` must compile these records with zero errors.
 
-Update `contracts/README.md`: change the title/status to `Frozen`, remove the `Plan Only` and `Why It Is Empty Now` sections, and record the B-000 commit. Keep the inventory, the approved delta, the materialization rules, and the freeze protocol. Then commit B-000 separately:
+Update `contracts/README.md`: change the title/status to `Frozen`, remove the `Plan Only` and `Why It Is Empty Now` sections, and record the B-000 commit. Keep the inventory, the approved deltas, the materialization rules, and the freeze protocol. Then commit B-000 separately:
 
 ```bash
 git add contracts
@@ -181,7 +186,7 @@ Read .agents/orchestrator.md and begin Phase 1.
 - [ ] `apps/mobile` is a valid Expo shell.
 - [ ] No gate, rule, endpoint, or component logic is implemented.
 - [ ] No package outside the human-approved set is present.
-- [ ] No contract field, endpoint, or type beyond the blueprint and the approved delta.
+- [ ] No contract field, endpoint, or type beyond the blueprint and the two approved additive deltas.
 - [ ] `fixtures/` is unchanged by the agent.
 - [ ] `git status --porcelain` is empty.
 - [ ] The human confirms the baseline.

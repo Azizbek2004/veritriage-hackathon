@@ -4,7 +4,7 @@ Status: **environment pre-staged; product code changes folded into owning tasks;
 
 This file is the reconciled delta plan for the seven changes in the human-provided Remediation Architect brief. It is not a license to add scope. It is a checklist with acceptance tests.
 
-The environment bootstrap applied the documentation, Q&A, math, and the contract delta plan. It did not materialize the contract files, build the product, run tests, or apply UI/infra code changes. B-000 materializes the contracts and applies the approved delta; the UI/infra changes are folded into the owning tasks in `BACKLOG.md` and verified by VT-031 after the product baseline is green.
+The environment bootstrap applied the documentation, Q&A, math, and the contract delta plan. It did not materialize the contract files, build the product, run tests, or apply UI/infra code changes. B-000 materializes the contracts and applies the approved additive deltas; the UI/infra changes are folded into the owning tasks in `BACKLOG.md` and verified by VT-031 after the product baseline is green.
 
 ## Preconditions
 
@@ -95,9 +95,9 @@ If baseline is red, write `BLOCKED.md` and stop. Do not "fix it while remediatin
 
 - `apps/web/components/RegulatoryClockBadge.tsx` (new)
 - `apps/web/components/CaseDetailPane.tsx`
-- `contracts/domain/CaseDetail.cs` (created in B-000; approved delta applied there)
-- `contracts/types/api.d.ts` (created in B-000; approved delta applied there)
-- `contracts/api/openapi.yaml` (created in B-000; approved delta applied there)
+- `contracts/domain/CaseDetail.cs` (created in B-000; approved additive deltas applied there)
+- `contracts/types/api.d.ts` (created in B-000; approved additive deltas applied there)
+- `contracts/api/openapi.yaml` (created in B-000; approved additive deltas applied there)
 - `AGENTS.md` (Q&A pre-staged)
 
 **Change**
@@ -125,7 +125,7 @@ Three states:
 
 **Build time:** 25 minutes.
 
-**Contract note:** This is the only approved `contracts/domain` change. The environment bootstrap documented it; B-000 applies it when materializing the files. Do not add another field.
+**Contract note:** This is the only remediation contract change. The environment bootstrap documented it; B-000 applies it when materializing the files. The Track 5 pivot separately adds the additive `CnbAmlMetadata` delta in `contracts/README.md`; do not add any other field.
 
 ## Change 4 — Q&A War Room with the Three Traps
 
@@ -237,7 +237,7 @@ Display `21.1 FTEs saved · €1.16M/yr` in the metric card.
 Do **not** do any of these:
 
 1. No Mastercard MCC label or virtual card UI. The answer is in `.agents/QA_WAR_ROOM.md`; no product change.
-2. No `contracts/domain/*.cs` change except the optional `regulatory_clock` applied during B-000.
+2. No `contracts/domain/*.cs` change except the approved additive `regulatory_clock` and Track 5 `CnbAmlMetadata` deltas applied during B-000.
 3. No change to `fixtures/textract_invoice.json` or `fixtures/invoice_hero.png`. If the Czech prose change is needed, write `PROPOSAL.md` and stop.
 4. No new NuGet or npm package.
 5. No verifier pipeline refactor. Only Gate 2 and the regulatory clock touch existing behavior.

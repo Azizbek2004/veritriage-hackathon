@@ -16,9 +16,24 @@ The fixture directory is empty by design. Agents must not fabricate ARES, Textra
 | `tax_offices.json` | GFŘ published list | Real | FÚ matrix lookup |
 | `pre_signed_mobile_signature.json` | Produced during rehearsal | Demo failover | F9 injection |
 
+## New fixtures (Track 5 AML partial pivot)
+
+| File | Source | Status | Synthetic |
+|---|---|---|---|
+| `cnb_transactions.csv` | ČNB official dataset | Pending download at H+0 | No (official) |
+| `tapaya_kyb_form_1.pdf` | Tapaya official dataset | Pending download at H+0 | No (anonymized) |
+| `tapaya_kyb_form_2.pdf` | Tapaya official dataset | Pending download at H+0 | No (anonymized) |
+| `tapaya_kyb_extracted.json` | Textract output on form 1 | Built at H+2 (VT-034) | No (official extraction) |
+| `apify_web_footprint.json` | Synthetic, hand-built | Built at H+4 (VT-035) | Yes |
+| `alert_hero_aml.json` | Constructed from ČNB + Tapaya + ARES | Built at H+4 | Yes (composite) |
+
+The existing `textract_invoice.json` and `invoice_hero.png` remain the PSR-only fallback. The Track 5 path uses the Tapaya extraction and the ČNB slice.
+
 ## Rules
 
 - Every synthetic JSON fixture carries `"_synthetic": true` and the UI labels it.
+- Every file with `"_synthetic": true` in JSON or a `// SYNTHETIC` header must be labeled in the UI. See `COMPLIANCE.md`.
+- Official datasets (ČNB, Tapaya) are labeled "Official dataset"; they are not marked synthetic.
 - Record the exact retrieval command, timestamp, and endpoint in a companion note when the file is added. Do not include secrets.
 - The PNG is a demo asset. It must match `textract_invoice.json`; if it does not, Gate 3's bounding boxes point at the wrong pixels.
 - A fixture change requires `PROPOSAL.md` and a human `DECISION.md`.
@@ -34,4 +49,4 @@ The fixture directory is empty by design. Agents must not fabricate ARES, Textra
 - [ ] No real customer data, secrets, or credentials are committed.
 - [ ] `git status` is clean after the fixtures are committed.
 
-Until this checklist is complete, VT-007 and later fixture-dependent tasks are blocked. VT-001 through VT-006 do not need fixtures.
+Until this checklist is complete, VT-007 and later PSR fixture-dependent tasks are blocked. VT-001 through VT-006 do not need fixtures. VT-033 and VT-034 also stay blocked until the ČNB CSV and Tapaya PDFs are downloaded; VT-035 is synthetic and can be built offline.

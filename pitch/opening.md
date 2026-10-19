@@ -1,14 +1,26 @@
 # Opening — 90 Seconds
 
-## The One Line
+## Primary Opening (two-regime framing)
 
-> "Under PSR Article 83, a PSP handles thousands of alerts per day. VeriTriage clears 82% deterministically and saves 21.1 full-time analysts per 5,000 daily alerts — while producing ČNB-ready dossiers for the 4% that escalate."
+> "Under PSR Article 83 and the Czech AML Act, a European PSP has a bounded window
+> to produce a defensible dossier — or eat the loss. VeriTriage ingests the Czech
+> National Bank's 400,000-transaction dataset, auto-clears 82% deterministically at
+> zero Bedrock tokens, and produces an FAÚ/ČNB-ready proof receipt for the 4% that
+> escalate."
+
+## Fallback Opening (PSR-only, 21 FTE)
+
+> "Under PSR Article 83, a PSP handles thousands of alerts per day. VeriTriage clears
+> 82% deterministically and saves 21.1 full-time analysts per 5,000 daily alerts —
+> while producing ČNB-ready dossiers for the 4% that escalate."
+
+Use the primary opening if the ČNB CSV and Tapaya forms are ready by H+18. Use the fallback if they are not. Do not resurrect the old write-off hook in either version.
 
 ## Timing
 
 | Time | Action | Narration |
 |---|---|---|
-| 0:00 | Cockpit loads; top bar shows `100 alerts · 14ms · 82 auto-cleared · 0 LLM tokens · 21.1 FTEs saved (€1.16M/yr)`. | The one line above. |
+| 0:00 | Cockpit loads; top bar shows `100 alerts · 14ms · 82 auto-cleared · 0 LLM tokens · 21.1 FTEs saved (€1.16M/yr)`. | The primary or fallback line above. |
 | 0:10 | Click "Run 100-Alert Batch." Counters climb to 82/14/4. | "82% never touch an LLM. The verifier clears them in 14 milliseconds. Let me show you the 4% that escalate." |
 | 0:25 | Open the hero case. Bedrock two-hop runs. | "The agent reads the invoice, spots the contradiction — IT micro-entity billing for steel, director appointed 48 hours ago, Lithuanian IBAN." |
 | 0:45 | All five gates green. Toggle OCR to 94.2%. Gate 3 red; decision flips to ESCALATE. | "The AI recommended auto-clear. The verifier caught it. Gate 3 failed, fail-closed." |

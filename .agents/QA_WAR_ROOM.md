@@ -40,6 +40,15 @@ This file is the drill. If an answer is not here, do not improvise law.
 
 Do not add a Mastercard UI, MCC label, or virtual card hook. The answer is a concession, not a product claim.
 
+## AML / Track 5 Answers
+
+| Question | Answer |
+|---|---|
+| "Which regime is primary — PSR or AML?" | "PSR Article 83 is the primary hook for the payment-suspension workflow. The Czech AML Act is the primary hook for merchant-level risk assessment. The same verifier serves both because the pattern is identical — evidence gathering, deterministic proof, human signature. We demonstrate both regimes in one workflow to show the architecture generalizes across regulatory domains." |
+| "What makes an AML proof receipt legally non-repudiable?" | "Under Czech AML Act § 20, when an obliged entity postpones a suspicious transaction, the exact timestamp and the specific statutory grounds must be logged immutably, so the institution cannot be sued under § 20(7) if the transaction later turns out legitimate. Under § 16, the institution must retain reconstruction of the decision logic for 10 years. Our proof receipt binds the ČNB transaction row, the Tapaya KYB form, and the ARES snapshot into a SHA-256 hash signed by the § 22 AML contact person's ECDSA P-256 key — satisfying both § 20(7) safe-harbor and § 16/§ 25 audit reconstruction." |
+| "Why won't a bank's Model Risk Management team block this?" | "Because the LLM never produces a number or a decision. It gathers evidence. The deterministic C# verifier recomputes every number in `System.Decimal` and independently grounds every claim via RFC 6901 pointer resolution. The human signs the final decision. This is the architecture MRM teams approve, because the model's failure modes are bounded and auditable." |
+| "Aren't you just a feature that Feedzai or Hawk AI will absorb?" | "For bank-facing fraud triage, we compete with that risk directly — incumbents will add JSON pointer grounding in 12–18 months. Our defense is the pre-settlement CFO market: PSR Article 59 excludes corporate buyers from mandatory reimbursement, and Czech VAT Act § 109 makes the buyer a guarantor. That is a 4–5× faster sales cycle, a different buyer, and a distribution channel the incumbents do not own." |
+
 ## NEVER SAY
 
 - `€48,000`
@@ -48,8 +57,27 @@ Do not add a Mastercard UI, MCC label, or virtual card hook. The answer is a con
 - `25-second sign`
 - `100% of liability`
 - `VCN cures VAT`
+- "95% of the code is identical" (the partial pivot is 2-3 hours of rework, not zero)
+- "We processed 400,000 transactions" (say: "we ran a 5,000-row slice in X ms; the dataset has 400,000 rows")
+- "8.5 out of 10 hackathon project" (the honest number is 7.2-7.5, with upside from rehearsal)
 
 If the presenter is about to say one of these, stop. Use the answer above or say nothing.
+
+## VC Judge Answer (Memorize Verbatim)
+
+When the VC judge asks "Banks take 18 months to buy software — how do you go to market?",
+say this verbatim:
+
+> "We designed the engine to meet the strictest regulatory bar first — PSR Articles 56 and 83
+> for PSPs and EMIs. Because PSR Article 59 explicitly excludes corporate accounts from mandatory
+> bank fraud reimbursement, our Day-1 commercial wedge is selling this exact same deterministic
+> verifier directly to mid-market CFOs and B2B spend platforms as a pre-settlement gate on SEPA
+> pain.001 payment batches — stopping supplier IBAN spoofing and Czech § 109 unreliable-VAT-payer
+> liability before the wire leaves the ERP."
+
+Do not paraphrase. Do not add a sentence before or after. Deliver it, then stop.
+
+The § 109 / CFO angle is Q&A ONLY. It must not appear in the demo, the slides, or the opening line. The demo is on PSR + AML. The § 109 answer is for one specific judge question, delivered in 25 seconds, then dropped.
 
 ## Additional Traps to Drill
 

@@ -21,6 +21,36 @@ Expect no output. If there is output, stop and inspect it.
 
 ---
 
+## Track 5 Registration (Person B, do this first)
+
+```bash
+# Step 0A: Register under Track 5 AML (FINREG Partners Challenge)
+# Go to the organizers' desk or the registration link. Confirm your team
+# is registered under Track 5, not Track 1. This is the only way to be
+# eligible for the CZK 40,000 bonus. Get a confirmation screenshot.
+
+# Step 0B: Claim Apify credits
+# Go to the Apify booth. Claim USD 100 per person. Do not integrate yet.
+
+# Step 0C: Download official datasets
+# Go to the Hackers Guide / Circle link. Download:
+#   - ČNB 400k synthetic transactions CSV
+#   - Tapaya KYB filled forms (2 PDFs)
+# Save to fixtures/ with headers:
+#   - fixtures/cnb_transactions.csv
+#   - fixtures/tapaya_kyb_form_1.pdf
+#   - fixtures/tapaya_kyb_form_2.pdf
+
+# Step 0D: Talk to the FINREG Partners mentor (15 min)
+# Ask exactly: "What makes an AML proof receipt legally non-repudiable
+# under Czech AML Act § 20?" Write the answer verbatim in
+# .agents/QA_WAR_ROOM.md under the "AML / Track 5 Answers" section.
+```
+
+Person B does this before the web shell. Person A starts B-000 in parallel. The Track 5 registration is the only time-sensitive action; do not skip it.
+
+---
+
 ## Person A — Backend, Contracts, ARES, Fixtures
 
 ### A0. Approve the package set (HUMAN-002)
@@ -45,13 +75,14 @@ If it prints 8.x, install the .NET 9 SDK or use the `./.dotnet/dotnet` path from
 
 ### A2. Materialize the contracts (B-000)
 
-This is editor work, not a shell one-liner. Open [BOOTSTRAP.md](BOOTSTRAP.md) Step 0 and transcribe the ten C# records from `blueprint.md` section 3, plus the TypeScript mirror and OpenAPI spec. Apply the `regulatory_clock` delta from [contracts/README.md](contracts/README.md).
+This is editor work, not a shell one-liner. Open [BOOTSTRAP.md](BOOTSTRAP.md) Step 0 and transcribe the blueprint C# records from `blueprint.md` section 3 plus the new `CnbAmlMetadata` record, along with the TypeScript mirror and OpenAPI spec. Apply both additive deltas from [contracts/README.md](contracts/README.md): `regulatory_clock` and `CnbAmlMetadata`.
 
 Ask the agent exactly this:
 
 ```text
 Read BOOTSTRAP.md Step 0 and materialize the contracts from blueprint.md.
-Do not invent fields. Apply the regulatory_clock delta. Stop after B-000.
+Do not invent fields. Apply both approved additive deltas: regulatory_clock
+and CnbAmlMetadata. Stop after B-000.
 ```
 
 Then:
