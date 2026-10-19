@@ -32,4 +32,12 @@ public sealed class BedrockServiceTests
         Assert.NotNull(node["claims"]);
         Assert.NotNull(node["legalBasis"]);
     }
+
+    [Fact]
+    public async Task LiveBedrockService_ProbeAsync_DoesNotThrow()
+    {
+        var service = new LiveBedrockService();
+        var probe = await service.ProbeAsync();
+        Assert.NotNull(probe);
+    }
 }

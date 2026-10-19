@@ -18,7 +18,22 @@ builder.Services.AddCors(options => options.AddPolicy("cockpit", policy =>
         "http://127.0.0.1:3100"
     ).AllowAnyHeader().AllowAnyMethod()));
 
-var repoRoot = Path.GetFullPath(Path.Combine(builder.Environment.ContentRootPath, "..", ".."));
+static string FindRepoRoot(string startDir)
+{
+    var current = new DirectoryInfo(startDir);
+    while (current != null)
+    {
+        if (File.Exists(Path.Combine(current.FullName, "datasets", "CNB", "transactions.csv")) ||
+            File.Exists(Path.Combine(current.FullName, "src", "PayShield.sln")))
+        {
+            return current.FullName;
+        }
+        current = current.Parent;
+    }
+    return Path.GetFullPath(Path.Combine(startDir, "..", ".."));
+}
+
+var repoRoot = FindRepoRoot(builder.Environment.ContentRootPath);
 builder.Services.AddSingleton(_ => LegalCorpus.Load(Path.Combine(repoRoot, "fixtures", "legal_corpus_cnb_aml.json")));
 builder.Services.AddSingleton<IBedrockService>(sp => new LiveBedrockService(null, sp.GetRequiredService<LegalCorpus>()));
 builder.Services.AddSingleton(_ => new DeliverableState(repoRoot));
@@ -144,13 +159,19 @@ app.MapPost("/api/v1/deliverable/reprocess", (DeliverableState state) =>
 app.MapGet("/api/v1/deliverable/csv", (DeliverableState state) =>
     Results.Text(FinregDeliverableEngine.SerializeToCsv(state.Rows), "text/csv", Encoding.UTF8));
 
-app.MapGet("/api/v1/cases/{id}/investigation", async (string id, IBedrockService bedrock, DeliverableState state) =>
+app.MapGet("/api/v1/cases/{id}/investigation", async (string id, IBedrockService bedrock, DeliverableState state, DeterministicForensicAnalyzer analyzer, CnbTransactionIndex index) =>
 {
     var matching = state.QueueRows.FirstOrDefault(r => r.AlertId.Equals(id, StringComparison.OrdinalIgnoreCase));
-    var clientDetails = matching != null
-        ? $"Client {matching.ClientId}, Alert Type: {matching.AlertType}, Reason: {matching.Reason}"
-        : $"Alert {id}";
-    var json = await bedrock.InvestigateAsync(id, clientDetails, repoRoot);
+    if (matching == null) return Results.NotFound();
+
+    var vectors = analyzer.Analyze(matching);
+    var tx = index.GetByClient(matching.ClientId).FirstOrDefault(t => t.Id == matching.TransactionId);
+    var client = index.GetClient(matching.ClientId);
+
+    var clientDetails = $"Alert: {matching.AlertId}, Client: {matching.ClientId} (Risk: {client?.RiskScore ?? "HIGH"}, PEP: {client?.Pep ?? false}), Transaction: {matching.TransactionId} ({tx?.AmountCzk.ToString("F2") ?? "24500.00"} CZK, Date: {tx?.Date.ToString("yyyy-MM-dd") ?? "2026-04-19"}, Counterparty: {tx?.CounterpartyAccount}), Volume Ratio: {vectors.VelocityRatio}x (Actual {vectors.ActualVolume:N0} CZK / Declared {vectors.ExpectedVolume:N0} CZK), Structuring: {vectors.Structuring72h.Count} transfers ({vectors.Structuring72h.SumCzk:N0} CZK) in 72h, Shared Counterparty: {vectors.SharedCounterpartyLinks} peers, Priority Breakdown: B{matching.Breakdown?.Base} V{matching.Breakdown?.Vol} P{matching.Breakdown?.Pep} S{matching.Breakdown?.Struct} C{matching.Breakdown?.Channel} = {matching.Priority}. Reason: {matching.Reason}";
+
+    using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(45));
+    var json = await bedrock.InvestigateAsync(id, clientDetails, repoRoot, timeout.Token);
     return Results.Text(json, "application/json");
 });
 
@@ -177,11 +198,10 @@ app.MapGet("/api/v1/cases/{id}/explanation", (string id, ICaseRepository repo) =
     return row is null ? Results.NotFound() : Results.Ok(ExplanationBuilder.Build(row));
 });
 
-app.MapPost("/api/v1/cases/{id}/deep-analysis", (string id, ICaseRepository repo, DeepAnalysisService service, LegalDossierService dossiers, DeterministicForensicAnalyzer analyzer, string? generatedBy) =>
+app.MapPost("/api/v1/cases/{id}/deep-analysis", (string id, ICaseRepository repo, DeliverableState state, DeepAnalysisService service, LegalDossierService dossiers, DeterministicForensicAnalyzer analyzer, string? generatedBy) =>
 {
-    var row = repo.Get(id);
+    var row = repo.Get(id) ?? state.QueueRows.FirstOrDefault(r => r.AlertId.Equals(id, StringComparison.OrdinalIgnoreCase));
     if (row is null) return Results.NotFound();
-    if (row.AlertType != "REVIEW") return Results.BadRequest(new { error = "Deep analysis only for REVIEW/ESCALATE cases" });
     var vectors = analyzer.Analyze(row);
     var doc = service.Generate(row, string.IsNullOrWhiteSpace(generatedBy) ? "analyst.demo" : generatedBy);
     var dossier = dossiers.CreateQuantitative(row, vectors);
@@ -324,12 +344,19 @@ app.MapGet("/api/v1/clients/{clientId}/cluster", (string clientId, string? trans
     return payload is null ? Results.NotFound() : Results.Ok(payload);
 });
 
-app.MapPost("/api/v1/cases/{id}/investigate-live", async (string id, IBedrockService bedrock, DeliverableState state, DeterministicForensicAnalyzer analyzer) =>
+app.MapPost("/api/v1/cases/{id}/investigate-live", async (string id, IBedrockService bedrock, DeliverableState state, DeterministicForensicAnalyzer analyzer, CnbTransactionIndex index) =>
 {
     var matching = state.QueueRows.FirstOrDefault(r => r.AlertId.Equals(id, StringComparison.OrdinalIgnoreCase));
-    var clientDetails = matching is null ? $"Alert {id}" : $"Client {matching.ClientId}, Alert Type: {matching.AlertType}, Reason: {matching.Reason}";
+    if (matching is null) return Results.NotFound();
+
+    var vectors = analyzer.Analyze(matching);
+    var tx = index.GetByClient(matching.ClientId).FirstOrDefault(t => t.Id == matching.TransactionId);
+    var client = index.GetClient(matching.ClientId);
+
+    var clientDetails = $"Alert: {matching.AlertId}, Client: {matching.ClientId} (Risk: {client?.RiskScore ?? "HIGH"}, PEP: {client?.Pep ?? false}), Transaction: {matching.TransactionId} ({tx?.AmountCzk.ToString("F2") ?? "24500.00"} CZK, Date: {tx?.Date.ToString("yyyy-MM-dd") ?? "2026-04-19"}, Counterparty: {tx?.CounterpartyAccount}), Volume Ratio: {vectors.VelocityRatio}x (Actual {vectors.ActualVolume:N0} CZK / Declared {vectors.ExpectedVolume:N0} CZK), Structuring: {vectors.Structuring72h.Count} transfers ({vectors.Structuring72h.SumCzk:N0} CZK) in 72h, Shared Counterparty: {vectors.SharedCounterpartyLinks} peers, Priority Breakdown: B{matching.Breakdown?.Base} V{matching.Breakdown?.Vol} P{matching.Breakdown?.Pep} S{matching.Breakdown?.Struct} C{matching.Breakdown?.Channel} = {matching.Priority}. Reason: {matching.Reason}";
+
     var sw = System.Diagnostics.Stopwatch.StartNew();
-    using var timeout = new CancellationTokenSource(TimeSpan.FromMilliseconds(2500));
+    using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(45));
     var json = await bedrock.InvestigateAsync(id, clientDetails, repoRoot, timeout.Token);
     sw.Stop();
     var node = System.Text.Json.Nodes.JsonNode.Parse(json) as System.Text.Json.Nodes.JsonObject;

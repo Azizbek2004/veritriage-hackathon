@@ -123,62 +123,107 @@ public sealed class DeepAnalysisService : IDeepAnalysisService
         var client = _index.GetClient(row.ClientId);
         var siblings = _index.GetByClient(row.ClientId).Take(12).ToList();
         var audit = _ledger.Get(row.AlertId);
-        var sb = new StringBuilder();
-        sb.AppendLine($"# Deep Analysis — {row.AlertId}");
-        sb.AppendLine();
-        sb.AppendLine($"- Case: `{row.AlertId}`");
-        sb.AppendLine($"- Client: `{row.ClientId}`");
-        sb.AppendLine($"- Transaction: `{row.TransactionId}`");
-        sb.AppendLine($"- Generated: `{DateTimeOffset.UtcNow:O}` by `{generatedBy}`");
-        sb.AppendLine($"- Rule versions: `{string.Join(", ", RuleRegistry.All.Select(r => $"{r.RuleId} v{r.Version}"))}`");
-        sb.AppendLine();
-        sb.AppendLine("## Executive summary");
-        sb.AppendLine($"The deterministic engine classified this case as **{row.Triage}** with priority **{row.Priority}/100**. {row.Reason}");
-        sb.AppendLine();
-        sb.AppendLine("## Evidence — sibling transactions");
-        sb.AppendLine("| Date | Amount | Direction | Counterparty | Flagged |");
-        sb.AppendLine("|---|---:|---|---|---|");
-        foreach (var tx in siblings)
-            sb.AppendLine($"| {tx.Date:yyyy-MM-dd} | {tx.AmountCzk.ToString("N2", CultureInfo.InvariantCulture)} | {tx.Direction} | {tx.CounterpartyAccount} | {(tx.Id == row.TransactionId ? "THIS ALERT" : "")} |");
-        sb.AppendLine();
-        sb.AppendLine("## Priority breakdown");
-        if (row.Breakdown is { } bd)
-            sb.AppendLine($"`B{bd.Base} + V{bd.Vol} + P{bd.Pep} + S{bd.Struct} + C{bd.Channel} = {row.Priority.ToString(CultureInfo.InvariantCulture)}`");
         var vector = _analyzer.Analyze(row);
+        var sb = new StringBuilder();
+
+        sb.AppendLine($"# ČNB / FAÚ AML Compliance Dossier — {row.AlertId}");
         sb.AppendLine();
-        sb.AppendLine("## Quantitative typology vectors");
-        sb.AppendLine($"- Velocity: **{vector.VelocityRatio:0.00}x**; count: **{vector.CountRatio:0.00}x**");
-        sb.AppendLine($"- 72h sub-threshold cluster: **{vector.Structuring72h.Count} / {vector.Structuring72h.SumCzk.ToString("N2", CultureInfo.InvariantCulture)} CZK**");
-        sb.AppendLine($"- HHI: **{vector.CounterpartyHhi:0}**; shared links: **{vector.SharedCounterpartyLinks}**; primary: `{vector.PrimaryCounterparty}`");
-        sb.AppendLine($"- Round-amount ratio: **{vector.RoundAmountRatio:0.00}%**; in/out: **{vector.InOutRatio:0.0000}**");
+        sb.AppendLine("> [!IMPORTANT]");
+        sb.AppendLine($"> **Case:** `{row.AlertId}` | **Client:** `{row.ClientId}` | **Transaction:** `{row.TransactionId}` | **Priority:** **{row.Priority}/100** ({row.Triage})");
+        sb.AppendLine($"> **Generated:** `{DateTimeOffset.UtcNow:yyyy-MM-dd HH:mm:ss} UTC` by `{generatedBy}` | **Legal Basis:** Czech AML Act No. 253/2008 Sb. § 6, § 21");
         sb.AppendLine();
-        sb.AppendLine("## Why the score is high");
+        sb.AppendLine("## 1. Executive Summary & Statutory Grounds");
+        sb.AppendLine();
+        sb.AppendLine(row.Reason);
+        sb.AppendLine();
+        sb.AppendLine("### Case Classification Metadata");
+        sb.AppendLine("| Parameter | Value | Reference / Notes |");
+        sb.AppendLine("|---|---|---|");
+        sb.AppendLine($"| **Alert ID** | `{row.AlertId}` | Track 5 AML FINREG |");
+        sb.AppendLine($"| **Client ID** | `{row.ClientId}` | {(client?.Pep == true ? "⚠️ Politically Exposed Person (§ 21(5))" : "Standard Client")} |");
+        sb.AppendLine($"| **Transaction ID** | `{row.TransactionId}` | ČNB Transaction Index |");
+        sb.AppendLine($"| **Triage Outcome** | **{row.Triage}** | Priority score: {row.Priority}/100 |");
+        if (row.Breakdown is { } bd)
+        {
+            sb.AppendLine($"| **Priority Formula** | `B{bd.Base} + V{bd.Vol} + P{bd.Pep} + S{bd.Struct} + C{bd.Channel}` | Base {bd.Base}, Vol {bd.Vol}, PEP {bd.Pep}, Struct {bd.Struct}, Channel {bd.Channel} |");
+        }
+        sb.AppendLine();
+        sb.AppendLine("## 2. Quantitative Forensic Typology Vectors");
+        sb.AppendLine();
+        sb.AppendLine("| Typology Metric | Measured Value | Statutory / Behavioral Significance |");
+        sb.AppendLine("|---|---:|---|");
+        sb.AppendLine($"| **Volume Deviation** | **{vector.VelocityRatio:0.00}x** | Actual {vector.ActualVolume:N0} CZK vs Declared Expected {vector.ExpectedVolume:N0} CZK (§ 6(1)(a)) |");
+        sb.AppendLine($"| **Transaction Count Ratio** | **{vector.CountRatio:0.00}x** | Actual {vector.ActualCount} tx vs Declared Expected {vector.ExpectedCount} tx |");
+        sb.AppendLine($"| **72h Sub-Threshold Cluster** | **{vector.Structuring72h.Count} tx** ({vector.Structuring72h.SumCzk:N0} CZK) | Structuring below reporting threshold within window (§ 6(1)(b)) |");
+        sb.AppendLine($"| **Counterparty Concentration (HHI)** | **{vector.CounterpartyHhi:0}** | Outbound distribution index (0-10,000 scale) |");
+        sb.AppendLine($"| **Shared Counterparty Links** | **{vector.SharedCounterpartyLinks} peers** | Other clients transacting with same IBAN: `{vector.PrimaryCounterparty ?? "N/A"}` |");
+        sb.AppendLine($"| **Round Amount Frequency** | **{vector.RoundAmountRatio:0.0}%** | Ratio of round-sum transfers (% 1,000 CZK) |");
+        sb.AppendLine($"| **In / Out Ratio** | **{vector.InOutRatio:0.0000}** | Inbound vs outbound turnover velocity |");
+        sb.AppendLine();
+        sb.AppendLine("### Typology Assessment");
         sb.AppendLine(vector.FraudNarrative);
         sb.AppendLine();
-        sb.AppendLine("## Rules");
+        sb.AppendLine("## 3. Deterministic C# Verifier Gate Checks (0-Token Local Prover)");
+        sb.AppendLine();
+        sb.AppendLine("| Gate Check | Status | Verification Detail | Legal / Technical Standard |");
+        sb.AppendLine("|---|:---:|---|---|");
+        foreach (var gate in vector.Gates)
+        {
+            var statusBadge = gate.Pass ? "✅ **PASS**" : "❌ **FAIL**";
+            var standard = gate.Gate switch
+            {
+                "SCHEMA" => "Act 253/2008 Sb. § 20",
+                "FOUR_EYES_SEPARATION" => "Decree 67/2018 § 12 (4-eyes)",
+                "DECIMAL_RECOMPUTATION" => "System.Decimal Invariant (±0.01 CZK)",
+                "THRESHOLD_CONSISTENCY" => "Track 5 Scoring Engine Invariant",
+                "STATUTORY_POINTER" => "Corpus Grounding (§ 6, § 21)",
+                _ => "Deterministic Verification Gate"
+            };
+            sb.AppendLine($"| **{gate.Gate}** | {statusBadge} | {gate.Detail} | {standard} |");
+        }
+        sb.AppendLine();
+        sb.AppendLine("## 4. Transaction Sibling Cluster (Client Account Evidence)");
+        sb.AppendLine();
+        sb.AppendLine("| Date | Transaction ID | Amount (CZK) | Direction | Counterparty Account | Status |");
+        sb.AppendLine("|---|---|---:|:---:|---|:---:|");
+        foreach (var tx in siblings)
+        {
+            var isAlert = tx.Id == row.TransactionId;
+            sb.AppendLine($"| {tx.Date:yyyy-MM-dd} | `{tx.Id}` | **{tx.AmountCzk:N2}** | {tx.Direction} | `{tx.CounterpartyAccount}` | {(isAlert ? "🔴 **THIS ALERT**" : "Normal")} |");
+        }
+        sb.AppendLine();
+        sb.AppendLine("## 5. Evaluated Rules & Deterministic Traces");
+        sb.AppendLine();
+        sb.AppendLine("| Rule ID | Version | Operator | Threshold | Observed Input | Contribution | Status |");
+        sb.AppendLine("|---|---|:---:|---|---|---:|:---:|");
         foreach (var rule in explanation.RulesFired)
-            sb.AppendLine($"- **{rule.RuleId} v{rule.Version}** ({rule.StatutoryBasis}): {rule.Operator} {rule.Threshold}; input {rule.InputValue}; **FIRED**, contribution {rule.Contribution}");
+            sb.AppendLine($"| **{rule.RuleId}** | v{rule.Version} | `{rule.Operator}` | `{rule.Threshold}` | `{rule.InputValue}` | +{rule.Contribution} | **FIRED** |");
         foreach (var rule in explanation.RulesCheckedNotFired)
-            sb.AppendLine($"- {rule.RuleId} v{rule.Version}: {rule.Operator} {rule.Threshold}; input {rule.InputValue}; not fired");
+            sb.AppendLine($"| {rule.RuleId} | v{rule.Version} | `{rule.Operator}` | `{rule.Threshold}` | `{rule.InputValue}` | 0 | Not Fired |");
         sb.AppendLine();
-        sb.AppendLine("## Verifier gates");
-        sb.AppendLine("Gate 1–5: NOT_RE_RUN for this document generation; the CSV row is produced by the deterministic engine. The verifier pipeline remains the authority for evidence envelopes.");
+        sb.AppendLine("## 6. Four-Eyes Governance & Sign-Off Record");
         sb.AppendLine();
-        sb.AppendLine("## 4-eyes record");
-        sb.AppendLine($"- Executive: {row.ExecutivePerson}");
-        sb.AppendLine($"- Approver: {row.Approver}");
-        sb.AppendLine($"- Independent: {(!string.Equals(row.ExecutivePerson, row.Approver, StringComparison.Ordinal)).ToString().ToLowerInvariant()}");
+        sb.AppendLine("| Role | Designated Official | Status / Independent Separation |");
+        sb.AppendLine("|---|---|---|");
+        sb.AppendLine($"| **Executive Officer** | {row.ExecutivePerson} ({row.ExecutiveRole}) | Initial Review & Triage |");
+        sb.AppendLine($"| **Approver (MLRO)** | {row.Approver} | Independent Sign-Off |");
+        var independent = !string.Equals(row.ExecutivePerson, row.Approver, StringComparison.Ordinal);
+        sb.AppendLine($"| **4-Eyes Separation** | **{(independent ? "COMPLIANT" : "VIOLATION")}** | § 21 AML Act / § 12 Decree 67/2018 |");
         sb.AppendLine();
-        sb.AppendLine("## Audit chain excerpt");
+        sb.AppendLine("## 7. Cryptographic Audit Chain Excerpt");
+        sb.AppendLine();
+        sb.AppendLine("| Timestamp | Event Name | Event SHA-256 Digest |");
+        sb.AppendLine("|---|---|---|");
         foreach (var ev in audit.TakeLast(6))
-            sb.AppendLine($"- `{ev.Timestamp}` {ev.Event} `{ev.Hash}`");
+            sb.AppendLine($"| `{ev.Timestamp}` | **{ev.Event}** | `{ev.Hash}` |");
         sb.AppendLine();
-        sb.AppendLine("## FATF references");
+        sb.AppendLine("## 8. Relevant FATF Typologies & Guidance");
+        sb.AppendLine();
         foreach (var reference in _fatf.All)
-            sb.AppendLine($"- {reference.ReferenceId}: {reference.Title} — {reference.Url}");
+            sb.AppendLine($"- **{reference.ReferenceId}**: [{reference.Title}]({reference.Url})");
         sb.AppendLine();
-        sb.AppendLine("## Legal disclaimer");
-        sb.AppendLine("This document is a decision-support artifact. It does not constitute legal advice. The human signatory is responsible for the final decision.");
+        sb.AppendLine("---");
+        sb.AppendLine("*Legal Disclaimer: This dossier is generated by VeriTriage for compliance officer decision-support under Czech AML Act No. 253/2008 Sb. The human sign-off creates the legal record.*");
         return sb.ToString();
     }
 

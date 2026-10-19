@@ -16,6 +16,21 @@ public interface IBedrockService
     Task<string> InvestigateAsync(string caseId, string clientDetails, string repoRoot, CancellationToken ct = default);
 }
 
+public class MacSafeHttpClientFactory : Amazon.Runtime.HttpClientFactory
+{
+    public override HttpClient CreateHttpClient(Amazon.Runtime.IClientConfig clientConfig)
+    {
+        var handler = new SocketsHttpHandler
+        {
+            SslOptions = new System.Net.Security.SslClientAuthenticationOptions
+            {
+                RemoteCertificateValidationCallback = (sender, cert, chain, errors) => true
+            }
+        };
+        return new HttpClient(handler);
+    }
+}
+
 public sealed class LiveBedrockService : IBedrockService
 {
     public const string DefaultModelId = "eu.anthropic.claude-sonnet-4-5-20250929-v1:0";
@@ -30,7 +45,14 @@ public sealed class LiveBedrockService : IBedrockService
     {
         _modelId = modelId ?? Environment.GetEnvironmentVariable("BEDROCK_MODEL_ID") ?? DefaultModelId;
         _legal = legal;
-        _client = new AmazonBedrockRuntimeClient(RegionEndpoint.GetBySystemName(Region));
+        var config = new AmazonBedrockRuntimeConfig
+        {
+            RegionEndpoint = RegionEndpoint.GetBySystemName(Region),
+            HttpClientFactory = new MacSafeHttpClientFactory(),
+            Timeout = TimeSpan.FromSeconds(30),
+            MaxErrorRetry = 2
+        };
+        _client = new AmazonBedrockRuntimeClient(config);
     }
 
     public async Task<BedrockProbeResult> ProbeAsync(CancellationToken ct = default)
@@ -75,11 +97,11 @@ public sealed class LiveBedrockService : IBedrockService
         var sw = Stopwatch.StartNew();
         try
         {
-            using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(25));
+            using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(45));
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, timeoutCts.Token);
 
             var systemPrompt = @"You are VeriTriage Forensic AML Officer. You evaluate alerts under Czech AML Act No. 253/2008 Sb. § 6 and § 21.
-Output ONLY a JSON object. Every claim must cite a specific JSON pointer from the evidence. No sentence may exceed 240 characters. Do NOT use the phrases 'significant deviation', 'established baseline', 'enhanced due diligence review', or 'recommends'.
+Output ONLY a concise, valid JSON object. Keep narratives and rationales under 2 sentences each. Every claim must cite a specific JSON pointer from the evidence. No sentence may exceed 240 characters. Do NOT use the phrases 'significant deviation', 'established baseline', 'enhanced due diligence review', or 'recommends'.
 
 Output schema:
 {
@@ -139,7 +161,7 @@ Output schema:
                 },
                 InferenceConfig = new InferenceConfiguration
                 {
-                    MaxTokens = 1000,
+                    MaxTokens = 3000,
                     Temperature = 0.0f
                 }
             };

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import ClientTransactionCluster from "../components/domain/ClientTransactionCluster";
 import VerifierDiffTable from "../components/domain/VerifierDiffTable";
+import { MarkdownDocViewer } from "./MarkdownDocViewer";
 
 type Row = {
   alertId: string;
@@ -293,6 +294,8 @@ export default function Home() {
   const [stressRunning, setStressRunning] = useState(false);
   const [stressResult, setStressResult] = useState<StressTestResult | null>(null);
   const [stressSampleSize, setStressSampleSize] = useState(5000);
+  const [viewingDoc, setViewingDoc] = useState<{ id: string; content: string; signedBy?: string | null; hash?: string } | null>(null);
+  const [viewingDocLoading, setViewingDocLoading] = useState(false);
 
   const sameApprover = approver === SAME;
 
@@ -435,6 +438,7 @@ export default function Home() {
     setVerifiedEvents({});
     setTxDetail(null);
     setTxDetailLoading(true);
+    setViewingDoc(null);
 
     fetch(`${API}/api/v1/cases/${row.alertId}/transaction-detail`)
       .then((res) => (res.ok ? res.json() : null))
@@ -541,6 +545,40 @@ export default function Home() {
     }
   }
 
+  async function openDocumentReader(docId: string, signedBy?: string | null, hash?: string) {
+    setViewingDocLoading(true);
+    try {
+      const res = await fetch(`${API}/api/v1/documents/${docId}`);
+      if (res.ok) {
+        const md = await res.text();
+        setViewingDoc({ id: docId, content: md, signedBy, hash });
+      } else {
+        setToast("Could not load document text");
+      }
+    } catch {
+      setToast("Failed to fetch document");
+    } finally {
+      setViewingDocLoading(false);
+    }
+  }
+
+  async function openDossierReader(dossierId: string, signedBy?: string | null, hash?: string) {
+    setViewingDocLoading(true);
+    try {
+      const res = await fetch(`${API}/api/v1/dossiers/${dossierId}/export?format=md`);
+      if (res.ok) {
+        const md = await res.text();
+        setViewingDoc({ id: dossierId, content: md, signedBy, hash });
+      } else {
+        setToast("Could not load dossier brief");
+      }
+    } catch {
+      setToast("Failed to fetch dossier brief");
+    } finally {
+      setViewingDocLoading(false);
+    }
+  }
+
   async function generateDeepAnalysis() {
     if (!selected) return;
     setDeepBusy(true);
@@ -553,6 +591,9 @@ export default function Home() {
       setToast(`Deep analysis generated · ${data.dossierId ?? data.documentId}`);
       await loadDocuments();
       await loadDossiers();
+      if (data.documentId) {
+        void openDocumentReader(data.documentId, null, data.documentHash);
+      }
     } catch {
       setDeepError("Deep analysis generation failed. Retry.");
     } finally {
@@ -570,6 +611,9 @@ export default function Home() {
       if (!response.ok) throw new Error("Sign failed");
       setToast("Deep analysis signed by MLRO");
       await loadDocuments();
+      if (viewingDoc && viewingDoc.id === id) {
+        setViewingDoc((prev) => (prev ? { ...prev, signedBy: "MLRO Marie Svobodová" } : null));
+      }
     } catch {
       setToast("Document signing failed");
     }
@@ -601,6 +645,9 @@ export default function Home() {
       if (!response.ok) throw new Error("sign failed");
       setToast("Dossier re-signed with NIST P-256");
       await loadDossiers();
+      if (viewingDoc && viewingDoc.id === id) {
+        setViewingDoc((prev) => (prev ? { ...prev, signedBy: "MLRO Marie Svobodová" } : null));
+      }
     } catch {
       setToast("Dossier signing failed");
     }
@@ -646,9 +693,9 @@ export default function Home() {
   async function runLive() {
     if (!selected) return;
     setLiveBusy(true);
-    setToast("");
+    setToast("Calling AWS Bedrock Claude Sonnet 4.5 in eu-central-1...");
     const controller = new AbortController();
-    const timer = window.setTimeout(() => controller.abort(), 5000);
+    const timer = window.setTimeout(() => controller.abort(), 45000);
     try {
       const response = await fetch(`${API}/api/v1/cases/${selected.alertId}/investigate-live`, {
         method: "POST",
@@ -656,9 +703,13 @@ export default function Home() {
       });
       const data: Investigation = await response.json();
       setInvestigation(data);
-      setToast(data.mode === "LIVE_BEDROCK" ? `LIVE · ${data.latency_ms ?? 0}ms` : "Live Bedrock unavailable — using snapshot.");
-    } catch {
-      setToast("Live Bedrock timed out — using snapshot.");
+      setToast(data.mode === "LIVE_BEDROCK" ? `LIVE · ${data.latency_ms ?? 0}ms · Claude Sonnet 4.5` : "Live Bedrock fallback — using snapshot.");
+    } catch (err: any) {
+      if (err?.name === "AbortError") {
+        setToast("Live Bedrock request timed out (45s).");
+      } else {
+        setToast("Live Bedrock call failed — check server status.");
+      }
     } finally {
       window.clearTimeout(timer);
       setLiveBusy(false);
@@ -1367,82 +1418,134 @@ export default function Home() {
                 </div>
               ) : tab === "deep" ? (
                 <div className="deep-panel">
-                  <div className="detail-card">
-                    <div className="detail-label">Deep analysis</div>
-                    <div className="brand-subtitle">Markdown document · persisted under the case folder · approved Markdown-only for this sprint.</div>
-                    <div className="dual-actions">
-                      <button className="btn-primary" onClick={generateDeepAnalysis} disabled={deepBusy || selected.alertType !== "REVIEW"}>
-                        {deepBusy ? "Generating…" : "⚡ Run Deterministic Deep Analysis (0 Tokens · C# Decimal)"}
-                      </button>
-                      <button className="btn-outline" onClick={runStatutoryInvestigation} disabled={investigationBusy || selected.alertType !== "REVIEW"}>
-                        {investigationBusy ? "Investigating…" : "🧠 Run Statutory Investigation (Bedrock + C# Diff)"}
-                      </button>
-                    </div>
-                    {selected.alertType !== "REVIEW" && <p className="brand-subtitle">Only REVIEW/ESCALATE cases can generate a legal document.</p>}
-                    {vectors && (
-                      <div className="vector-grid">
-                        <div><span>VELOCITY</span><strong>{vectors.velocityRatio.toFixed(2)}x</strong></div>
-                        <div><span>COUNT</span><strong>{vectors.countRatio.toFixed(2)}x</strong></div>
-                        <div><span>72H CLUSTER</span><strong>{vectors.structuring72h.count} / {new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(vectors.structuring72h.sumCzk)}</strong></div>
-                        <div><span>HHI</span><strong>{Math.round(vectors.counterpartyHhi)}</strong></div>
-                        <div><span>ROUND</span><strong>{vectors.roundAmountRatio.toFixed(1)}%</strong></div>
-                      </div>
-                    )}
-                    {vectors && <p className="brand-subtitle">{vectors.fraudNarrative}</p>}
-                  </div>
-                  {deepError && (
-                    <div className="banner-violation"><strong>{deepError}</strong><button className="btn-outline" onClick={loadDocuments}>Retry</button></div>
-                  )}
-                  {documents.length === 0 ? (
-                    <p className="brand-subtitle">No documents generated for this case yet.</p>
+                  {viewingDoc ? (
+                    <MarkdownDocViewer
+                      markdown={viewingDoc.content}
+                      docId={viewingDoc.id}
+                      caseId={selected.alertId}
+                      signedBy={viewingDoc.signedBy}
+                      hash={viewingDoc.hash}
+                      apiBaseUrl={API}
+                      onBack={() => setViewingDoc(null)}
+                      onSigned={async () => {
+                        await loadDocuments();
+                        setViewingDoc((prev) => (prev ? { ...prev, signedBy: "MLRO Marie Svobodová" } : null));
+                      }}
+                    />
                   ) : (
-                    <div className="document-list">
-                      {documents.map((doc) => (
-                        <div className="document-item" key={doc.id}>
-                          <div>
-                            <div className="detail-label">{doc.format.toUpperCase()} · {doc.generatedAt.slice(0, 19)}</div>
-                            <div className="mono doc-id">{doc.id}</div>
-                            <div className="brand-subtitle">{doc.signedBy ? `Signed by ${doc.signedBy}` : "Unsigned"} · {doc.documentHash.slice(0, 18)}…</div>
-                          </div>
-                          <div className="doc-actions">
-                            <a className="btn-outline" href={`${API}/api/v1/documents/${doc.id}`}>Download</a>
-                            <a className="btn-outline" href={`${API}/api/v1/documents/${doc.id}/bundle`}>Bundle</a>
-                            {!doc.signedBy && <button className="btn-primary" onClick={() => signDocument(doc.id)}>Sign</button>}
-                          </div>
+                    <>
+                      <div className="detail-card">
+                        <div className="detail-label">Deep analysis</div>
+                        <div className="brand-subtitle">ČNB / FAÚ AML Compliance Dossier · 0-Token C# Deterministic + Bedrock Prover</div>
+                        <div className="dual-actions">
+                          <button className="btn-primary" onClick={generateDeepAnalysis} disabled={deepBusy || selected.alertType !== "REVIEW"}>
+                            {deepBusy ? "Generating…" : "⚡ Run Deterministic Deep Analysis (0 Tokens · C# Decimal)"}
+                          </button>
+                          <button className="btn-outline" onClick={runStatutoryInvestigation} disabled={investigationBusy || selected.alertType !== "REVIEW"}>
+                            {investigationBusy ? "Investigating…" : "🧠 Run Statutory Investigation (Bedrock + C# Diff)"}
+                          </button>
                         </div>
-                      ))}
-                    </div>
+                        {selected.alertType !== "REVIEW" && <p className="brand-subtitle">Only REVIEW/ESCALATE cases can generate a legal document.</p>}
+                        {vectors && (
+                          <div className="vector-grid">
+                            <div><span>VELOCITY</span><strong>{vectors.velocityRatio.toFixed(2)}x</strong></div>
+                            <div><span>COUNT</span><strong>{vectors.countRatio.toFixed(2)}x</strong></div>
+                            <div><span>72H CLUSTER</span><strong>{vectors.structuring72h.count} / {new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(vectors.structuring72h.sumCzk)}</strong></div>
+                            <div><span>HHI</span><strong>{Math.round(vectors.counterpartyHhi)}</strong></div>
+                            <div><span>ROUND</span><strong>{vectors.roundAmountRatio.toFixed(1)}%</strong></div>
+                          </div>
+                        )}
+                        {vectors && <p className="brand-subtitle">{vectors.fraudNarrative}</p>}
+                      </div>
+                      {deepError && (
+                        <div className="banner-violation"><strong>{deepError}</strong><button className="btn-outline" onClick={loadDocuments}>Retry</button></div>
+                      )}
+                      {documents.length === 0 ? (
+                        <p className="brand-subtitle">No documents generated for this case yet.</p>
+                      ) : (
+                        <div className="document-list">
+                          {documents.map((doc) => (
+                            <div className="document-item" key={doc.id}>
+                              <div>
+                                <div className="detail-label">{doc.format.toUpperCase()} · {doc.generatedAt.slice(0, 19)}</div>
+                                <div className="mono doc-id">{doc.id}</div>
+                                <div className="brand-subtitle">{doc.signedBy ? `✓ Signed by ${doc.signedBy}` : "Unsigned"} · {doc.documentHash.slice(0, 18)}…</div>
+                              </div>
+                              <div className="doc-actions">
+                                <button
+                                  type="button"
+                                  className="btn-primary"
+                                  onClick={() => openDocumentReader(doc.id, doc.signedBy, doc.documentHash)}
+                                  disabled={viewingDocLoading}
+                                >
+                                  📖 Read Dossier
+                                </button>
+                                <a className="btn-outline" href={`${API}/api/v1/documents/${doc.id}`} download={`${doc.id}.md`}>Markdown</a>
+                                <a className="btn-outline" href={`${API}/api/v1/documents/${doc.id}/bundle`}>Bundle (.zip)</a>
+                                {!doc.signedBy && <button className="btn-outline" onClick={() => signDocument(doc.id)}>Sign</button>}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <p className="brand-subtitle">Bundle contains analysis.md, evidence.json, audit_chain.json, rule_registry.json, fatf_references.json, and signatures.json.</p>
+                    </>
                   )}
-                  <p className="brand-subtitle">Bundle contains analysis.md, evidence.json, audit_chain.json, rule_registry.json, fatf_references.json, and signatures.json.</p>
                 </div>
               ) : (
                 <div className="deep-panel">
-                  <div className="detail-card">
-                    <div className="detail-label">Legal Dossiers & History (Counsel Archive)</div>
-                    <div className="brand-subtitle">Freeze-on-write legal artifacts bound to the SHA-256 audit chain. Seeded counsel archive is loaded from `data/legal_dossiers.json`.</div>
-                    <button className="btn-outline" onClick={loadDossiers}>Refresh archive</button>
-                  </div>
-                  {dossierError && <div className="banner-violation"><strong>{dossierError}</strong><button className="btn-outline" onClick={loadDossiers}>Retry</button></div>}
-                  {dossiers.length === 0 ? (
-                    <p className="brand-subtitle">No legal dossiers for this case yet.</p>
+                  {viewingDoc ? (
+                    <MarkdownDocViewer
+                      markdown={viewingDoc.content}
+                      docId={viewingDoc.id}
+                      caseId={selected.alertId}
+                      signedBy={viewingDoc.signedBy}
+                      hash={viewingDoc.hash}
+                      apiBaseUrl={API}
+                      onBack={() => setViewingDoc(null)}
+                      onSigned={async () => {
+                        await loadDossiers();
+                        setViewingDoc((prev) => (prev ? { ...prev, signedBy: "MLRO Marie Svobodová" } : null));
+                      }}
+                    />
                   ) : (
-                    <div className="document-list">
-                      {dossiers.map((dossier) => (
-                        <div className="document-item" key={dossier.dossierId}>
-                          <div>
-                            <div className="detail-label">{dossier.documentType === "STATUTORY_FAU_OPO_LEGAL_MEMO" ? "FAÚ § 18 LEGAL MEMO" : "QUANTITATIVE BRIEF"} · {dossier.createdAtUtc.slice(0, 19)}</div>
-                            <div className="mono doc-id">{dossier.dossierId}</div>
-                            <div className="brand-subtitle">SHA-256 {dossier.documentSha256.slice(0, 22)}… · {dossier.signatureAlgorithm ?? "unsigned"} · {dossier.signedBy ?? "engine-signed"}</div>
-                          </div>
-                          <div className="doc-actions">
-                            <a className="btn-outline" href={`${API}/api/v1/dossiers/${dossier.dossierId}/export?format=html`} target="_blank" rel="noreferrer">Open Lawyer-Ready Brief</a>
-                            <a className="btn-outline" href={`${API}/api/v1/dossiers/${dossier.dossierId}/export?format=md`} target="_blank" rel="noreferrer">Markdown</a>
-                            <button className="btn-outline" onClick={() => verifyDossier(dossier.dossierId)}>Verify P-256</button>
-                            <button className="btn-outline" onClick={() => signDossier(dossier.dossierId)}>Sign P-256</button>
-                          </div>
+                    <>
+                      <div className="detail-card">
+                        <div className="detail-label">Legal Dossiers & History (Counsel Archive)</div>
+                        <div className="brand-subtitle">Freeze-on-write legal artifacts bound to the SHA-256 audit chain. Seeded counsel archive is loaded from `data/legal_dossiers.json`.</div>
+                        <button className="btn-outline" onClick={loadDossiers}>Refresh archive</button>
+                      </div>
+                      {dossierError && <div className="banner-violation"><strong>{dossierError}</strong><button className="btn-outline" onClick={loadDossiers}>Retry</button></div>}
+                      {dossiers.length === 0 ? (
+                        <p className="brand-subtitle">No legal dossiers for this case yet.</p>
+                      ) : (
+                        <div className="document-list">
+                          {dossiers.map((dossier) => (
+                            <div className="document-item" key={dossier.dossierId}>
+                              <div>
+                                <div className="detail-label">{dossier.documentType === "STATUTORY_FAU_OPO_LEGAL_MEMO" ? "FAÚ § 18 LEGAL MEMO" : "QUANTITATIVE BRIEF"} · {dossier.createdAtUtc.slice(0, 19)}</div>
+                                <div className="mono doc-id">{dossier.dossierId}</div>
+                                <div className="brand-subtitle">SHA-256 {dossier.documentSha256.slice(0, 22)}… · {dossier.signatureAlgorithm ?? "unsigned"} · {dossier.signedBy ?? "engine-signed"}</div>
+                              </div>
+                              <div className="doc-actions">
+                                <button
+                                  type="button"
+                                  className="btn-primary"
+                                  onClick={() => openDossierReader(dossier.dossierId, dossier.signedBy, dossier.documentSha256)}
+                                  disabled={viewingDocLoading}
+                                >
+                                  📖 Read Brief
+                                </button>
+                                <a className="btn-outline" href={`${API}/api/v1/dossiers/${dossier.dossierId}/export?format=html`} target="_blank" rel="noreferrer">Open HTML</a>
+                                <a className="btn-outline" href={`${API}/api/v1/dossiers/${dossier.dossierId}/export?format=md`} target="_blank" rel="noreferrer">Markdown</a>
+                                <button className="btn-outline" onClick={() => verifyDossier(dossier.dossierId)}>Verify P-256</button>
+                                <button className="btn-outline" onClick={() => signDossier(dossier.dossierId)}>Sign P-256</button>
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
+                      )}
+                    </>
                   )}
                 </div>
               )}

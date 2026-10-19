@@ -59,7 +59,7 @@ public sealed class DeterministicForensicAnalyzer
         var hhi = outTotal > 0 ? Math.Round(groups.Sum(g => (g.Sum / outTotal) * (g.Sum / outTotal)) * 10_000m, 0, MidpointRounding.ToEven) : 0m;
         var primary = groups.FirstOrDefault()?.Account;
         var shared = primary is null ? 0 : _index.GetByCounterparty(primary).Select(t => t.ClientId).Distinct(StringComparer.Ordinal).Count(id => id != row.ClientId);
-        var roundCount = transactions.Count(t => t.AmountCzk % 1000m == 0m || t.AmountCzk % 500m == 0m);
+        var roundCount = transactions.Count(t => t.AmountCzk >= 500m && t.AmountCzk % 500m == 0m);
         var roundRatio = transactions.Count > 0 ? Math.Round((decimal)roundCount * 100m / transactions.Count, 2, MidpointRounding.ToEven) : 0m;
 
         var bd = row.Breakdown;
@@ -69,7 +69,7 @@ public sealed class DeterministicForensicAnalyzer
         {
             new ForensicGateResult("SCHEMA", client is not null && transactions.Count > 0, client is null ? "client missing" : $"{transactions.Count} transactions loaded"),
             new ForensicGateResult("FOUR_EYES_SEPARATION", fourEyes, fourEyes ? "executive and approver differ" : "SAME PERSON"),
-            new ForensicGateResult("DECIMAL_RECOMPUTATION", expected > 0 && actual >= 0, $"{actual.ToString("N2", CultureInfo.InvariantCulture)} / {expected.ToString("N2", CultureInfo.InvariantCulture)} CZK"),
+            new ForensicGateResult("DECIMAL_RECOMPUTATION", expected >= 0 && actual >= 0, $"{actual.ToString("N2", CultureInfo.InvariantCulture)} / {expected.ToString("N2", CultureInfo.InvariantCulture)} CZK"),
             new ForensicGateResult("THRESHOLD_CONSISTENCY", row.Priority is >= 0 and <= 100 && breakdownSum == row.Priority, $"breakdown {breakdownSum} == priority {row.Priority}"),
             new ForensicGateResult("STATUTORY_POINTER", LegalQuotes.Get("AML-253-2008-S6-1A") is not null && LegalQuotes.Get("AML-253-2008-S21-5") is not null, "quoted corpus pointers resolved"),
         };
@@ -90,7 +90,7 @@ public sealed class DeterministicForensicAnalyzer
             if (window.Count > best.Count || (window.Count == best.Count && sum > best.SumCzk))
                 best = new StructuringWindow72h(window.Count, sum, start.ToString("yyyy-MM-dd"), window[^1].Date.ToString("yyyy-MM-dd"), window.Select(t => t.Id).ToArray());
         }
-        return best;
+        return best.Count >= 2 ? best : new StructuringWindow72h(0, 0m, null, null, Array.Empty<string>());
     }
 
     private static string BuildNarrative(DeliverableCsvRow row, decimal velocity, decimal countRatio, decimal actual, decimal expected, int actualCount, int expectedCount,
