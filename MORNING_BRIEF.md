@@ -1,3 +1,5 @@
+> **Build update 2026-10-19:** B-000/B-001/B-002 are complete; the backend is 16/16 green. The frontend/mobile are still absent, and Bedrock invoke is blocked. Read `BUILD_LOG.md` and `FINAL_REPORT.md` before running the morning sequence.
+
 # Morning Brief — 2026-10-19
 
 Read this in 5 minutes. Then start.

@@ -15,6 +15,19 @@
 | Tapaya KYB Forms | Official hackathon dataset, anonymized | Primary document input. Textract extraction. |
 | Apify Web-Footprint | USD 100 credit, offline generation only | Synthetic fixture built offline. Not called live in demo. |
 
+## Acquisition 2026-10-19
+
+Official data was downloaded from `s3://ai-hackathon-datasets-422928733782/` into `datasets/` (gitignored):
+
+| File | Rows | Classification |
+|---|---:|---|
+| `CNB/transactions.csv` | 397,853 | Official |
+| `CNB/clients.csv` | 5,493 | Official |
+| `MerchantKYB/*.pdf` | 8 files | Official, anonymized |
+| `MostlyRIght/...csv` | 10,542 | Official |
+
+No real personal data is committed. The 36 MB transaction CSV stays out of git. The two filled Tapaya forms have not been mapped from the `MerchantKYB` bucket yet.
+
 ## Synthetic Data Rule
 
 Every synthetic fixture file must contain `"_synthetic": true` in its JSON, or a `// SYNTHETIC` header comment if it's not JSON. Official datasets are labeled "Official dataset" instead. Every UI component that displays fixture data must show a "Synthetic" or "Official dataset" badge in the footer.

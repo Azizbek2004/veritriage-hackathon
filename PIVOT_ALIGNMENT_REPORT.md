@@ -15,8 +15,8 @@ Backlog: four new AML tasks (VT-033 through VT-036)
 Compliance: AWS terms + data sources + synthetic rule documented
 Morning commands: Track 5 registration at the top
 
-Build state: not run — no product solution exists until B-000/B-001.
-            The contract build acceptance is deferred to B-000.
+Build state: backend green — dotnet build PASS, dotnet test 16/16.
+            Full product build remains blocked on frontend/mobile and Bedrock invoke.
 Git state: clean.
 
 Honest win probability:
@@ -34,11 +34,9 @@ What the team must do first thing at H+0:
 Do not add scope. The remaining win probability is in rehearsal, not code.
 ```
 
-## Why the Build State Is Not Green Yet
+## Build State (Updated 2026-10-19)
 
-The environment intentionally contains no product code. `src/PayShield.sln` is created in B-001 and the contract files are created in B-000. Running `dotnet build` tonight would either fail or force product scaffolding that the environment-only scope forbids. The additive contract delta is fully specified in [contracts/README.md](contracts/README.md) and will be applied at B-000; `dotnet build` is the first acceptance test after B-001.
-
-This is a deferral by design, not a failed build.
+B-000/B-001/B-002 are complete. The contracts are materialized, `dotnet build` is green, and the backend suite is 16/16. The full demo is not green: `apps/web` and `apps/mobile` are absent, the API is only `/api/v1/health`, and Bedrock invoke is blocked. See [BUILD_LOG.md](BUILD_LOG.md).
 
 ## Changes Applied
 

@@ -1,10 +1,8 @@
-# Contracts — Plan Only
+# Contracts — Frozen
 
-This directory contains the contract **plan**, not the contract files. The product is intentionally unbuilt. The AI agent materializes the actual C# records, TypeScript mirror, and OpenAPI spec in bootstrap task **B-000** from `blueprint.md` and then freezes them.
+These files are the coordination mechanism for the agent team. They were materialized from `blueprint.md` in B-000 on 2026-10-19 and are now frozen. Only a human may change them, after `PROPOSAL.md` plus `DECISION.md`.
 
-If `contracts/domain/`, `contracts/types/`, or `contracts/api/` are missing, the product is not bootstrapped. Do not improvise contract code. Run `BOOTSTRAP.md`.
-
-## Planned Inventory
+## Inventory
 
 | Path | Source | Purpose |
 |---|---|---|
@@ -22,7 +20,7 @@ If `contracts/domain/`, `contracts/types/`, or `contracts/api/` are missing, the
 | `types/api.d.ts` | `blueprint.md` sections 8–10, `project.md` section 10 | TypeScript mirror of the wire format. |
 | `api/openapi.yaml` | `blueprint.md` section 8 | 12-endpoint HTTP contract plus health. |
 
-The planned namespace is `VeriTriage.Domain`; the planned verifier namespace is `VeriTriage.Verifier`.
+The namespace is `VeriTriage.Domain`; the verifier namespace is `VeriTriage.Verifier`.
 
 ## Approved Additive Deltas
 
@@ -111,6 +109,6 @@ After B-000, these files are frozen.
 - A missing field is not a reason to edit the contract; it is a reason to stop and propose.
 - The pre-approved deltas are `regulatory_clock` and `CnbAmlMetadata`.
 
-## Why It Is Empty Now
+## Materialized
 
-The environment bootstrap was intentionally scoped to process, not product. Writing the contracts would have been the first product task, and the user asked for the environment only. B-000 restores the original blueprint assumption that the contracts exist before the first feature task.
+B-000 materialized the C# records, TypeScript mirror, and OpenAPI spec on 2026-10-19. The approved additive deltas (`regulatory_clock`, `CnbAmlMetadata`) are included. The files are frozen from this point.

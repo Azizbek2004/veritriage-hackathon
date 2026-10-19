@@ -4,6 +4,10 @@
 .nuget-packages/
 .nuget-local/
 .npm-cache/
+.uv-cache/
+datasets/
+secrets/
+tools/
 bin/
 obj/
 node_modules/

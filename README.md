@@ -1,6 +1,6 @@
 # VeriTriage — Agent Environment
 
-This repository is the self-organizing engineering environment for VeriTriage. It is **not** the product build. Product code and contract files are intentionally absent so the AI agent can create them from a clean, frozen starting point.
+This repository is the VeriTriage agent environment plus a green backend verifier/rules slice. The frontend, mobile app, most API endpoints, and live Bedrock call are not built. See `FINAL_REPORT.md` and `BUILD_LOG.md` for the exact state.
 
 ## What Is Here
 
@@ -10,31 +10,31 @@ This repository is the self-organizing engineering environment for VeriTriage. I
 | `BOOTSTRAP.md` | The one-time product scaffold instructions. Run this before the orchestrator. |
 | `.agents/` | Orchestrator, analyzer, implementer, evaluator, reviewer, state machine, human handoff, remediation, Q&A war room. |
 | `.skills/` | `ponytail`, `test-first`, `no-slop-verifier`, `scope-guard`, `signalr-checklist`. |
-| `contracts/` | Contract plan and approved delta. C#/TS/OpenAPI files are created in B-000. |
+| `contracts/` | Frozen C#/TS/OpenAPI contracts; materialized 2026-10-19. |
 | `BACKLOG.md` | Ordered build tasks and the bootstrap phase. |
 | `REMEDIATION.md` | Bounded seven-change post-baseline delta plan. |
 | `pitch/` | Post-remediation opening, deployment slide, throughput math. |
 | `evaluation/` | Evaluation-input status. No fabricated report. |
-| `fixtures/` | Fixture inventory and acquisition checklist. Data is pending. |
-| `.github/workflows/ci.yml` | Test + ponytail gate. Inactive until the product scaffold exists. |
+| `fixtures/` | Fixture inventory. Official data is acquired in `datasets/` (gitignored). |
+| `.github/workflows/ci.yml` | Backend test + ponytail gate; web steps run when `apps/web` exists. |
 
 ## What Is Intentionally Absent
 
-- `contracts/domain/`, `contracts/types/`, and `contracts/api/` — created in B-000 from `blueprint.md`.
-- `src/`, `apps/`, and `tests/PayShield.Tests` — created by `BOOTSTRAP.md`.
-- `fixtures/` data — human-owned; agents must not invent ARES or Textract data.
-- `tests/golden/` snapshots — created after the verifier is implemented and approved.
-- Installed packages, `node_modules`, build outputs, SDKs.
+- `apps/web` and `apps/mobile` — not built.
+- API endpoints beyond `/api/v1/health` — not built.
+- `fixtures/` committed data — official data stays in `datasets/` (gitignored).
+- `tests/golden/` snapshots — not created yet.
+- `node_modules`, build outputs, SDKs.
 
-No product test baseline is included. The product scaffold and its generated build outputs were removed so the AI agent starts clean. The original "expect one failing test" readiness line is superseded by the environment-only scope. The first failing test is created by `BOOTSTRAP.md`, not by this setup.
+Backend baseline: `dotnet build` green, `dotnet test` 16/16. Frontend/mobile are not built. See `BUILD_LOG.md` and `FINAL_REPORT.md`.
 
 ## Start Order
 
 1. **Human:** read `contracts/README.md`, `fixtures/README.md`, `evaluation/README.md`, and `REMEDIATION.md`. Populate fixtures. Approve the package set. Confirm the 68–72% post-remediation estimate, not 81%.
-2. **AI agent:** read `AGENTS.md`, then execute `BOOTSTRAP.md`. Materialize the contracts (B-000), create the .NET 9 solution, web/mobile shells, test harness, and the VT-001 red test. Commit.
-3. **AI agent:** prove the baseline: `dotnet test` exactly one intended failure; `npm test` and `npm run build` green. Then launch the orchestrator with `Read .agents/orchestrator.md and begin Phase 1.`
-4. **AI agent:** as the owning tasks land, fold in the seven remediation deltas from `REMEDIATION.md`. After all seven are green, run the remediation verification pass and write `EXTENDED_FINDINGS.md`.
-5. **Humans:** rehearse the OCR drop and QR sign. No new scope after H+20.
+2. **Build state:** B-000/B-001/B-002 are complete. Next: B-003/B-004 (web/mobile shells), then API/cockpit/mobile. See `BUILD_LOG.md`.
+3. **Bedrock:** blocked on refreshed TeamAdmin invoke credentials; see `WAITING_FOR_CREDENTIALS.md`.
+4. **Datasets:** official data is in `datasets/`; see `DATASET_INVENTORY.md`.
+5. **Humans:** approve the frontend/mobile package set and decide the MCC mapping in `PROPOSAL.md`.
 
 ## The One Rule That Matters
 

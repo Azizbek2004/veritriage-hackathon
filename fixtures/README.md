@@ -20,9 +20,9 @@ The fixture directory is empty by design. Agents must not fabricate ARES, Textra
 
 | File | Source | Status | Synthetic |
 |---|---|---|---|
-| `cnb_transactions.csv` | ČNB official dataset | Pending download at H+0 | No (official) |
-| `tapaya_kyb_form_1.pdf` | Tapaya official dataset | Pending download at H+0 | No (anonymized) |
-| `tapaya_kyb_form_2.pdf` | Tapaya official dataset | Pending download at H+0 | No (anonymized) |
+| `cnb_transactions.csv` | ČNB official dataset | Acquired at `datasets/CNB/transactions.csv` (397,853 rows); copy/link pending | No (official) |
+| `tapaya_kyb_form_1.pdf` | Tapaya official dataset | 8 MerchantKYB PDFs acquired in `datasets/MerchantKYB/`; mapping pending | No (anonymized) |
+| `tapaya_kyb_form_2.pdf` | Tapaya official dataset | 8 MerchantKYB PDFs acquired in `datasets/MerchantKYB/`; mapping pending | No (anonymized) |
 | `tapaya_kyb_extracted.json` | Textract output on form 1 | Built at H+2 (VT-034) | No (official extraction) |
 | `apify_web_footprint.json` | Synthetic, hand-built | Built at H+4 (VT-035) | Yes |
 | `alert_hero_aml.json` | Constructed from ČNB + Tapaya + ARES | Built at H+4 | Yes (composite) |

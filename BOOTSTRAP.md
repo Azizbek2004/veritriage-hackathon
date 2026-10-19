@@ -1,3 +1,5 @@
+> **Status 2026-10-19:** B-000/B-001/B-002 are complete; contracts, solution, test harness, verifier, and rules are green. B-003–B-006 (web/mobile shells, fixtures, baseline proof) are not complete. This file is historical for the remaining bootstrap steps.
+
 # Product Bootstrap — Run Once Before the Orchestrator
 
 This repository is the agent environment. Product code is intentionally absent. This file is the only place where the AI agent materializes the contracts and product shells. It creates structure, not features.

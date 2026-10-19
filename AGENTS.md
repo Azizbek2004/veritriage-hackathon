@@ -18,7 +18,7 @@
 
 ## Status
 
-This repository is the **agent environment**, not the product build. Product code is intentionally absent. The AI agent creates the product scaffold from `BOOTSTRAP.md`, proves the baseline, and only then launches the orchestrator.
+This repository started as the **agent environment**. B-000 and the backend verifier/rules slice are now implemented and green. The frontend, mobile app, most API endpoints, and live Bedrock call are not built. See `BUILD_LOG.md` and `FINAL_REPORT.md` for the exact state.
 
 FROZEN for the 30-hour build. If it is not in this file or in `contracts/`, it does not go on stage.
 
@@ -85,7 +85,7 @@ Every scope decision serves that moment. If a task does not make that moment mor
 | Path | Rule |
 |---|---|
 | `AGENTS.md` | Canonical agent operating contract. Only humans change the frozen sections. |
-| `contracts/` | Plan only (`README.md`). B-000 materializes the frozen files. Agents may read after; only a human may change them, after `PROPOSAL.md`. The approved `regulatory_clock` and `CnbAmlMetadata` deltas are in the README. |
+| `contracts/` | Frozen; materialized 2026-10-19 with `regulatory_clock` and `CnbAmlMetadata`. Only a human may change them, after `PROPOSAL.md` and `DECISION.md`. |
 | `fixtures/` | Frozen when populated. Synthetic fixtures carry `"_synthetic": true`. Currently pending human bootstrap. |
 | `BACKLOG.md` | Orchestrator-owned task order. Agents may read. |
 | `TASK.md` | Analyzer-owned, one active task. Working file, not committed. |
@@ -109,11 +109,13 @@ BOOTSTRAP.md               product scaffold instructions, run once
 REMEDIATION.md             bounded post-baseline delta plan
 .agents/                   orchestrator, four sub-agents, remediation, handoff, war room
 .skills/                   five mandatory skills
-contracts/README.md        contract plan + approved delta; files created in B-000
-fixtures/                  frozen demo evidence (pending)
+contracts/domain/          frozen C# records
+contracts/types/           frozen TypeScript mirror
+contracts/api/             frozen OpenAPI spec
+fixtures/                  demo evidence (official data in datasets/)
 tests/golden/              approved snapshots (policy only until bootstrap)
-src/                       created by BOOTSTRAP.md; absent today
-apps/                      created by BOOTSTRAP.md; absent today
+src/                       backend solution; Domain/Verifier green
+apps/                      absent; frontend and mobile not built
 pitch/                     opening, slide 2, throughput math
 evaluation/                evaluation-input status, no fabricated report
 .github/workflows/ci.yml   test + ponytail gate
@@ -121,14 +123,15 @@ evaluation/                evaluation-input status, no fabricated report
 
 ## Environment State
 
-- Product code is **not built**. `src/`, `apps/`, and `tests/PayShield.Tests` are absent by design.
-- `contracts/` contains `README.md` only. B-000 materializes the C#/TS/OpenAPI files from `blueprint.md` and applies the approved `regulatory_clock` and `CnbAmlMetadata` deltas.
-- `fixtures/` is empty. See `fixtures/README.md`. Track 5 ČNB/Tapaya datasets are pending HUMAN-001. Do not invent data.
-- `tests/golden/` contains policy only. Golden files are created after the verifier is implemented and approved.
-- No product test baseline is included. The product scaffold and its generated outputs were removed. The original "expect one failing test" readiness line is superseded by the environment-only scope.
+- The backend is built: contracts, Domain, Verifier, Infrastructure, Api shell, and tests. `dotnet build` is green and `dotnet test` is 16/16.
+- `apps/web` and `apps/mobile` are absent. The cockpit and mobile signer are not built.
+- `contracts/` is materialized and frozen. The approved deltas are included.
+- `fixtures/` has no committed data; official datasets are in `datasets/` (gitignored). See `DATASET_INVENTORY.md`.
+- `tests/golden/` contains policy only; no golden files yet.
+- No frontend/mobile test baseline exists. No Bedrock call has been authorized.
 - The post-remediation narrative and QA are pre-staged in `AGENTS.md`, `pitch/`, and `.agents/QA_WAR_ROOM.md`.
-- The seven product changes are planned in `REMEDIATION.md`; the documentation, Q&A, math, and contract delta plan are pre-staged. No contract files are materialized yet.
-- The Track 5 AML additions are queued as VT-033 through VT-036; the `CnbAmlMetadata` contract delta is in `contracts/README.md`.
+- The seven remediation changes remain partially pre-staged; the verifier/rules slice landed first.
+- The Track 5 AML additions are queued as VT-033 through VT-036. The `CnbAmlMetadata` delta is materialized.
 
 ## Startup Order
 
@@ -163,7 +166,7 @@ Do not install packages during environment setup. The human runs package install
 
 ## Domain Contracts
 
-When B-000 materializes the contracts, every type is in `contracts/domain/` under namespace `VeriTriage.Domain`. Required properties use `[JsonRequired]`. The materialized contracts include two approved additive deltas: the optional snake_case `regulatory_clock` field with a default of `PRE_EXECUTION_FREEZE`, and the optional `CnbAmlMetadata? CnbAml` field on `CaseDetail` and `AlertQueueRow`. No contract files exist today; this table is the frozen plan.
+The contracts are materialized in `contracts/domain/` under namespace `VeriTriage.Domain`. Required properties use `[JsonRequired]`. They include two approved additive deltas: the optional snake_case `regulatory_clock` field with a default of `PRE_EXECUTION_FREEZE`, and the optional `CnbAmlMetadata? CnbAml` field on `CaseDetail` and `AlertQueueRow`.
 
 | Type | Purpose |
 |---|---|
@@ -390,12 +393,12 @@ The seven changes are specified in `REMEDIATION.md`. The documentation, Q&A, mat
 
 ## Current Environment State
 
-- No product code, no contract files, no test project, no `package.json`, no lockfile.
-- No product test baseline is included. The environment-only scope intentionally does not claim a green or red suite.
-- `contracts/` contains `README.md` only. B-000 creates the C#/TS/OpenAPI files; the approved deltas are `regulatory_clock` and `CnbAmlMetadata`.
-- `fixtures/` is empty; see `fixtures/README.md`. Do not fabricate ARES, Textract, invoice, or batch data.
-- `evaluation/EVAL_REPORT.md` and `evaluation/HONEST_AMENDMENTS.md` were not supplied. `REMEDIATION.md` is the reconciled delta plan; do not invent an evaluation report.
-- The next action is `BOOTSTRAP.md`, not `Read .agents/orchestrator.md and begin Phase 1.` The orchestrator launches only after the product scaffold and baseline exist.
+- Contracts, Domain, Verifier, Infrastructure, Api shell, and tests are built.
+- `dotnet build` is green; `dotnet test` is 16 passed, 0 failed, 0 skipped.
+- `apps/web` and `apps/mobile` are absent. No frontend/mobile package set has been approved.
+- Bedrock invoke is blocked: ReadOnly cannot `InvokeModel`; the TeamAdmin token is invalid. See `AWS_PREFLIGHT.md` and `WAITING_FOR_CREDENTIALS.md`.
+- Official datasets are in `datasets/` (gitignored); see `DATASET_INVENTORY.md`. No fixture data is committed.
+- The next action is not `BOOTSTRAP.md`; B-000/B-001/B-002 are complete. See `BUILD_LOG.md` and `FINAL_REPORT.md`.
 
 ## Launch
 

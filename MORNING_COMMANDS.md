@@ -1,3 +1,5 @@
+> **Build update 2026-10-19:** contracts, solution, test harness, verifier, and rule engine are complete. Do not re-run A2–A4; they will collide with existing files. Start at A5/A7 and B2. See `BUILD_LOG.md`.
+
 # Morning Commands — H+0
 
 Read [MORNING_BRIEF.md](MORNING_BRIEF.md) first. Run these in order.
