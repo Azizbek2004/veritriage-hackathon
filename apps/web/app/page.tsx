@@ -71,6 +71,23 @@ type AuditVerification = AuditResponse & {
   total_events: number;
 };
 
+type Explanation = {
+  rulesFired: { ruleId: string; version: string; statutoryBasis: string; inputValue: number; threshold: number; operator: string; contribution: number }[];
+  rulesCheckedNotFired: { ruleId: string; version: string; statutoryBasis: string; inputValue: number; threshold: number; operator: string }[];
+  ruleVersions: Record<string, string>;
+};
+
+type AnalysisDoc = {
+  id: string;
+  caseId: string;
+  format: string;
+  documentHash: string;
+  generatedAt: string;
+  generatedBy: string;
+  signedBy?: string | null;
+  signatureHash?: string | null;
+};
+
 type BedrockStatus = {
   mode: string;
   latency_ms?: number;
@@ -164,7 +181,7 @@ type StressTestResult = {
   };
 };
 
-type Tab = "transaction" | "details" | "audit";
+type Tab = "transaction" | "details" | "audit" | "deep";
 type Filter = "ALL" | "FP" | "REVIEW" | "HIGH";
 
 const API = process.env.NEXT_PUBLIC_API_BASE ?? "http://127.0.0.1:5000";
@@ -225,6 +242,10 @@ export default function Home() {
   const [datasetStats, setDatasetStats] = useState<DatasetStats | null>(null);
   const [reprocessing, setReprocessing] = useState(false);
   const [auditError, setAuditError] = useState("");
+  const [documents, setDocuments] = useState<AnalysisDoc[]>([]);
+  const [deepBusy, setDeepBusy] = useState(false);
+  const [deepError, setDeepError] = useState("");
+  const [explanation, setExplanation] = useState<Explanation | null>(null);
   const [auditLoaded, setAuditLoaded] = useState(false);
   const [verifiedEvents, setVerifiedEvents] = useState<Record<number, boolean>>({});
   const [txDetail, setTxDetail] = useState<TransactionDetailData | null>(null);
@@ -338,6 +359,8 @@ export default function Home() {
 
   function openRow(row: Row) {
     setSelected(row);
+    setExplanation(null);
+    void loadExplanation(row.alertId);
     setApprover(INDEPENDENT);
     setBanner("");
     setInvestigation(null);
@@ -350,6 +373,8 @@ export default function Home() {
     setLedgerTotal(0);
     setAuditError("");
     setAuditLoaded(false);
+    setDocuments([]);
+    setDeepError("");
     setVerifiedEvents({});
     setTxDetail(null);
     setTxDetailLoading(true);
@@ -436,6 +461,64 @@ export default function Home() {
     } finally {
       setSigningBusy(false);
     }
+  }
+
+  async function loadExplanation(caseId: string) {
+    try {
+      const response = await fetch(`${API}/api/v1/cases/${caseId}/explanation`);
+      if (response.ok) setExplanation(await response.json());
+    } catch {
+      setExplanation(null);
+    }
+  }
+
+  async function loadDocuments() {
+    if (!selected) return;
+    setDeepError("");
+    try {
+      const response = await fetch(`${API}/api/v1/cases/${selected.alertId}/documents`);
+      if (!response.ok) throw new Error(`Documents ${response.status}`);
+      setDocuments(await response.json());
+    } catch {
+      setDeepError("Document history unavailable.");
+    }
+  }
+
+  async function generateDeepAnalysis() {
+    if (!selected) return;
+    setDeepBusy(true);
+    setDeepError("");
+    try {
+      const response = await fetch(`${API}/api/v1/cases/${selected.alertId}/deep-analysis?generatedBy=analyst.demo`, { method: "POST" });
+      if (!response.ok) throw new Error(`Deep analysis ${response.status}`);
+      const data = await response.json();
+      setToast(`Deep analysis generated · ${data.documentId}`);
+      await loadDocuments();
+    } catch {
+      setDeepError("Deep analysis generation failed. Retry.");
+    } finally {
+      setDeepBusy(false);
+    }
+  }
+
+  async function signDocument(id: string) {
+    try {
+      const response = await fetch(`${API}/api/v1/documents/${id}/sign`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ signedBy: "MLRO Marie Svobodová" }),
+      });
+      if (!response.ok) throw new Error("Sign failed");
+      setToast("Deep analysis signed by MLRO");
+      await loadDocuments();
+    } catch {
+      setToast("Document signing failed");
+    }
+  }
+
+  function showDeepAnalysis() {
+    setTab("deep");
+    void loadDocuments();
   }
 
   async function runLive() {
@@ -806,6 +889,7 @@ export default function Home() {
               <button role="tab" aria-selected={tab === "transaction"} className={tab === "transaction" ? "drawer-tab active" : "drawer-tab"} onClick={() => setTab("transaction")}>Transaction</button>
               <button role="tab" aria-selected={tab === "details"} className={tab === "details" ? "drawer-tab active" : "drawer-tab"} onClick={() => setTab("details")}>Details</button>
               <button role="tab" aria-selected={tab === "audit"} className={tab === "audit" ? "drawer-tab active" : "drawer-tab"} onClick={showAudit}>Audit Chain</button>
+              <button role="tab" aria-selected={tab === "deep"} className={tab === "deep" ? "drawer-tab active" : "drawer-tab"} onClick={showDeepAnalysis}>Deep Analysis</button>
             </div>
             <div className="drawer-body">
               {banner && (
@@ -967,6 +1051,21 @@ export default function Home() {
                     </div>
                   </div>
 
+                  {explanation && (
+                    <div className="detail-card">
+                      <div className="detail-label">Deterministic explanation</div>
+                      <div className="brand-subtitle">{explanation.rulesFired.length} rules fired · {explanation.rulesCheckedNotFired.length} checked and not fired</div>
+                      <div className="rule-list">
+                        {explanation.rulesFired.map((rule) => (
+                          <div className="rule-item" key={rule.ruleId}>
+                            <strong>{rule.ruleId} v{rule.version}</strong>
+                            <span>{rule.statutoryBasis} · {rule.operator} {rule.threshold} · input {rule.inputValue} · contribution {rule.contribution}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="detail-card legal-card">
                     <div className="detail-label">Statutory basis</div>
                     <div className="legal-citation">{citationOf(selected.reason)}</div>
@@ -1053,7 +1152,7 @@ export default function Home() {
                     <p className="brand-subtitle">4-eyes rule: the approver must differ from the executive. The same-person option is the demo trap.</p>
                   </div>
                 </>
-              ) : (
+              ) : tab === "audit" ? (
                 <div className="audit-panel">
                   <div className="badge-status cached ledger-badge">
                     <span className={chainValid ? "ledger-dot ok" : "ledger-dot bad"} />
@@ -1107,6 +1206,41 @@ export default function Home() {
                     <div className={chainValid ? "banner-ok" : "banner-violation"}>{chainStatus}</div>
                   )}
                   <p className="brand-subtitle">Each event hash is computed over the previous hash plus the event data.</p>
+                </div>
+              ) : (
+                <div className="deep-panel">
+                  <div className="detail-card">
+                    <div className="detail-label">Deep analysis</div>
+                    <div className="brand-subtitle">Markdown document · persisted under the case folder · approved Markdown-only for this sprint.</div>
+                    <button className="btn-primary" onClick={generateDeepAnalysis} disabled={deepBusy || selected.alertType !== "REVIEW"}>
+                      {deepBusy ? "Generating…" : "Generate Deep Analysis"}
+                    </button>
+                    {selected.alertType !== "REVIEW" && <p className="brand-subtitle">Only REVIEW/ESCALATE cases can generate a legal document.</p>}
+                  </div>
+                  {deepError && (
+                    <div className="banner-violation"><strong>{deepError}</strong><button className="btn-outline" onClick={loadDocuments}>Retry</button></div>
+                  )}
+                  {documents.length === 0 ? (
+                    <p className="brand-subtitle">No documents generated for this case yet.</p>
+                  ) : (
+                    <div className="document-list">
+                      {documents.map((doc) => (
+                        <div className="document-item" key={doc.id}>
+                          <div>
+                            <div className="detail-label">{doc.format.toUpperCase()} · {doc.generatedAt.slice(0, 19)}</div>
+                            <div className="mono doc-id">{doc.id}</div>
+                            <div className="brand-subtitle">{doc.signedBy ? `Signed by ${doc.signedBy}` : "Unsigned"} · {doc.documentHash.slice(0, 18)}…</div>
+                          </div>
+                          <div className="doc-actions">
+                            <a className="btn-outline" href={`${API}/api/v1/documents/${doc.id}`}>Download</a>
+                            <a className="btn-outline" href={`${API}/api/v1/documents/${doc.id}/bundle`}>Bundle</a>
+                            {!doc.signedBy && <button className="btn-primary" onClick={() => signDocument(doc.id)}>Sign</button>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <p className="brand-subtitle">Bundle contains analysis.md, evidence.json, audit_chain.json, rule_registry.json, fatf_references.json, and signatures.json.</p>
                 </div>
               )}
             </div>

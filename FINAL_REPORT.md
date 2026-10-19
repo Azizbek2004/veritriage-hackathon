@@ -20,7 +20,7 @@ The hero client K005397 is **1.71x volume / 1.71x count** (39,819.67 CZK declare
 
 ## Verified
 
-- `dotnet test`: **25/25**
+- `dotnet test`: **26/26**
 - `npm run build`: green
 - CSV: exact 11 columns
 - 4-eyes: same person 400; independent 200
@@ -54,3 +54,20 @@ The hero client K005397 is **1.71x volume / 1.71x count** (39,819.67 CZK declare
 - CSV `reason` now contains the exact quoted Czech clause and the actual 1.71x ratios.
 - `SOLUTION_2PAGE.md` and the QA war room are updated.
 - Honest boundary: the LLM does not autonomously select the tool; the deterministic pipeline retrieves and injects the excerpts. Do not claim autonomous model tool use.
+
+
+## Deep analysis & legal documents
+
+- 5 versioned rules (v1.0.0) and `ExplanationSnapshot` in the drawer.
+- `POST /cases/{id}/deep-analysis` generates a 9-section Markdown document, persisted under `documents/{caseId}/`.
+- `DEEP_ANALYSIS_GENERATED`/`DEEP_ANALYSIS_SIGNED` audit events.
+- ZIP bundle with analysis.md, evidence.json, audit_chain.json, rule_registry.json, fatf_references.json, signatures.json.
+- Markdown-only approved; no PDF package. Document hash verify endpoint works.
+
+
+## Deep Analysis
+
+- Drawer tab **Deep Analysis**; Generate for REVIEW/ESCALATE; Markdown document persisted under `documents/{caseId}/`.
+- Document includes evidence, priority breakdown, rules, verifier status, 4-eyes, audit excerpt, FATF references, disclaimer.
+- Sign endpoint + `DEEP_ANALYSIS_SIGNED`; bundle ZIP with 6 files; hash verify.
+- Markdown-only approved; no PDF package. PDF is a declared gap.

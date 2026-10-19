@@ -30,7 +30,7 @@
 
 ## Verification
 
-- `dotnet test`: **25/25 passed** (24 existing + golden hero snapshot).
+- `dotnet test`: **26/26 passed** (24 existing + golden hero snapshot + determinism test).
 - `npm run build`: green.
 - CSV header: intact.
 - 4-eyes bypass: blocked (400).

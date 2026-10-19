@@ -65,6 +65,11 @@ public static class FinregDeliverableEngine
         var s6a = LegalQuotes.Get("AML-253-2008-S6-1A");
         var s6b = LegalQuotes.Get("AML-253-2008-S6-1B");
         var s21_5 = LegalQuotes.Get("AML-253-2008-S21-5");
+        var volumeRule = RuleRegistry.Get("R-VOLUME-AML-01");
+        var structRule = RuleRegistry.Get("R-STRUCT-AML-01");
+        var pepRule = RuleRegistry.Get("R-PEP-AML-01");
+        var reviewRule = RuleRegistry.Get("R-REVIEW-PRIORITY-01");
+        string RuleTag(RuleDefinition? rule) => rule is null ? "" : $"[{rule.RuleId} v{rule.Version}] ";
         var quote = (LegalProvision? p) => p is null
             ? "(section text unavailable)"
             : $"[{p.ClauseId}] {p.Citation} \"{p.CzechText}\" — {p.Url}";
@@ -72,7 +77,7 @@ public static class FinregDeliverableEngine
         var components = $"priority {priority}/100 = B{bd.Base} + V{bd.Vol} + P{bd.Pep} + S{bd.Struct} + C{bd.Channel}";
         if (isFp)
         {
-            return $"{quote(s21_2)}; standard monitoring disposition (client {input.ClientId}); {components}";
+            return $"{RuleTag(reviewRule)}{quote(s21_2)}; standard monitoring disposition (client {input.ClientId}); {components}";
         }
 
         var parts = new List<string>();
@@ -84,17 +89,17 @@ public static class FinregDeliverableEngine
             var count = input.ExpectedCount > 0 && input.ActualCount > 0
                 ? $"; count {(input.ActualCount / (decimal)input.ExpectedCount).ToString("0.00", CultureInfo.InvariantCulture)}x ({input.ActualCount}/{input.ExpectedCount})"
                 : string.Empty;
-            parts.Add($"{quote(s6a)}; volume deviation {ratio}{count}");
+            parts.Add($"{RuleTag(volumeRule)}{quote(s6a)}; volume deviation {ratio}{count}");
         }
 
         if (bd.Struct > 0)
         {
-            parts.Add($"{quote(s6b)}; structuring component S{bd.Struct} (sub-threshold transfer pattern)");
+            parts.Add($"{RuleTag(structRule)}{quote(s6b)}; structuring component S{bd.Struct} (sub-threshold transfer pattern)");
         }
 
         if (input.Pep || bd.Pep > 0)
         {
-            parts.Add($"{quote(s21_5)}; PEP flag (client {input.ClientId})");
+            parts.Add($"{RuleTag(pepRule)}{quote(s21_5)}; PEP flag (client {input.ClientId})");
         }
 
         if (parts.Count == 0)

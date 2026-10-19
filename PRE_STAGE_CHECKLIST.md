@@ -83,7 +83,7 @@ dotnet test src/PayShield.sln --configuration Release
 cd apps/web && npm run build
 ```
 
-Expected: `25 passed, 0 failed`; web build green.
+Expected: `26 passed, 0 failed`; web build green.
 
 Have these open on the desktop:
 

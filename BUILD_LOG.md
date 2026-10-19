@@ -285,3 +285,12 @@ This is the honest phase log. It records what was built, what was verified, what
 - `BuildStatutoryReason` now embeds exact quoted Czech clauses and actual 1.71x volume/count ratios.
 - Added `tests/golden/verifier_hero_case.json` and golden test; suite 25/25.
 - Updated `SOLUTION_2PAGE.md`, `DEMO_SCRIPT.md`, `.agents/QA_WAR_ROOM.md`, and `LEGAL_GROUNDING_REPORT.md`.
+
+
+## Deterministic Logic & Legal Document Sprint — 2026-10-19
+
+- Added 5 versioned rules and `ExplanationSnapshot`; determinism endpoint and drawer rule list.
+- Added `ICaseRepository`, `IDeepAnalysisService`, file-backed document persistence, sign/bundle/verify endpoints.
+- Deep Analysis tab in the drawer; Markdown-only (no PDF package).
+- Added curated FATF references and bundle section.
+- Tests 26/26; build green; CSV/4-eyes/audit intact.

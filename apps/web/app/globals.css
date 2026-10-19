@@ -1152,3 +1152,13 @@ tbody td { white-space: nowrap; }
 .legal-head { display: flex; justify-content: space-between; gap: 10px; font: 700 10px var(--font-mono); color: var(--primary); }
 .legal-head span { color: var(--secondary); font-weight: 500; text-align: right; }
 .legal-item p { margin: 5px 0 0; color: var(--on-surface-variant); font-size: 10px; line-height: 1.45; }
+.deep-panel { display: flex; flex-direction: column; gap: 12px; }
+.document-list { display: flex; flex-direction: column; gap: 8px; }
+.document-item { display: flex; justify-content: space-between; gap: 10px; padding: 10px; border: 1px solid var(--outline-variant); border-radius: 8px; background: var(--surface-container-low); }
+.doc-id { font-size: 10px; overflow-wrap: anywhere; margin: 3px 0; }
+.doc-actions { display: flex; flex-direction: column; gap: 5px; align-items: stretch; }
+.doc-actions .btn-outline, .doc-actions .btn-primary { padding: 6px 8px; font-size: 10px; justify-content: center; }
+.rule-list { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+.rule-item { display: flex; flex-direction: column; gap: 2px; padding: 7px 8px; background: var(--surface-container-low); border: 1px solid var(--outline-variant); border-radius: 6px; }
+.rule-item strong { color: var(--primary); font: 700 10px var(--font-mono); }
+.rule-item span { color: var(--secondary); font-size: 10px; line-height: 1.4; }

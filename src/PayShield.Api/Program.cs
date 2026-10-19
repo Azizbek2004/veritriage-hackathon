@@ -24,6 +24,10 @@ builder.Services.AddSingleton<IBedrockService>(sp => new LiveBedrockService(null
 builder.Services.AddSingleton(_ => new DeliverableState(repoRoot));
 builder.Services.AddSingleton(_ => CnbTransactionIndex.Load(Path.Combine(repoRoot, "datasets", "CNB")));
 builder.Services.AddSingleton(_ => new FileAuditLedger(repoRoot));
+builder.Services.AddSingleton(_ => FatfCorpus.Load(Path.Combine(repoRoot, "fixtures", "fatf_references.json")));
+builder.Services.AddSingleton<ICaseRepository, CaseRepository>();
+builder.Services.AddSingleton(sp => new DeepAnalysisService(repoRoot, sp.GetRequiredService<CnbTransactionIndex>(), sp.GetRequiredService<FileAuditLedger>(), sp.GetRequiredService<FatfCorpus>()));
+builder.Services.AddSingleton<IDeepAnalysisService>(sp => sp.GetRequiredService<DeepAnalysisService>());
 
 var app = builder.Build();
 app.UseCors("cockpit");
@@ -151,6 +155,66 @@ app.MapPost("/api/v1/cases/verify-4-eyes", (FourEyesRequest request) =>
     FinregDeliverableEngine.IsFourEyesIndependent(request.Executive, request.Approver)
         ? Results.Ok(new { status = "ok" })
         : Results.Json(new { error = FinregDeliverableEngine.FourEyesViolation }, statusCode: 400));
+
+app.MapPost("/api/v1/verify/determinism/{caseId}", (string caseId, ICaseRepository repo) =>
+{
+    var row = repo.Get(caseId);
+    if (row is null) return Results.NotFound();
+    var a = ExplanationBuilder.Build(row);
+    var b = ExplanationBuilder.Build(row);
+    var reproducible = a.EvidenceHash == b.EvidenceHash && a.DecisionHash == b.DecisionHash;
+    return reproducible
+        ? Results.Ok(new { reproducible, input_hash = a.EvidenceHash, output_hash = a.DecisionHash, rule_versions_used = a.RuleVersions })
+        : Results.Json(new { reproducible, input_hash = a.EvidenceHash, output_hash = b.DecisionHash, error = "mismatch" }, statusCode: 500);
+});
+
+app.MapGet("/api/v1/cases/{id}/explanation", (string id, ICaseRepository repo) =>
+{
+    var row = repo.Get(id);
+    return row is null ? Results.NotFound() : Results.Ok(ExplanationBuilder.Build(row));
+});
+
+app.MapPost("/api/v1/cases/{id}/deep-analysis", (string id, ICaseRepository repo, DeepAnalysisService service, string? generatedBy) =>
+{
+    var row = repo.Get(id);
+    if (row is null) return Results.NotFound();
+    if (row.AlertType != "REVIEW") return Results.BadRequest(new { error = "Deep analysis only for REVIEW/ESCALATE cases" });
+    var doc = service.Generate(row, string.IsNullOrWhiteSpace(generatedBy) ? "analyst.demo" : generatedBy);
+    return Results.Ok(new { documentId = doc.Id, downloadUrl = $"/api/v1/documents/{doc.Id}", format = doc.Format, documentHash = doc.DocumentHash });
+});
+
+app.MapGet("/api/v1/cases/{id}/documents", (string id, DeepAnalysisService service) => Results.Ok(service.List(id)));
+
+app.MapGet("/api/v1/documents/{id}", (string id, DeepAnalysisService service) =>
+{
+    var doc = service.Get(id);
+    if (doc is null || !File.Exists(doc.FilePath)) return Results.NotFound();
+    return Results.Text(File.ReadAllText(doc.FilePath), "text/markdown");
+});
+
+app.MapGet("/api/v1/documents/{id}/verify", (string id, DeepAnalysisService service) =>
+{
+    var doc = service.Get(id);
+    if (doc is null) return Results.NotFound();
+    return Results.Ok(new { valid = service.Verify(doc), expected_hash = doc.DocumentHash, actual_hash = service.Verify(doc) ? doc.DocumentHash : "tampered" });
+});
+
+app.MapPost("/api/v1/documents/{id}/sign", (string id, DocumentSignRequest request, DeepAnalysisService service) =>
+{
+    var doc = service.Sign(id, request.SignedBy);
+    return doc is null ? Results.NotFound() : Results.Ok(new { status = "SIGNED", document_id = id, signed_by = doc.SignedBy, signature_hash = doc.SignatureHash });
+});
+
+app.MapGet("/api/v1/documents/{id}/bundle", (string id, DeepAnalysisService service, ICaseRepository repo) =>
+{
+    var doc = service.Get(id);
+    var row = doc is null ? null : repo.Get(doc.CaseId);
+    if (doc is null || row is null) return Results.NotFound();
+    return Results.File(service.Bundle(doc, row), "application/zip", $"{doc.Id}.zip");
+});
+
+app.MapGet("/api/v1/legal/fatf/{referenceId}", (string referenceId, FatfCorpus fatf) =>
+    fatf.Lookup(referenceId) is { } reference ? Results.Ok(reference) : Results.NotFound());
 
 app.MapGet("/api/v1/legal/section/{clauseId}", (string clauseId, LegalCorpus legal) =>
 {

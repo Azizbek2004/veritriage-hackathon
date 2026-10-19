@@ -121,6 +121,14 @@ Chain Verified: 5/5 events
 
 ---
 
+## Optional Deep Analysis (if a judge asks for the legal document)
+
+- Click **Deep Analysis** in the drawer.
+- Click **Generate Deep Analysis**.
+- Show the Markdown document sections: evidence, priority breakdown, rules, 4-eyes, audit excerpt, FATF references, disclaimer.
+- Download the **Bundle** (analysis.md, evidence.json, audit_chain.json, rule_registry.json, fatf_references.json, signatures.json).
+- Say: “This is the lawyer-ready Markdown bundle; PDF is intentionally deferred, and the document hash is verifiable.”
+
 ## If Something Breaks
 
 - **API is down:** show `rehearsal_output.csv` (already downloaded) and the `REHEARSAL.md` timing table. Do not fake the UI.
