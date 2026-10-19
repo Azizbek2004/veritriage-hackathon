@@ -39,7 +39,9 @@ var corpusPath = Directory.Exists(Path.Combine(repoRoot, "legal", "corpus"))
     : Path.Combine(repoRoot, "fixtures", "legal_corpus_cnb_aml.json");
 builder.Services.AddSingleton(_ => LegalCorpus.Load(corpusPath));
 builder.Services.AddSingleton<IBedrockService>(sp => new LiveBedrockService(null, sp.GetRequiredService<LegalCorpus>()));
-builder.Services.AddSingleton(_ => new DeliverableState(repoRoot));
+var priorityWeights = builder.Configuration.GetSection("Priority").Get<PriorityWeights>() ?? PriorityWeights.StatutoryDefaults;
+builder.Services.AddSingleton(priorityWeights);
+builder.Services.AddSingleton(_ => new DeliverableState(repoRoot, priorityWeights));
 builder.Services.AddSingleton(_ => CnbTransactionIndex.Load(Path.Combine(repoRoot, "datasets", "CNB")));
 builder.Services.AddSingleton(_ => new FileAuditLedger(repoRoot));
 builder.Services.AddSingleton(_ => FatfCorpus.Load(Path.Combine(repoRoot, "fixtures", "fatf_references.json")));
@@ -81,6 +83,16 @@ app.MapGet("/api/v1/bedrock/status", async (IBedrockService bedrock) =>
         });
     }
 });
+
+app.MapGet("/api/v1/priority/weights", (PriorityWeights weights) => Results.Ok(new
+{
+    @base = new { low = weights.Base.Low, medium = weights.Base.Medium, high = weights.Base.High, source = weights.Base.Source, rationale = weights.Base.Rationale },
+    volume = new { per_unit_ratio = weights.Volume.PerUnitRatio, cap = weights.Volume.Cap, source = weights.Volume.Source, rationale = weights.Volume.Rationale },
+    pep = new { weight = weights.Pep.Weight, source = weights.Pep.Source, rationale = weights.Pep.Rationale },
+    structuring = new { weight = weights.Structuring.Weight, source = weights.Structuring.Source, rationale = weights.Structuring.Rationale },
+    channel = new { weight = weights.Channel.Weight, source = weights.Channel.Source, rationale = weights.Channel.Rationale },
+    max_raw = weights.MaxRaw,
+}));
 
 app.MapGet("/api/v1/cases", (DeliverableState state) =>
     Results.Ok(state.Rows.OrderBy(r => r.Rank).ThenBy(r => r.AlertId, StringComparer.Ordinal)));

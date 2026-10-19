@@ -11,8 +11,9 @@ public static class FinregDeliverableEngine
     public const string LegalBasis = "AML Act No. 253/2008 Sb. § 6(1)(a); § 21(5)";
     public const string FourEyesViolation = "4-EYES VIOLATION [§ 21 AML Act / § 12 Decree 67/2018]";
 
-    public static IReadOnlyList<DeliverableCsvRow> ProcessSampleBatch(IReadOnlyList<CnbAlertInput> alerts)
+    public static IReadOnlyList<DeliverableCsvRow> ProcessSampleBatch(IReadOnlyList<CnbAlertInput> alerts, PriorityWeights? weights = null)
     {
+        weights ??= PriorityWeights.StatutoryDefaults;
         var ordered = alerts
             .OrderBy(a => RawPriority(a))
             .ThenBy(a => a.AlertId, StringComparer.Ordinal)
@@ -33,7 +34,7 @@ public static class FinregDeliverableEngine
                     : Math.Min(100, 80 + ((i - 40) % 6) * 4);
             priority = Math.Clamp(priority, 0, 100);
             var executiveRole = isFp ? "L1 AML Analyst" : "L2 Senior AML Specialist";
-            var bd = BuildBreakdown(priority, input, isFp);
+            var bd = BuildBreakdown(priority, input, isFp, weights);
             var reason = BuildStatutoryReason(input, priority, bd, isFp);
 
             var transactionId = input.AlertId.StartsWith("TX", StringComparison.OrdinalIgnoreCase)
@@ -148,18 +149,18 @@ public static class FinregDeliverableEngine
         return Math.Min(100, score);
     }
 
-    private static PriorityBreakdown BuildBreakdown(int priority, CnbAlertInput input, bool isFp)
+    private static PriorityBreakdown BuildBreakdown(int priority, CnbAlertInput input, bool isFp, PriorityWeights weights)
     {
-        var baseScore = isFp ? 10 : 40;
+        var baseScore = isFp ? weights.Base.Low : weights.Base.High;
         if (baseScore > priority) baseScore = priority;
-        var pep = input.Pep ? Math.Min(25, priority - baseScore) : 0;
+        var pep = input.Pep ? Math.Min(weights.Pep.Weight, priority - baseScore) : 0;
         var ratio = input.ExpectedVolume > 0 ? input.ActualVolume / input.ExpectedVolume : 1m;
         var velocity = isFp
             ? priority - baseScore
-            : Math.Clamp((int)Math.Round((ratio - 1m) * 15m, MidpointRounding.ToEven), 0, 30);
+            : Math.Clamp((int)Math.Round((ratio - 1m) * weights.Volume.VelocityScale, MidpointRounding.ToEven), 0, weights.Volume.Cap);
         velocity = Math.Min(velocity, Math.Max(0, priority - baseScore - pep));
-        var structure = isFp ? 0 : Math.Min(20, Math.Max(0, priority - baseScore - pep - velocity));
-        var channel = Math.Max(0, priority - baseScore - pep - velocity - structure);
+        var structure = isFp ? 0 : Math.Min(weights.Structuring.Weight, Math.Max(0, priority - baseScore - pep - velocity));
+        var channel = Math.Min(weights.Channel.Weight, Math.Max(0, priority - baseScore - pep - velocity - structure));
         return new PriorityBreakdown(baseScore, velocity, pep, structure, channel);
     }
 

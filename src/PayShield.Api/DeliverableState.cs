@@ -14,10 +14,12 @@ public sealed record DeliverableStats(
 public sealed class DeliverableState
 {
     private readonly string _repoRoot;
+    private readonly PriorityWeights _weights;
 
-    public DeliverableState(string repoRoot)
+    public DeliverableState(string repoRoot, PriorityWeights? weights = null)
     {
         _repoRoot = repoRoot;
+        _weights = weights ?? PriorityWeights.StatutoryDefaults;
         Reload();
     }
 
@@ -28,9 +30,9 @@ public sealed class DeliverableState
     public void Reload()
     {
         var load = FinregSampleLoader.LoadWithStats(_repoRoot, 45);
-        Rows = FinregDeliverableEngine.ProcessSampleBatch(load.Alerts);
+        Rows = FinregDeliverableEngine.ProcessSampleBatch(load.Alerts, _weights);
         var queueLoad = FinregSampleLoader.LoadWithStats(_repoRoot, 200);
-        var extras = FinregDeliverableEngine.ProcessSampleBatch(queueLoad.Alerts.Skip(45).ToList())
+        var extras = FinregDeliverableEngine.ProcessSampleBatch(queueLoad.Alerts.Skip(45).ToList(), _weights)
             .Select((row, i) => row with { AlertId = $"ALERT-{46 + i:000}" })
             .ToList();
         QueueRows = Rows.Concat(extras).ToList();
