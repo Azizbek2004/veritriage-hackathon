@@ -1,19 +1,40 @@
+using System.Diagnostics;
 using System.Globalization;
 using VeriTriage.Domain;
 
 namespace PayShield.Api;
 
+public sealed record SampleLoadResult(
+    IReadOnlyList<CnbAlertInput> Alerts,
+    int TransactionRows,
+    int ClientRows,
+    long BytesScanned,
+    double LoadMs,
+    string Source);
+
 public static class FinregSampleLoader
 {
-    public static IReadOnlyList<CnbAlertInput> Load(string repoRoot, int count = 45)
+    public static IReadOnlyList<CnbAlertInput> Load(string repoRoot, int count = 45) =>
+        LoadWithStats(repoRoot, count).Alerts;
+
+    public static SampleLoadResult LoadWithStats(string repoRoot, int count = 45)
     {
+        var sw = Stopwatch.StartNew();
         var transactions = Path.Combine(repoRoot, "datasets", "CNB", "transactions.csv");
         var clients = Path.Combine(repoRoot, "datasets", "CNB", "clients.csv");
-        if (!File.Exists(transactions) || !File.Exists(clients)) return Synthetic(count);
+        if (!File.Exists(transactions) || !File.Exists(clients))
+        {
+            var synthetic = Synthetic(count);
+            sw.Stop();
+            return new SampleLoadResult(synthetic, count, count, 0, sw.Elapsed.TotalMilliseconds, "Synthetic fallback");
+        }
 
+        var bytes = new FileInfo(transactions).Length + new FileInfo(clients).Length;
         var clientMap = new Dictionary<string, (bool Pep, int Risk)>(StringComparer.Ordinal);
+        var clientRows = 0;
         foreach (var line in File.ReadLines(clients).Skip(1))
         {
+            clientRows++;
             var parts = line.Split(';');
             if (parts.Length < 12) continue;
             var id = parts[0].Trim('\uFEFF', '"');
@@ -28,9 +49,13 @@ public static class FinregSampleLoader
         }
 
         var list = new List<CnbAlertInput>();
-        foreach (var line in File.ReadLines(transactions).Skip(1))
+        var transactionRows = 0;
+        var first = true;
+        foreach (var line in File.ReadLines(transactions))
         {
-            if (list.Count >= count) break;
+            if (first) { first = false; continue; }
+            transactionRows++;
+            if (list.Count >= count) continue;
             var parts = line.Split(';');
             if (parts.Length < 11) continue;
             var clientId = parts[1].Trim();
@@ -49,11 +74,12 @@ public static class FinregSampleLoader
                 "Ing. Jana Dvořáková"));
         }
 
-        if (list.Count == 0) return Synthetic(count);
+        if (list.Count == 0) list = Synthetic(count).ToList();
 
         var maxIndex = list.Select((a, i) => (a, i)).OrderByDescending(x => FinregDeliverableEngine.RawPriority(x.a)).First().i;
         list[maxIndex] = list[maxIndex] with { Pep = true };
-        return list;
+        sw.Stop();
+        return new SampleLoadResult(list, transactionRows, clientRows, bytes, sw.Elapsed.TotalMilliseconds, "ČNB official dataset");
     }
 
     private static IReadOnlyList<CnbAlertInput> Synthetic(int count)

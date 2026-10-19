@@ -55,6 +55,16 @@ type BedrockStatus = {
   error?: string;
 };
 
+type DataStats = {
+  deliverableRows: number;
+  transactionRows: number;
+  clientRows: number;
+  bytesScanned: number;
+  loadMs: number;
+  generatedAt: string;
+  source: string;
+};
+
 type Tab = "details" | "audit";
 type Filter = "ALL" | "FP" | "REVIEW" | "HIGH";
 
@@ -70,6 +80,19 @@ function priorityTone(priority: number) {
 
 function citationOf(reason: string) {
   return reason.split(" — ")[0]?.trim() || "§ 6(1)(a) / § 21(5)";
+}
+
+function formatNumber(value: number | undefined) {
+  return value === undefined ? "—" : new Intl.NumberFormat("en-US").format(value);
+}
+
+function formatBytes(value: number | undefined) {
+  return value === undefined ? "—" : `${(value / 1024 / 1024).toFixed(1)} MB`;
+}
+
+function formatRunTime(value: string | undefined) {
+  if (!value) return "—";
+  return new Date(value).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
 export default function Home() {
@@ -93,6 +116,10 @@ export default function Home() {
   const [bedrockMode, setBedrockMode] = useState<"LIVE_BEDROCK" | "LIVE_BEDROCK_CACHED">("LIVE_BEDROCK_CACHED");
   const [filter, setFilter] = useState<Filter>("ALL");
   const [query, setQuery] = useState("");
+  const [dataStats, setDataStats] = useState<DataStats | null>(null);
+  const [reprocessing, setReprocessing] = useState(false);
+  const [auditError, setAuditError] = useState("");
+  const [auditLoaded, setAuditLoaded] = useState(false);
 
   const sameApprover = approver === SAME;
 
@@ -125,9 +152,24 @@ export default function Home() {
         if (!response.ok) throw new Error(`API ${response.status}`);
         return response.json();
       })
-      .then((data: Row[]) => setRows(data))
+      .then((data: Row[]) => {
+        setRows(data);
+        const params = new URLSearchParams(window.location.search);
+        const caseId = params.get("case");
+        const row = caseId ? data.find((item) => item.alertId === caseId) : undefined;
+        if (row) {
+          setSelected(row);
+          setApprover(INDEPENDENT);
+          setTab(params.get("tab") === "audit" ? "audit" : "details");
+        }
+      })
       .catch((error: unknown) => setApiError(String(error)))
       .finally(() => setRowsLoading(false));
+
+    fetch(`${API}/api/v1/deliverable/stats`)
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data: DataStats | null) => setDataStats(data))
+      .catch(() => setDataStats(null));
 
     fetch(`${API}/api/v1/bedrock/status`)
       .then((response) => (response.ok ? response.json() : null))
@@ -148,6 +190,12 @@ export default function Home() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  useEffect(() => {
+    if (selected && tab === "audit" && !auditLoaded && !auditBusy && !auditError) {
+      void loadAudit();
+    }
+  }, [selected, tab, auditLoaded, auditBusy, auditError]);
+
   function openRow(row: Row) {
     setSelected(row);
     setApprover(INDEPENDENT);
@@ -158,6 +206,8 @@ export default function Home() {
     setChainStatus("");
     setChainValid(true);
     setAuditMode("DEMO_STATIC");
+    setAuditError("");
+    setAuditLoaded(false);
   }
 
   async function chooseApprover(value: string) {
@@ -214,39 +264,77 @@ export default function Home() {
   async function loadAudit() {
     if (!selected) return;
     setAuditBusy(true);
+    setAuditError("");
     try {
       const response = await fetch(`${API}/api/v1/cases/${selected.alertId}/audit`);
-      const data: AuditResponse = await response.json();
-      setAudit(data.events);
-      setChainValid(data.chain_valid);
-      setAuditMode(data.mode);
+      if (!response.ok) throw new Error(`Audit ${response.status}`);
+      const raw: AuditResponse | AuditEvent[] = await response.json();
+      const data: AuditResponse = Array.isArray(raw)
+        ? { events: raw, chain_valid: true, mode: "DEMO_STATIC" }
+        : raw;
+      const events = Array.isArray(data.events) ? data.events : [];
+      setAudit(events);
+      setChainValid(data.chain_valid ?? true);
+      setAuditMode(data.mode === "PERSISTENT" ? "PERSISTENT" : "DEMO_STATIC");
+    } catch {
+      setAudit([]);
+      setChainValid(false);
+      setAuditError("Audit chain could not be loaded. Retry the request.");
     } finally {
       setAuditBusy(false);
+      setAuditLoaded(true);
     }
   }
 
   async function verifyChain() {
     if (!selected) return;
     setAuditBusy(true);
+    setAuditError("");
     try {
       const response = await fetch(`${API}/api/v1/cases/${selected.alertId}/audit/verify`);
+      if (!response.ok) throw new Error(`Audit ${response.status}`);
       const data: AuditVerification = await response.json();
-      setAudit(data.events);
-      setChainValid(data.chain_valid);
-      setAuditMode(data.mode);
+      const events = Array.isArray(data.events) ? data.events : [];
+      setAudit(events);
+      setChainValid(data.chain_valid ?? false);
+      setAuditMode(data.mode === "PERSISTENT" ? "PERSISTENT" : "DEMO_STATIC");
       setChainStatus(
         data.chain_valid
           ? `Chain Verified: ${data.verified_events}/${data.total_events} events`
           : `Chain Invalid: ${data.verified_events}/${data.total_events} events`,
       );
+    } catch {
+      setAudit([]);
+      setChainValid(false);
+      setAuditError("Audit verification failed. Retry the request.");
     } finally {
       setAuditBusy(false);
+      setAuditLoaded(true);
     }
   }
 
   function showAudit() {
     setTab("audit");
     if (audit.length === 0) void loadAudit();
+  }
+
+  async function reprocess() {
+    setReprocessing(true);
+    setSelected(null);
+    setToast("");
+    try {
+      const response = await fetch(`${API}/api/v1/deliverable/reprocess`, { method: "POST" });
+      if (!response.ok) throw new Error(`Reprocess ${response.status}`);
+      const data: { summary: DataStats; rows: Row[] } = await response.json();
+      setRows(data.rows);
+      setDataStats(data.summary);
+      setApiError("");
+      setToast(`Reprocessed ${formatNumber(data.summary.transactionRows)} transactions in ${Math.round(data.summary.loadMs)} ms`);
+    } catch {
+      setToast("Reprocess failed. Check the API and try again.");
+    } finally {
+      setReprocessing(false);
+    }
   }
 
   function downloadAudit() {
@@ -309,7 +397,7 @@ export default function Home() {
 
       <section className="kpi-grid" aria-label="Deliverable summary">
         <div className="kpi-card">
-          <div className="kpi-label">Alerts <span>45</span></div>
+          <div className="kpi-label">Alerts <span>{stats.total}</span></div>
           <div className="kpi-value">{stats.total}</div>
           <div className="kpi-sub">{stats.fp} FP · {stats.review} review</div>
         </div>
@@ -328,6 +416,42 @@ export default function Home() {
           <div className="kpi-value">21.1</div>
           <div className="kpi-sub">€1.16M/yr · 21.1 FTE</div>
         </div>
+      </section>
+
+      <section className="data-strip" aria-label="Processed data">
+        <div className="data-item">
+          <span>Source</span>
+          <strong>{dataStats?.source ?? "ČNB dataset"}</strong>
+          <small>official input</small>
+        </div>
+        <div className="data-item">
+          <span>Scanned</span>
+          <strong>{formatNumber(dataStats?.transactionRows)}</strong>
+          <small>transactions</small>
+        </div>
+        <div className="data-item">
+          <span>Clients</span>
+          <strong>{formatNumber(dataStats?.clientRows)}</strong>
+          <small>joined records</small>
+        </div>
+        <div className="data-item">
+          <span>Alerts built</span>
+          <strong>{formatNumber(dataStats?.deliverableRows ?? stats.total)}</strong>
+          <small>FINREG rows</small>
+        </div>
+        <div className="data-item">
+          <span>Payload</span>
+          <strong>{formatBytes(dataStats?.bytesScanned)}</strong>
+          <small>read from disk</small>
+        </div>
+        <div className="data-item">
+          <span>Last run</span>
+          <strong>{dataStats ? `${Math.round(dataStats.loadMs)} ms` : "—"}</strong>
+          <small>{formatRunTime(dataStats?.generatedAt)}</small>
+        </div>
+        <button className="btn-outline data-action" onClick={reprocess} disabled={reprocessing}>
+          {reprocessing ? "Reprocessing…" : "Reprocess"}
+        </button>
       </section>
 
       <section className="toolbar" aria-label="Filter alerts">
@@ -424,11 +548,6 @@ export default function Home() {
           </table>
         </div>
       </div>
-
-      <footer className="footer">
-        <div><strong>21.1 FTEs saved</strong> · €1.16M/yr · 45-alert FINREG sample</div>
-        <div>Deterministic priority · 4-eyes enforced · hash-logged</div>
-      </footer>
 
       {selected && (
         <>
@@ -540,19 +659,25 @@ export default function Home() {
                   {auditMode === "DEMO_STATIC" && (
                     <div className="badge-status cached">DEMO_STATIC · production appends at write time</div>
                   )}
+                  {auditError && (
+                    <div className="banner-violation">
+                      <strong>{auditError}</strong>
+                      <button className="btn-outline" onClick={loadAudit}>Retry</button>
+                    </div>
+                  )}
                   <div className="timeline">
-                    {audit.map((event) => (
-                      <div className="timeline-item" key={event.hash}>
+                    {audit.map((event, index) => (
+                      <div className="timeline-item" key={`${event.event}-${index}`}>
                         <div className={chainValid ? "timeline-dot" : "timeline-dot invalid"}>{chainValid ? "✓" : "!"}</div>
                         <div className="timeline-content">
                           <div className="timeline-event">{event.event}</div>
-                          <div className="timeline-meta">{event.timestamp} · {event.hash.slice(0, 12)}</div>
+                          <div className="timeline-meta">{event.timestamp} · {event.hash?.slice(0, 12) ?? "—"}</div>
                           <button className="copy" onClick={() => copyHash(event.hash)}>copy hash</button>
                         </div>
                       </div>
                     ))}
                   </div>
-                  {audit.length === 0 && !auditBusy && <p className="brand-subtitle">No audit events loaded.</p>}
+                  {audit.length === 0 && !auditBusy && !auditError && <p className="brand-subtitle">No audit events loaded.</p>}
                   <div className="audit-actions">
                     <button className="btn-primary" onClick={verifyChain} disabled={auditBusy}>
                       {auditBusy ? "Verifying…" : "Verify Chain"}

@@ -11,4 +11,8 @@ API proof (no 4-eyes PNG; Playwright/Puppeteer are not installed):
 - `audit_chain_verify.json` — 5/5, `mode: DEMO_STATIC`.
 - `csv_header.txt` — the exact 11-column header.
 
-The light screenshot is the visual proof that CORS, the live badge, and the 11-column table work in a normal browser.
+The light screenshot is the visual proof that CORS, the probe-driven badge, the data strip, and the 11-column table work in a normal browser.
+
+Audit view:
+
+- `audit_chain.png` — deep link `?case=ALERT-045&tab=audit`; five-event timeline, DEMO_STATIC label, no crash.

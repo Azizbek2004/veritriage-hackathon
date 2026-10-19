@@ -1,19 +1,13 @@
-# Bedrock Credentials Status: LIVE
+# Bedrock Credentials Status: INTERMITTENT
 
-The live Bedrock path is working as of 2026-10-19.
+The code probes Bedrock on every status request; the label is never hardcoded.
 
-## Verified
+- Earlier: `LIVE_BEDROCK` (1207ms probe, 12706ms investigation).
+- Latest: `LIVE_BEDROCK_CACHED` with an SSL error.
+- The cassette is the honest fallback.
 
-- `/api/v1/bedrock/status` → `mode: "LIVE_BEDROCK"`, **1207ms** probe.
-- `/api/v1/cases/ALERT-045/investigation` → `mode: "LIVE_BEDROCK"`, **12706ms**, 4 claims, § 21(5) legal basis.
-- Model: `eu.anthropic.claude-sonnet-4-5-20250929-v1:0`, region `eu-central-1`.
+## Stage Rule
 
-## Fallback
+Use whichever mode the badge and panel show. If cached, say “cached for demo stability.” Do not claim live.
 
-If credentials or TLS fail, the service returns `LIVE_BEDROCK_CACHED` and the UI
-shows the yellow CACHED badge. Do not force the LIVE label.
-
-## Stage Note
-
-The live call takes ~12.7s. Pre-warm it before the 5-minute timer or use the
-cassette fallback. See [AWS_BEDROCK_STATUS.md](AWS_BEDROCK_STATUS.md).
+See [AWS_BEDROCK_STATUS.md](AWS_BEDROCK_STATUS.md).

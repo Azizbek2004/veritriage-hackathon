@@ -34,7 +34,7 @@ aws bedrock-runtime converse \
 - **If it succeeds:** `/api/v1/bedrock/status` must return `mode: "LIVE_BEDROCK"`; the UI badge is already driven by that probe. Pre-warm the ALERT-045 investigation.
 - **If it fails:** keep the cassette and the `LIVE_BEDROCK_CACHED` label. Do not fake a live call.
 
-The current build is live; the drawer displays the actual `LIVE_BEDROCK` or `LIVE_BEDROCK_CACHED` mode from the response.
+The build is probe-driven; the drawer displays the actual `LIVE_BEDROCK` or `LIVE_BEDROCK_CACHED` mode from the response. Use the script path that matches the badge.
 
 ## 3. Browser Rehearsal
 

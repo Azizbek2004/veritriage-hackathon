@@ -254,3 +254,14 @@ This is the honest phase log. It records what was built, what was verified, what
 - Bedrock became live during this pass: probe `LIVE_BEDROCK` 1207ms; investigation `LIVE_BEDROCK` 12706ms, 4 claims, § 21(5) legal basis.
 - Screenshot: `screenshots/cockpit_light.png`; normal Chrome on 3100, no security flags.
 - Tests remain 24/24; web build green.
+
+
+## Data Cockpit + Audit Crash Fix — 2026-10-19
+
+- Added `/api/v1/deliverable/stats` and `/api/v1/deliverable/reprocess`.
+- Loader now scans all 397,853 transactions and 5,493 clients; stats report 36,972,049 bytes and ~37–49ms.
+- Added data strip + Reprocess button; removed duplicate footer; compacted all 11 columns.
+- Audit tab now normalizes array/object responses, handles errors with Retry, and has a Next.js error boundary.
+- Deep link `?case=ALERT-045&tab=audit` verifies the audit timeline without a crash: `screenshots/audit_chain.png`.
+- Bedrock is probe-driven; latest probe cached, earlier live. UI follows the probe.
+- `dotnet test` 24/24; `npm run build` green.

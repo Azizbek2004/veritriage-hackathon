@@ -46,14 +46,14 @@
 
 **Proof:** [screenshots/cockpit_light.png](screenshots/cockpit_light.png)
 
-## FIX 5 — Live Bedrock: LIVE
+## FIX 5 — Live Bedrock: INTERMITTENT
 
-- Real probe: `mode: "LIVE_BEDROCK"`, 1207ms.
-- Real investigation: `LIVE_BEDROCK`, 12706ms, 4 claims, § 21(5) legal basis.
-- Cassette remains a labeled fallback.
+- Earlier probe: `LIVE_BEDROCK`, 1207ms; investigation 12706ms, 4 claims.
+- Latest probe: `LIVE_BEDROCK_CACHED` with an SSL error.
+- The UI is probe-driven; the cassette remains labeled.
 - Evidence: [AWS_BEDROCK_STATUS.md](AWS_BEDROCK_STATUS.md).
 
-**Live is verified.** Do not say live if the probe/response says cached.
+**Say live only when the current badge/panel says LIVE_BEDROCK.**
 
 ## FIX 6 — Docs/Tests Alignment: FIXED
 

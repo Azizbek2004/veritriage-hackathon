@@ -1,85 +1,94 @@
-# FINAL REPORT — Advanced Cockpit + Live Bedrock
+# FINAL REPORT — Data Cockpit + Safe Audit Chain
 
 **Date:** 2026-10-19
-**Status:** Frontend advanced. Bedrock is **live**. GitHub is pushed. Human rehearsal remains.
+**Status:** UI/UX advanced. Audit chain crash fixed. Data volume + reprocess added. Bedrock is **probe-driven**; the latest probe is cached.
 
-## Frontend Advancements
+## New UX
 
-- **KPI strip:** 45 alerts, 30 FP, 15 review, 5 high (1 PEP), approved count, 21.1 FTE.
-- **Filter and search:** All / FP / Review / High, plus search by alert, client, or transaction.
-- **PEP badge** on § 21(5) rows.
-- **Decision drawer:** alert type, priority, executive, 4-eyes state, statutory basis, and full reason.
-- **Live/cached Bedrock card:** mode, model, latency, 4 claim cards, legal basis.
-- **Audit Chain:** timeline with 5 events, green/red chain state, copy-hash, Verify Chain, and **Download audit JSON**.
-- **4-eyes guardrail:** same-person state is red and blocks the signing button.
-- **Light Scandinavian design system** preserved; no new packages; external Google Fonts import removed so the table renders offline.
-- All 11 FINREG columns fit the 1440px shell.
+- **Data strip:** 397,853 ČNB transactions, 5,493 clients, 45 FINREG alerts, 35.3 MB read, last run 37 ms.
+- **Reprocess button:** calls `POST /api/v1/deliverable/reprocess`, re-scans the official files, updates the rows and stats, and toasts the new runtime.
+- **KPIs:** alerts, FP/review split, high-priority/PEP count, approvals in this session, 21.1 FTE.
+- **Filters + search:** All / FP / Review / High and client/alert/transaction search.
+- **Decision drawer:** statutory basis, 4-eyes state, live/cached Bedrock mode, claim cards, and legal citation.
+- **Audit chain:** safe fetch/verify, explicit error with retry, 5-event timeline, copy hash, Verify Chain, Download audit JSON.
+- **Deep links:** `?case=ALERT-045&tab=audit` opens the audit drawer directly; this was used to verify the crash fix.
+- **Error boundary:** `app/error.tsx` prevents a single render error from blanking the cockpit.
+- External Google Fonts import removed so the table renders without network access.
+- All 11 FINREG columns fit the 1440px shell; footer duplicate removed.
 
-![Cockpit](screenshots/cockpit_light.png)
+## Audit Chain Crash — Fixed
 
-## Live Bedrock
+The previous audit tab assumed the endpoint always returned `{events: [...]}`. If the endpoint returned an array, an error, or a malformed payload, `audit.map` crashed the page.
 
-Real probe (`/api/v1/bedrock/status`):
+Now:
+
+- `/audit` and `/audit/verify` responses are normalized.
+- `events` is always an array.
+- Fetch/parse/verify failures set a visible error with a Retry button.
+- A Next.js error boundary catches any remaining render error.
+- Deep-link screenshot: [screenshots/audit_chain.png](screenshots/audit_chain.png).
+
+## Data Processing
+
+`GET /api/v1/deliverable/stats`:
 
 ```json
 {
-  "mode": "LIVE_BEDROCK",
-  "model": "eu.anthropic.claude-sonnet-4-5-20250929-v1:0",
-  "region": "eu-central-1",
-  "latency_ms": 1207,
-  "error": null
+  "deliverableRows": 45,
+  "transactionRows": 397853,
+  "clientRows": 5493,
+  "bytesScanned": 36972049,
+  "loadMs": 48.9,
+  "source": "ČNB official dataset"
 }
 ```
 
-Real investigation (`/api/v1/cases/ALERT-045/investigation`):
+`POST /api/v1/deliverable/reprocess` re-runs the scan and returns `{summary, rows}`. The button is wired to it.
 
-- `mode`: `LIVE_BEDROCK`
-- `latency_ms`: **12706**
-- 4 claims
-- legal basis: `AML Act No. 253/2008 Sb. § 21(5); Payment Services Regulation (EU) 2015/847 Article 83`
+## Bedrock Status — Probe-Driven
 
-The cassette remains a labeled fallback. If the live call fails, the UI must show `LIVE_BEDROCK_CACHED`; the badge is driven by the probe, not a hardcoded string.
+The badge is not hardcoded. The latest probe returned:
 
-## Integrity Fixes Still in Place
+```json
+{
+  "mode": "LIVE_BEDROCK_CACHED",
+  "latency_ms": 1229,
+  "error": "The SSL connection could not be established, see inner exception."
+}
+```
 
-- `/approve` rejects the same person with 400 and the exact 4-eyes body.
-- `/audit` returns `mode: "DEMO_STATIC"`; the UI labels it.
-- CORS allows 3000/3100 on localhost and 127.0.0.1.
-- 24 backend tests; `npm run build` green.
+Earlier probes returned `LIVE_BEDROCK` (1207ms probe, 12706ms investigation). The live path is intermittent. The UI correctly shows **CACHED** when the probe fails, and the cassette is labeled. Do not claim live unless the badge and panel say `LIVE_BEDROCK`.
 
 ## Verified
 
-- `dotnet test` — **24 passed, 0 failed, 0 skipped**.
+- `dotnet test` — **24 passed, 0 failed**.
 - `npm run build` — green.
-- `npm test` — exit 0 (zero Node tests).
-- CSV — exact 11-column header, 45 rows, 30/10/5.
-- 4-eyes — same person 400; Marie 200.
-- Audit — `DEMO_STATIC`, 5/5.
-- CORS — `Access-Control-Allow-Origin: http://localhost:3100`.
-- Normal Chrome on `http://localhost:3100` loads the table; no `--disable-web-security`.
-- Backend rehearsal — 0.0356s.
+- CSV header — exact 11 columns.
+- 4-eyes — same person 400; independent 200.
+- Stats — 397,853 transactions / 5,493 clients / 45 alerts.
+- Reprocess — 200, 45 rows, ~37ms.
+- Audit — `DEMO_STATIC`, 5/5, no crash; deep link verified.
+- Normal Chrome on `http://localhost:3100`; no security flags.
 - GitHub — public, `main` pushed.
 
 ## Honest Win Probability
 
 | State | Probability |
 |---|---:|
-| Current: live Bedrock + advanced cockpit, no human rehearsal | **55%** |
-| After 3× rehearsal of the 5-minute script | **60–65%** |
-| If live latency exceeds 15s or the probe falls back | **55–60%** |
-
-The live investigation took 12.7s. That is within the 30s final segment, but it must be pre-warmed or the presenter must be ready to use the labeled cassette.
+| Current: polished cockpit, cached Bedrock, no human rehearsal | **50%** |
+| After three rehearsals of the 5-minute script | **55–60%** |
+| If the Bedrock probe is stably live | **60–65%** |
 
 ## Human Actions
 
-1. Pre-warm `/api/v1/cases/ALERT-045/investigation` before the timer; confirm `mode: LIVE_BEDROCK` and the 12s latency.
-2. Rehearse [DEMO_SCRIPT.md](DEMO_SCRIPT.md) three times on `http://localhost:3100` in a normal browser.
+1. Pre-warm the investigation before the timer; confirm the badge/panel mode and use the matching script path.
+2. Rehearse [DEMO_SCRIPT.md](DEMO_SCRIPT.md) three times on `http://localhost:3100`.
 3. Record `backup_video.mp4`.
-4. Push the final commit.
+4. If Bedrock is cached, say “cached for demo stability” — never “live.”
 
 ## Links
 
+- [screenshots/cockpit_light.png](screenshots/cockpit_light.png)
+- [screenshots/audit_chain.png](screenshots/audit_chain.png)
 - [AWS_BEDROCK_STATUS.md](AWS_BEDROCK_STATUS.md)
-- [FIX_LOG.md](FIX_LOG.md)
-- [REHEARSAL.md](REHEARSAL.md)
-- [screenshots/README.md](screenshots/README.md)
+- [DEMO_SCRIPT.md](DEMO_SCRIPT.md)

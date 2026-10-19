@@ -101,9 +101,9 @@ Chain Verified: 5/5 events
 
 ## 4:30 – 5:00 [THE BEDROCK INVESTIGATION]
 
-**Action:** click the **Details** tab. Click **Investigate**. The live Sonnet 4.5 call takes about 12 seconds; the badge and panel must say LIVE_BEDROCK.
+**Action:** click the **Details** tab. Click **Investigate**. If the badge says LIVE, the call takes about 12 seconds; if it says CACHED, the cassette returns immediately. Read the badge and panel before speaking.
 
-**Show:** the `LIVE_BEDROCK` label and the legal citation panel.
+**Show:** the actual mode label (`LIVE_BEDROCK` or `LIVE_BEDROCK_CACHED`) and the legal citation panel.
 
 **Say:**
 > “The Bedrock agent assembled the legal dossier live: § 21(5) for the PEP exposure and § 6(1)(a) for the monitoring duty. If the network falls back, the panel says LIVE_BEDROCK_CACHED — we never relabel the cassette.”

@@ -16,12 +16,11 @@ builder.Services.AddCors(options => options.AddPolicy("cockpit", policy =>
     ).AllowAnyHeader().AllowAnyMethod()));
 
 builder.Services.AddSingleton<IBedrockService>(_ => new LiveBedrockService());
+var repoRoot = Path.GetFullPath(Path.Combine(builder.Environment.ContentRootPath, "..", ".."));
+builder.Services.AddSingleton(_ => new DeliverableState(repoRoot));
 
 var app = builder.Build();
 app.UseCors("cockpit");
-
-var repoRoot = Path.GetFullPath(Path.Combine(app.Environment.ContentRootPath, "..", ".."));
-var rows = FinregDeliverableEngine.ProcessSampleBatch(FinregSampleLoader.Load(repoRoot));
 
 app.MapGet("/api/v1/health", () => Results.Ok(new { status = "ok", mode = "finreg" }));
 
@@ -51,14 +50,22 @@ app.MapGet("/api/v1/bedrock/status", async (IBedrockService bedrock) =>
     }
 });
 
-app.MapGet("/api/v1/deliverable/sample", () => Results.Ok(rows));
+app.MapGet("/api/v1/deliverable/sample", (DeliverableState state) => Results.Ok(state.Rows));
 
-app.MapGet("/api/v1/deliverable/csv", () =>
-    Results.Text(FinregDeliverableEngine.SerializeToCsv(rows), "text/csv", Encoding.UTF8));
+app.MapGet("/api/v1/deliverable/stats", (DeliverableState state) => Results.Ok(state.Stats));
 
-app.MapGet("/api/v1/cases/{id}/investigation", async (string id, IBedrockService bedrock) =>
+app.MapPost("/api/v1/deliverable/reprocess", (DeliverableState state) =>
 {
-    var matching = rows.FirstOrDefault(r => r.AlertId.Equals(id, StringComparison.OrdinalIgnoreCase));
+    state.Reload();
+    return Results.Ok(new { summary = state.Stats, rows = state.Rows });
+});
+
+app.MapGet("/api/v1/deliverable/csv", (DeliverableState state) =>
+    Results.Text(FinregDeliverableEngine.SerializeToCsv(state.Rows), "text/csv", Encoding.UTF8));
+
+app.MapGet("/api/v1/cases/{id}/investigation", async (string id, IBedrockService bedrock, DeliverableState state) =>
+{
+    var matching = state.Rows.FirstOrDefault(r => r.AlertId.Equals(id, StringComparison.OrdinalIgnoreCase));
     var clientDetails = matching != null
         ? $"Client {matching.ClientId}, Alert Type: {matching.AlertType}, Reason: {matching.Reason}"
         : $"Alert {id}";
@@ -96,9 +103,9 @@ app.MapGet("/api/v1/cases/{id}/audit/verify", (string id) =>
     });
 });
 
-app.MapPost("/api/v1/cases/{id}/approve", (string id, ApproveRequest request) =>
+app.MapPost("/api/v1/cases/{id}/approve", (string id, ApproveRequest request, DeliverableState state) =>
 {
-    var matching = rows.FirstOrDefault(r => r.AlertId.Equals(id, StringComparison.OrdinalIgnoreCase));
+    var matching = state.Rows.FirstOrDefault(r => r.AlertId.Equals(id, StringComparison.OrdinalIgnoreCase));
     if (matching is null) return Results.NotFound();
 
     var validation = ApprovalPolicy.Validate(matching.ExecutivePerson, request.ApproverId);
