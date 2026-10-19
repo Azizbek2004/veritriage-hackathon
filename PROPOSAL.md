@@ -69,3 +69,49 @@ executive_role,executive_person,approver,reason,log
 ```
 
 The exact `FinregDeliverableEngine.cs` values/formula still were not supplied. `alert_type`, `triage`, and `executive_role` are our documented interpretation. If FINREG requires different value vocabularies, only the mapping changes; the header row is exact.
+
+## P4 — Production Hardening Package Set (NOT APPROVED)
+
+The production-hardening brief requires packages that are not in the current `.csproj` or `package.json`. Per the brief's own hard rule, I stopped before adding them.
+
+### Backend
+
+| Package | Why |
+|---|---|
+| `Microsoft.EntityFrameworkCore` | Persistent audit, cases, approvals, idempotency |
+| `Npgsql.EntityFrameworkCore.PostgreSQL` | Postgres provider |
+| `Microsoft.EntityFrameworkCore.Design` | Migrations |
+| `Serilog.AspNetCore` + `Serilog.Sinks.Console` | Structured JSON request logging |
+| `Swashbuckle.AspNetCore` | Generated OpenAPI |
+| `Microsoft.AspNetCore.Authentication.JwtBearer` | RBAC / JWT |
+
+`Microsoft.AspNetCore.RateLimiting` is in the shared framework and needs no package. SignalR server is in the shared framework; the client needs `@microsoft/signalr`.
+
+### Frontend
+
+| Package | Why |
+|---|---|
+| `zustand` | Role store |
+| `@tanstack/react-query` | Typed server-state hooks |
+| `@microsoft/signalr` | Real-time updates |
+| `vitest`, `@testing-library/react`, `jsdom` | Component tests |
+| `@axe-core/react` or equivalent | Accessibility checks |
+
+### Mobile
+
+A new Expo app needs `expo`, `expo-camera`, `expo-secure-store`, `expo-local-authentication`, `expo-barcode-generator`, `@noble/curves`, React Native, and device/simulator testing. This is a new app, not a package bump.
+
+### Infrastructure / External
+
+- PostgreSQL server (local or container).
+- A real phone or iOS Simulator with biometrics for the signing checkpoint.
+- ARES network access for the real client (can be tested separately).
+- S3 or local `exports/` for the signed audit export.
+
+### Time Reality
+
+The brief budgets 10 hours and a 20-hour hard cap. A genuinely production-grade implementation of Phases 1–5 (including Postgres, EF migrations, SignalR, RBAC, role-based frontend, Expo signing, webhooks, and 50+ tests) is a multi-day build, not a 10-hour one. The honest ceiling for this session is a partial hardening pass, not 9.0/10.
+
+### Recommendation
+
+Approve the package set and choose a **post-pitch** hardening window, or skip to rehearsal now. The current demo is live, tested, and visually ready; the remaining risk is stage rehearsal, not code volume.
