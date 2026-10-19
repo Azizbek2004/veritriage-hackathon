@@ -27,3 +27,5 @@ Forensic views:
 - `dossiers.png` — Legal Dossiers & History tab with seeded counsel archive and printable HTML links.
 
 - `METHODOLOGY_2PAGER.pdf` — two-page FINREG methodology (formula, vectors, 4-eyes, dual-mode).
+
+- `priority_hardening.png` — 45-row priority table with confidence, V11/S20 breakdown, and 0-mismatch sensitivity panel.

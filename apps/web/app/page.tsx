@@ -343,7 +343,7 @@ export default function Home() {
       fp: list.filter((row) => row.alertType === "FP").length,
       review: list.filter((row) => row.alertType === "REVIEW").length,
       high: list.filter((row) => row.priority >= 75).length,
-      pep: list.filter((row) => row.reason?.includes("§ 21(5)")).length,
+      pep: list.filter((row) => row.reason?.includes("§ 9a")).length,
       approved: approved.size,
     };
   }, [rows, approved]);
@@ -428,7 +428,11 @@ export default function Home() {
   const filteredRows = useMemo(() => {
     if (!Array.isArray(sensitivityRows ?? rows)) return [];
     const needle = query.trim().toLowerCase();
-    return (sensitivityRows ?? rows).filter((row) => {
+    const source = sensitivityRows ?? [...rows].sort((a, b) =>
+      (b.priority_raw ?? b.priority) - (a.priority_raw ?? a.priority)
+      || (b.confidence_score ?? 0) - (a.confidence_score ?? 0)
+      || a.alertId.localeCompare(b.alertId));
+    return source.filter((row) => {
       const matchesFilter =
         filter === "ALL" || (filter === "HIGH" ? row.priority >= 75 : row.alertType === filter);
       const matchesQuery =
@@ -995,7 +999,7 @@ export default function Home() {
         <div className="kpi-card">
           <div className="kpi-label">High priority <span>{stats.pep} PEP</span></div>
           <div className="kpi-value">{stats.high}</div>
-          <div className="kpi-sub">Priority 75+ · § 21(5)</div>
+          <div className="kpi-sub">Priority 75+ · § 9a(2)(c)</div>
         </div>
         <div className="kpi-card">
           <div className="kpi-label">Approved here <span>4-eyes</span></div>
@@ -1135,7 +1139,7 @@ export default function Home() {
                 <tr><td colSpan={10} className="loading-row">No alerts match this filter.</td></tr>
               ) : (
                 visibleRows.map((row) => {
-                  const isPep = row.reason.includes("§ 21(5)");
+                  const isPep = row.reason.includes("§ 9a") || row.reason.toLowerCase().includes("pep");
                   const isSelected = selected?.alertId === row.alertId;
                   return (
                     <tr

@@ -103,7 +103,7 @@ app.MapGet("/api/v1/cases/{id}", (string id, DeliverableState state) =>
     return row is null ? Results.NotFound() : Results.Ok(row);
 });
 
-app.MapGet("/api/v1/deliverable/sample", (DeliverableState state) => Results.Ok(state.QueueRows));
+app.MapGet("/api/v1/deliverable/sample", (DeliverableState state) => Results.Ok(state.Rows));
 
 app.MapGet("/api/v1/deliverable/stats", (DeliverableState state) => Results.Ok(state.Stats));
 
