@@ -1525,3 +1525,4 @@ tbody td { white-space: nowrap; }
 .top-badge.new { color: var(--warning); background: var(--warning-container); }
 .top-badge.drop { color: var(--danger); background: var(--danger-container); }
 .raw-pill { display: inline-block; margin-left: 4px; font: 700 8px var(--font-mono); color: var(--secondary); }
+.status-pill.pep { margin-left: 4px; }
