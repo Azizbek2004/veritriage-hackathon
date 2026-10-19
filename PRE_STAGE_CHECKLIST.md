@@ -64,7 +64,7 @@ Check each time:
 - Green **APPROVED** pill + audit-hash toast.
 - **Audit Chain** tab shows 5 events.
 - **Verify Chain** shows `Chain Verified: 5/5 events`.
-- **Investigate** shows `LIVE_BEDROCK` and the legal citations (or `LIVE_BEDROCK_CACHED` if the network falls back).
+- **Investigate** shows `LIVE_BEDROCK` and the legal citations (or `SNAPSHOT` if the network falls back).
 
 ## 4. Backup Video
 

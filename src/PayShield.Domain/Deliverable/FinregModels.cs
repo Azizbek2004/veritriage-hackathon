@@ -14,6 +14,14 @@ public sealed record CnbAlertInput(
     string ExecutivePerson,
     string Approver);
 
+public sealed record PriorityBreakdown(
+    int Base,
+    int Vol,
+    int Pep,
+    int Struct,
+    int Channel,
+    bool Overridden = false);
+
 public sealed record DeliverableCsvRow(
     string AlertId,
     string AlertType,
@@ -25,7 +33,8 @@ public sealed record DeliverableCsvRow(
     string ExecutivePerson,
     string Approver,
     string Reason,
-    string Log);
+    string Log,
+    [property: JsonPropertyName("priority_breakdown")] PriorityBreakdown? Breakdown = null);
 
 public sealed record FourEyesRequest(string Executive, string Approver);
 

@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import ClientTransactionCluster from "../components/domain/ClientTransactionCluster";
+import VerifierDiffTable from "../components/domain/VerifierDiffTable";
 
 type Row = {
   alertId: string;
@@ -14,6 +16,14 @@ type Row = {
   approver: string;
   reason: string;
   log: string;
+  priority_breakdown?: {
+    base: number;
+    vol: number;
+    pep: number;
+    struct: number;
+    channel: number;
+    overridden?: boolean;
+  };
 };
 
 type Claim = {
@@ -41,7 +51,9 @@ type AuditEvent = {
 type AuditResponse = {
   events: AuditEvent[];
   chain_valid: boolean;
-  mode: "DEMO_STATIC" | "PERSISTENT";
+  ledger_mode: string;
+  verified_events?: number;
+  total_events?: number;
 };
 
 type AuditVerification = AuditResponse & {
@@ -50,7 +62,7 @@ type AuditVerification = AuditResponse & {
 };
 
 type BedrockStatus = {
-  mode: "LIVE_BEDROCK" | "LIVE_BEDROCK_CACHED";
+  mode: string;
   latency_ms?: number;
   error?: string;
 };
@@ -106,14 +118,20 @@ export default function Home() {
   const [investigation, setInvestigation] = useState<Investigation | null>(null);
   const [bedrockBusy, setBedrockBusy] = useState(false);
   const [signingBusy, setSigningBusy] = useState(false);
+  const [liveBusy, setLiveBusy] = useState(false);
   const [approved, setApproved] = useState<Set<string>>(new Set());
   const [tab, setTab] = useState<Tab>("details");
   const [audit, setAudit] = useState<AuditEvent[]>([]);
   const [auditBusy, setAuditBusy] = useState(false);
   const [chainValid, setChainValid] = useState(true);
   const [chainStatus, setChainStatus] = useState("");
-  const [auditMode, setAuditMode] = useState<"DEMO_STATIC" | "PERSISTENT">("DEMO_STATIC");
-  const [bedrockMode, setBedrockMode] = useState<"LIVE_BEDROCK" | "LIVE_BEDROCK_CACHED">("LIVE_BEDROCK_CACHED");
+  const [ledgerMode, setLedgerMode] = useState("IN_MEMORY_CHAIN");
+  const [ledgerVerified, setLedgerVerified] = useState(0);
+  const [ledgerTotal, setLedgerTotal] = useState(0);
+  const [bedrockLive, setBedrockLive] = useState(false);
+  const [bedrockLatency, setBedrockLatency] = useState<number | undefined>(undefined);
+  const [bedrockError, setBedrockError] = useState("");
+  const [lastLiveAt, setLastLiveAt] = useState("");
   const [filter, setFilter] = useState<Filter>("ALL");
   const [query, setQuery] = useState("");
   const [dataStats, setDataStats] = useState<DataStats | null>(null);
@@ -182,9 +200,16 @@ export default function Home() {
     fetch(`${API}/api/v1/bedrock/status`)
       .then((response) => (response.ok ? response.json() : null))
       .then((data: BedrockStatus | null) => {
-        setBedrockMode(data?.mode === "LIVE_BEDROCK" ? "LIVE_BEDROCK" : "LIVE_BEDROCK_CACHED");
+        const live = data?.mode === "LIVE_BEDROCK";
+        setBedrockLive(live);
+        setBedrockLatency(data?.latency_ms);
+        setBedrockError(live ? "" : (data?.error ?? "No live probe"));
+        if (live) setLastLiveAt(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
       })
-      .catch(() => setBedrockMode("LIVE_BEDROCK_CACHED"));
+      .catch(() => {
+        setBedrockLive(false);
+        setBedrockError("Probe unavailable");
+      });
   }, []);
 
   useEffect(() => {
@@ -213,7 +238,9 @@ export default function Home() {
     setAudit([]);
     setChainStatus("");
     setChainValid(true);
-    setAuditMode("DEMO_STATIC");
+    setLedgerMode("IN_MEMORY_CHAIN");
+    setLedgerVerified(0);
+    setLedgerTotal(0);
     setAuditError("");
     setAuditLoaded(false);
   }
@@ -272,6 +299,28 @@ export default function Home() {
     }
   }
 
+  async function runLive() {
+    if (!selected) return;
+    setLiveBusy(true);
+    setToast("");
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), 2600);
+    try {
+      const response = await fetch(`${API}/api/v1/cases/${selected.alertId}/investigate-live`, {
+        method: "POST",
+        signal: controller.signal,
+      });
+      const data: Investigation = await response.json();
+      setInvestigation(data);
+      setToast(data.mode === "LIVE_BEDROCK" ? `LIVE · ${data.latency_ms ?? 0}ms` : "Live Bedrock unavailable — using snapshot.");
+    } catch {
+      setToast("Live Bedrock timed out — using snapshot.");
+    } finally {
+      window.clearTimeout(timer);
+      setLiveBusy(false);
+    }
+  }
+
   async function loadAudit() {
     if (!selected) return;
     setAuditBusy(true);
@@ -281,12 +330,14 @@ export default function Home() {
       if (!response.ok) throw new Error(`Audit ${response.status}`);
       const raw: AuditResponse | AuditEvent[] = await response.json();
       const data: AuditResponse = Array.isArray(raw)
-        ? { events: raw, chain_valid: true, mode: "DEMO_STATIC" }
+        ? { events: raw, chain_valid: true, ledger_mode: "IN_MEMORY_CHAIN", verified_events: raw.length, total_events: raw.length }
         : raw;
       const events = Array.isArray(data.events) ? data.events : [];
       setAudit(events);
       setChainValid(data.chain_valid ?? true);
-      setAuditMode(data.mode === "PERSISTENT" ? "PERSISTENT" : "DEMO_STATIC");
+      setLedgerMode(data.ledger_mode ?? "IN_MEMORY_CHAIN");
+      setLedgerVerified(data.verified_events ?? events.length);
+      setLedgerTotal(data.total_events ?? events.length);
     } catch {
       setAudit([]);
       setChainValid(false);
@@ -308,7 +359,9 @@ export default function Home() {
       const events = Array.isArray(data.events) ? data.events : [];
       setAudit(events);
       setChainValid(data.chain_valid ?? false);
-      setAuditMode(data.mode === "PERSISTENT" ? "PERSISTENT" : "DEMO_STATIC");
+      setLedgerMode(data.ledger_mode ?? "IN_MEMORY_CHAIN");
+      setLedgerVerified(data.verified_events ?? events.length);
+      setLedgerTotal(data.total_events ?? events.length);
       setChainStatus(
         data.chain_valid
           ? `Chain Verified: ${data.verified_events}/${data.total_events} events`
@@ -351,7 +404,7 @@ export default function Home() {
 
   function downloadAudit() {
     if (!selected) return;
-    const payload = { caseId: selected.alertId, mode: auditMode, events: audit };
+    const payload = { caseId: selected.alertId, ledger_mode: ledgerMode, events: audit };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -393,14 +446,22 @@ export default function Home() {
           <div>
             <div className="brand-title">VeriTriage</div>
             <div className="brand-subtitle">FINREG Track 5 · AML deliverable cockpit</div>
-            <div className="schema-line">11-column FINREG schema · DEMO_STATIC audit</div>
+            <div className="schema-line">11-column FINREG schema · IN-MEMORY SHA-256 audit</div>
           </div>
         </div>
         <div className="navbar-actions">
-          <span className={`badge-status ${bedrockMode === "LIVE_BEDROCK" ? "live" : "cached"}`}>
+          <span className="badge-status live">
             <span className="live-indicator" />
-            Bedrock: {bedrockMode === "LIVE_BEDROCK" ? "LIVE · Sonnet 4.5" : "CACHED · Bedrock offline"}
+            ENGINE: C# DETERMINISTIC · {Math.round(dataStats?.loadMs ?? 0)}ms
           </span>
+          <button
+            className={bedrockLive ? "badge-status live" : "badge-status cached"}
+            onClick={() => { setBedrockError(""); fetch(`${API}/api/v1/bedrock/status`).then((r) => r.json()).then((data: BedrockStatus) => { const live = data.mode === "LIVE_BEDROCK"; setBedrockLive(live); setBedrockLatency(data.latency_ms); setBedrockError(live ? "" : (data.error ?? "Snapshot")); if (live) setLastLiveAt(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })); }).catch(() => setBedrockError("Retry")); }}
+            title={bedrockError || "Probe Bedrock"}
+          >
+            <span className="live-indicator" />
+            {bedrockLive ? `BEDROCK: LIVE · ${bedrockLatency ?? 0}ms` : `BEDROCK: SNAPSHOT · ${lastLiveAt || "latest"}`}
+          </button>
           <a className="btn-primary" href={`${API}/api/v1/deliverable/csv`}>
             Download FINREG Deliverable CSV
           </a>
@@ -546,7 +607,28 @@ export default function Home() {
                           ? <span className="status-pill approved">APPROVED</span>
                           : <span className="mono-cell">{row.triage}</span>}
                       </td>
-                      <td><span className={`priority-badge ${priorityTone(row.priority)}`}>{row.priority}</span></td>
+                      <td>
+                        <div className="priority-stack">
+                          <span className={`priority-badge ${priorityTone(row.priority)}`}>{row.priority}</span>
+                          {row.priority_breakdown && (
+                            <span
+                              className="breakdown"
+                              title={`base ${row.priority_breakdown.base} + vol ${row.priority_breakdown.vol} + pep ${row.priority_breakdown.pep} + struct ${row.priority_breakdown.struct} + channel ${row.priority_breakdown.channel} = ${row.priority}`}
+                            >
+                              {[
+                                ["B", row.priority_breakdown.base],
+                                ["V", row.priority_breakdown.vol],
+                                ["P", row.priority_breakdown.pep],
+                                ["S", row.priority_breakdown.struct],
+                                ["C", row.priority_breakdown.channel],
+                              ]
+                                .filter(([, value]) => Number(value) > 0)
+                                .map(([key, value]) => `${key}:${value}`)
+                                .join(" · ")}
+                            </span>
+                          )}
+                        </div>
+                      </td>
                       <td>{row.executiveRole}</td>
                       <td>{row.executivePerson}</td>
                       <td>{row.approver}</td>
@@ -586,6 +668,8 @@ export default function Home() {
 
               {tab === "details" ? (
                 <>
+                  <ClientTransactionCluster clientId={selected.clientId} transactionId={selected.transactionId} onFilterClients={(ids) => setQuery(ids[0] ?? "")} />
+                  <VerifierDiffTable caseId={selected.alertId} />
                   <div className="decision-grid">
                     <div className="detail-card">
                       <div className="detail-label">Alert type</div>
@@ -593,7 +677,14 @@ export default function Home() {
                     </div>
                     <div className="detail-card">
                       <div className="detail-label">Priority</div>
-                      <div className="detail-value"><span className={`priority-badge ${priorityTone(selected.priority)}`}>{selected.priority}</span></div>
+                      <div className="detail-value">
+                        <span className={`priority-badge ${priorityTone(selected.priority)}`}>{selected.priority}</span>
+                        {selected.priority_breakdown && (
+                          <span className="breakdown drawer-breakdown">
+                            B{selected.priority_breakdown.base} · V{selected.priority_breakdown.vol} · P{selected.priority_breakdown.pep} · S{selected.priority_breakdown.struct} · C{selected.priority_breakdown.channel}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <div className="detail-card">
                       <div className="detail-label">Executive</div>
@@ -616,12 +707,17 @@ export default function Home() {
                   <div className="ai-card">
                     <div className="ai-header">
                       <div>
-                        <div className="ai-badge">{investigation?.mode ?? (bedrockMode === "LIVE_BEDROCK" ? "LIVE_BEDROCK" : "LIVE_BEDROCK_CACHED")}</div>
+                        <div className="ai-badge">{investigation?.mode === "LIVE_BEDROCK" ? "LIVE" : "SNAPSHOT"}</div>
                         <div className="brand-subtitle">Bedrock investigation</div>
                       </div>
-                      <button className="btn-outline" onClick={runInvestigation} disabled={bedrockBusy}>
-                        {bedrockBusy ? "Querying…" : "Investigate"}
-                      </button>
+                      <div className="ai-actions">
+                        <button className="btn-outline" onClick={runInvestigation} disabled={bedrockBusy}>
+                          {bedrockBusy ? "Querying…" : "Investigate"}
+                        </button>
+                        <button className="btn-outline" onClick={runLive} disabled={liveBusy}>
+                          {liveBusy ? "Deep-tracing…" : "Run live deep-trace"}
+                        </button>
+                      </div>
                     </div>
                     {investigation ? (
                       <>
@@ -645,7 +741,7 @@ export default function Home() {
                       </>
                     ) : (
                       <p className="detail-value">
-                        Run the cached or live AML dossier. The result is grounded in the case evidence and legal basis.
+                        Run the AML dossier. The result is grounded in the case evidence and legal basis.
                       </p>
                     )}
                   </div>
@@ -668,9 +764,10 @@ export default function Home() {
                 </>
               ) : (
                 <div className="audit-panel">
-                  {auditMode === "DEMO_STATIC" && (
-                    <div className="badge-status cached">DEMO_STATIC · production appends at write time</div>
-                  )}
+                  <div className="badge-status cached ledger-badge">
+                    <span className={chainValid ? "ledger-dot ok" : "ledger-dot bad"} />
+                    LEDGER · {ledgerMode === "IN_MEMORY_CHAIN" ? "IN-MEMORY " : ""}SHA-256 CHAIN{ledgerMode === "IN_MEMORY_CHAIN" ? " · NOT PERSISTED" : ""} · {ledgerVerified}/{ledgerTotal} VERIFIED
+                  </div>
                   {auditError && (
                     <div className="banner-violation">
                       <strong>{auditError}</strong>

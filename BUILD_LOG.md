@@ -265,3 +265,14 @@ This is the honest phase log. It records what was built, what was verified, what
 - Deep link `?case=ALERT-045&tab=audit` verifies the audit timeline without a crash: `screenshots/audit_chain.png`.
 - Bedrock is probe-driven; latest probe cached, earlier live. UI follows the probe.
 - `dotnet test` 24/24; `npm run build` green.
+
+
+## Forensic UI Sprint — 2026-10-19
+
+- Added priority breakdown JSON/pills; all 45 sums match.
+- Added CNB transaction index, client cluster endpoint, baseline bars, sibling ledger, structuring pattern, shared counterparty.
+- Added verifier diff endpoint/table with OVERRIDDEN and FAIL_CLOSED rows.
+- Added file-backed audit ledger (`data/audit_ledger.json`); 5→6 after approve; `FILE_CHAIN`.
+- Removed debug labels from UI; dual ENGINE/BEDROCK badges.
+- Added live deep-trace button/endpoint with 2.5s snapshot fallback.
+- 24/24 tests; build green; screenshots `forensic_drawer.png`, `audit_chain.png`.

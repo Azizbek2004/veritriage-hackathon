@@ -16,3 +16,9 @@ The light screenshot is the visual proof that CORS, the probe-driven badge, the 
 Audit view:
 
 - `audit_chain.png` — deep link `?case=ALERT-045&tab=audit`; five-event timeline, DEMO_STATIC label, no crash.
+
+
+Forensic views:
+
+- `forensic_drawer.png` — client cluster (1.71x actual), sibling ledger with `THIS ALERT`, structuring pattern, shared counterparty, and the 5-row verifier diff.
+- `audit_chain.png` — file-backed ledger `6/6` after approval; no `DEMO_STATIC`.

@@ -57,7 +57,8 @@ public sealed class LiveBedrockService : IBedrockService
         catch (Exception ex)
         {
             sw.Stop();
-            return new BedrockProbeResult(false, sw.ElapsedMilliseconds, ex.Message);
+            var errMsg = ex.InnerException != null ? $"{ex.Message} -> {ex.InnerException.Message}" : ex.Message;
+            return new BedrockProbeResult(false, sw.ElapsedMilliseconds, errMsg);
         }
     }
 

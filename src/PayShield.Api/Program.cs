@@ -3,6 +3,8 @@ using System.Text;
 using PayShield.Api;
 using VeriTriage.Domain;
 using VeriTriage.Infrastructure.Bedrock;
+using VeriTriage.Infrastructure.Data;
+using VeriTriage.Infrastructure.Audit;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddCors(options => options.AddPolicy("cockpit", policy =>
@@ -18,9 +20,12 @@ builder.Services.AddCors(options => options.AddPolicy("cockpit", policy =>
 builder.Services.AddSingleton<IBedrockService>(_ => new LiveBedrockService());
 var repoRoot = Path.GetFullPath(Path.Combine(builder.Environment.ContentRootPath, "..", ".."));
 builder.Services.AddSingleton(_ => new DeliverableState(repoRoot));
+builder.Services.AddSingleton(_ => CnbTransactionIndex.Load(Path.Combine(repoRoot, "datasets", "CNB")));
+builder.Services.AddSingleton(_ => new FileAuditLedger(repoRoot));
 
 var app = builder.Build();
 app.UseCors("cockpit");
+app.Services.GetRequiredService<CnbTransactionIndex>();
 
 app.MapGet("/api/v1/health", () => Results.Ok(new { status = "ok", mode = "finreg" }));
 
@@ -78,29 +83,54 @@ app.MapPost("/api/v1/cases/verify-4-eyes", (FourEyesRequest request) =>
         ? Results.Ok(new { status = "ok" })
         : Results.Json(new { error = FinregDeliverableEngine.FourEyesViolation }, statusCode: 400));
 
-app.MapGet("/api/v1/cases/{id}/audit", (string id) =>
+app.MapGet("/api/v1/cases/{id}/audit", (string id, FileAuditLedger ledger) =>
 {
-    var events = AuditChainBuilder.Build(id);
+    var events = ledger.Get(id);
+    var valid = ledger.Verify(id);
     return Results.Ok(new
     {
         events,
-        chain_valid = AuditChainBuilder.Verify(id, events),
-        mode = "DEMO_STATIC",
+        chain_valid = valid,
+        ledger_mode = "FILE_CHAIN",
+        verified_events = valid ? events.Count : 0,
+        total_events = events.Count,
     });
 });
 
-app.MapGet("/api/v1/cases/{id}/audit/verify", (string id) =>
+app.MapGet("/api/v1/cases/{id}/audit/verify", (string id, FileAuditLedger ledger) =>
 {
-    var events = AuditChainBuilder.Build(id);
-    var valid = AuditChainBuilder.Verify(id, events);
+    var events = ledger.Get(id);
+    var valid = ledger.Verify(id);
     return Results.Ok(new
     {
         chain_valid = valid,
         verified_events = valid ? events.Count : 0,
         total_events = events.Count,
         events,
-        mode = "DEMO_STATIC",
+        ledger_mode = "FILE_CHAIN",
     });
+});
+
+app.MapGet("/api/v1/clients/{clientId}/cluster", (string clientId, string? transactionId, CnbTransactionIndex index) =>
+{
+    var payload = ForensicBuilder.Cluster(clientId, transactionId, index);
+    return payload is null ? Results.NotFound() : Results.Ok(payload);
+});
+
+app.MapPost("/api/v1/cases/{id}/investigate-live", async (string id, IBedrockService bedrock, DeliverableState state) =>
+{
+    var matching = state.Rows.FirstOrDefault(r => r.AlertId.Equals(id, StringComparison.OrdinalIgnoreCase));
+    var clientDetails = matching is null ? $"Alert {id}" : $"Client {matching.ClientId}, Alert Type: {matching.AlertType}, Reason: {matching.Reason}";
+    using var timeout = new CancellationTokenSource(TimeSpan.FromMilliseconds(2500));
+    var json = await bedrock.InvestigateAsync(id, clientDetails, repoRoot, timeout.Token);
+    return Results.Text(json, "application/json");
+});
+
+app.MapGet("/api/v1/cases/{id}/diff", (string id, DeliverableState state, CnbTransactionIndex index) =>
+{
+    var row = state.Rows.FirstOrDefault(r => r.AlertId.Equals(id, StringComparison.OrdinalIgnoreCase));
+    if (row is null) return Results.NotFound();
+    return Results.Ok(ForensicBuilder.Diff(id, row, index));
 });
 
 app.MapPost("/api/v1/cases/{id}/approve", (string id, ApproveRequest request, DeliverableState state) =>
@@ -127,7 +157,10 @@ app.MapPost("/api/v1/cases/{id}/approve", (string id, ApproveRequest request, De
 
     var ts = DateTimeOffset.UtcNow.ToString("O");
     var digest = SHA256.HashData(Encoding.UTF8.GetBytes($"{id}|{request.SignatureB64}|{request.ApproverId}|{ts}"));
-    return Results.Ok(new ApproveResponse("APPROVED", "sha256:" + Convert.ToHexString(digest).ToLowerInvariant()));
+    var auditHash = "sha256:" + Convert.ToHexString(digest).ToLowerInvariant();
+    var ledger = app.Services.GetRequiredService<FileAuditLedger>();
+    ledger.Append(id, "APPROVED", new { approver = request.ApproverId, audit_hash = auditHash });
+    return Results.Ok(new ApproveResponse("APPROVED", auditHash));
 });
 
 app.Run();

@@ -1013,3 +1013,75 @@ tbody td { white-space: nowrap; }
   .data-item { padding: 0; }
   .data-action { grid-column: 1 / -1; margin-left: 0; justify-content: center; }
 }
+
+/* Forensic cluster + diff cards */
+.cluster-card, .diff-card { background: var(--surface); border: 1px solid var(--outline-variant); border-radius: 12px; padding: 14px; }
+.cluster-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.small-title { font-size: 16px; }
+.cluster-ratio { font: 700 12px var(--font-mono); padding: 4px 8px; border-radius: 6px; white-space: nowrap; }
+.cluster-ratio.green { color: var(--tertiary); background: var(--tertiary-container); }
+.cluster-ratio.amber { color: var(--warn); background: var(--warn-container); }
+.cluster-ratio.red { color: var(--error); background: var(--error-container); }
+.cluster-bars { display: flex; flex-direction: column; gap: 8px; }
+.cluster-bar-row { display: grid; grid-template-columns: 1fr 34px; gap: 6px; align-items: center; }
+.cluster-bar-label { grid-column: 1 / -1; display: flex; justify-content: space-between; gap: 12px; font-size: 11px; color: var(--secondary); }
+.cluster-bar-label strong { color: var(--on-surface); font: 600 11px var(--font-mono); text-align: right; }
+.cluster-track { height: 8px; background: var(--surface-container); border-radius: 99px; overflow: hidden; }
+.cluster-fill { height: 100%; border-radius: 99px; }
+.cluster-fill.declared { background: var(--outline); }
+.cluster-fill.green { background: var(--tertiary); }
+.cluster-fill.amber { background: var(--warn); }
+.cluster-fill.red { background: var(--error); }
+.cluster-count { font: 11px var(--font-mono); color: var(--secondary); text-align: right; }
+.structuring-banner { margin: 10px 0; padding: 8px 10px; border-left: 3px solid var(--error); background: var(--error-container); color: var(--on-error); font: 600 11px var(--font-mono); line-height: 1.4; }
+.sibling-table-wrap { overflow-x: auto; margin-top: 10px; }
+.sibling-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+.sibling-table th { text-align: left; color: var(--secondary); font-size: 9px; text-transform: uppercase; letter-spacing: 0.06em; padding: 5px 6px; border-bottom: 1px solid var(--outline-variant); }
+.sibling-table td { padding: 5px 6px; border-bottom: 1px solid var(--outline-subtle); color: var(--on-surface-variant); }
+.sibling-table tr.flagged td { background: #fff1f2; border-top: 1px solid #fecdd3; border-bottom: 1px solid #fecdd3; }
+.sibling-table tr.pattern td:first-child { border-left: 2px solid var(--error); }
+.sibling-table .amount { color: var(--on-surface); font-weight: 600; }
+.sibling-table .this-alert { color: var(--error); font: 700 9px var(--font-mono); white-space: nowrap; }
+.shared-counterparty { width: 100%; margin-top: 9px; text-align: left; background: var(--warn-container); border: 1px solid var(--warn-border); color: var(--on-warn); border-radius: 7px; padding: 7px 9px; font: 600 10px var(--font-mono); cursor: pointer; }
+.cluster-skeleton { height: 36px; border-radius: 8px; background: linear-gradient(90deg, var(--surface-container) 25%, var(--surface-dim) 37%, var(--surface-container) 63%); background-size: 400% 100%; animation: shimmer 1.4s ease infinite; margin: 8px 0; }
+.cluster-skeleton.short { height: 18px; }
+@keyframes shimmer { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
+.diff-subtitle { color: var(--secondary); font-size: 11px; margin-top: 2px; }
+.diff-toggle { display: flex; align-items: center; gap: 6px; color: var(--secondary); font-size: 10px; white-space: nowrap; }
+.diff-toggle input { accent-color: var(--primary); }
+.diff-table-wrap { overflow-x: auto; }
+.diff-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+.diff-table th { text-align: left; color: var(--secondary); font-size: 9px; text-transform: uppercase; letter-spacing: 0.06em; padding: 5px 6px; border-bottom: 1px solid var(--outline-variant); }
+.diff-table td { padding: 6px; border-bottom: 1px solid var(--outline-subtle); vertical-align: top; }
+.diff-table td.llm { color: var(--secondary); font-style: italic; }
+.diff-table td.verifier { color: var(--on-surface); font-family: var(--font-mono); }
+.diff-table tr.critical td { background: #fffbeb; }
+.gate { display: inline-block; padding: 2px 6px; border-radius: 4px; font: 700 9px var(--font-mono); white-space: nowrap; }
+.gate-recomputed { color: var(--primary); background: var(--primary-subtle); }
+.gate-overridden, .gate-escalated { color: var(--warn); background: var(--warn-container); }
+.gate-fail_closed { color: var(--error); background: var(--error-container); }
+.gate-proven { color: var(--tertiary); background: var(--tertiary-container); }
+.priority-stack { display: flex; flex-direction: column; gap: 2px; align-items: flex-start; }
+.breakdown { font: 9px var(--font-mono); color: var(--secondary); white-space: nowrap; }
+.drawer-breakdown { display: block; margin-top: 4px; }
+.ledger-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 10px; }
+.ledger-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+.ledger-dot.ok { background: var(--tertiary); }
+.ledger-dot.bad { background: var(--error); }
+.ai-actions { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.ai-actions .btn-outline { padding: 8px 10px; font-size: 11px; }
+/* Forensic drawer must be fully seated for screenshots and stage */
+.drawer { animation: none; }
+/* Keep the 4-column verifier diff inside the 520px drawer */
+.diff-table { table-layout: fixed; width: 100%; }
+.diff-table th:nth-child(1), .diff-table td:nth-child(1) { width: 19%; }
+.diff-table th:nth-child(2), .diff-table td:nth-child(2) { width: 23%; }
+.diff-table th:nth-child(3), .diff-table td:nth-child(3) { width: 36%; }
+.diff-table th:nth-child(4), .diff-table td:nth-child(4) { width: 22%; }
+.diff-table td { overflow-wrap: anywhere; word-break: break-word; }
+.diff-table .gate { white-space: normal; }
+.diff-table th, .diff-table td { white-space: normal; }
+.diff-table td.llm, .diff-table td.verifier { word-break: break-word; overflow-wrap: anywhere; }
+.mono-cell, .priority-badge, .breakdown, .timeline-meta, .cluster-bar-label strong, .cluster-ratio, .sibling-table td, .diff-table td.verifier, .kpi-value {
+  font-variant-numeric: tabular-nums;
+}

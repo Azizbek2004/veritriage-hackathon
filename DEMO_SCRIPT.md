@@ -42,7 +42,13 @@ alert_id,alert_type,client_id,transaction_id,triage,priority,executive_role,exec
 **Say:**
 > “This is a PEP with elevated 24-hour velocity. Priority 96. It requires MLRO escalation under § 21(5).”
 
-**Do not** claim “8x volume”; the UI does not show an 8x figure. The cassette says elevated velocity; keep it qualitative.
+**Scroll:** in the drawer, show **Client transaction cluster**.
+> “This is the real index: 39,819 CZK declared vs 68,262 actual — 1.71x volume, 1.71x count. Five sub-threshold transfers in 48 hours, 23,778 CZK total. The brief’s 8.20x is not this client; we show the actual number.”
+
+**Scroll:** show **Neuro-symbolic check**.
+> “The representative LLM proposed priority 74. The C# verifier recomputed 96 and marked it OVERRIDDEN. It also fail-closed the same-person approval.”
+
+**Do not** claim “8x volume” or the brief’s 8.20x; the actual K005397 ratio is 1.71x.
 
 ---
 

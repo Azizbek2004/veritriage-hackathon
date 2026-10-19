@@ -1,94 +1,47 @@
-# FINAL REPORT — Data Cockpit + Safe Audit Chain
+# FINAL REPORT — Forensic AML Workstation
 
 **Date:** 2026-10-19
-**Status:** UI/UX advanced. Audit chain crash fixed. Data volume + reprocess added. Bedrock is **probe-driven**; the latest probe is cached.
+**Status:** Forensic UI sprint complete; file-backed audit; live Bedrock is snapshot/intermittent; human rehearsal remains.
 
-## New UX
+## Forensic upgrades
 
-- **Data strip:** 397,853 ČNB transactions, 5,493 clients, 45 FINREG alerts, 35.3 MB read, last run 37 ms.
-- **Reprocess button:** calls `POST /api/v1/deliverable/reprocess`, re-scans the official files, updates the rows and stats, and toasts the new runtime.
-- **KPIs:** alerts, FP/review split, high-priority/PEP count, approvals in this session, 21.1 FTE.
-- **Filters + search:** All / FP / Review / High and client/alert/transaction search.
-- **Decision drawer:** statutory basis, 4-eyes state, live/cached Bedrock mode, claim cards, and legal citation.
-- **Audit chain:** safe fetch/verify, explicit error with retry, 5-event timeline, copy hash, Verify Chain, Download audit JSON.
-- **Deep links:** `?case=ALERT-045&tab=audit` opens the audit drawer directly; this was used to verify the crash fix.
-- **Error boundary:** `app/error.tsx` prevents a single render error from blanking the cockpit.
-- External Google Fonts import removed so the table renders without network access.
-- All 11 FINREG columns fit the 1440px shell; footer duplicate removed.
+- **Client transaction cluster:** 397,853-row index, 5,493 clients; baseline vs actual bars; sibling ledger; structuring pattern; shared counterparty.
+- **Verifier diff:** 5-row `LLM proposal (representative)` vs `C# verifier (executed)`; `OVERRIDDEN (+22)` highlighted; `FAIL_CLOSED` 4-eyes row.
+- **Priority breakdown:** `priority_breakdown` per row; sum equals displayed priority for all 45 rows.
+- **Persistent audit:** `FileAuditLedger` → `data/audit_ledger.json`; approve appends `APPROVED`; audit goes 5 → 6; refresh stable. API `ledger_mode: FILE_CHAIN`.
+- **Debug labels removed:** no `DEMO_STATIC`, `LIVE_BEDROCK_CACHED`, or uppercase `CACHED` in `apps/web/`.
+- **Dual operational badges:** `ENGINE: C# DETERMINISTIC · <ms>` and `BEDROCK: LIVE/SNAPSHOT`.
+- **On-demand deep-trace:** button + 2.5s timeout; snapshot fallback; no raw mode string.
+- **UX:** data strip, reprocess, filters, PEP badges, compact 11-column table, deep links, error boundary, no external font import.
 
-## Audit Chain Crash — Fixed
+## Honest data note
 
-The previous audit tab assumed the endpoint always returned `{events: [...]}`. If the endpoint returned an array, an error, or a malformed payload, `audit.map` crashed the page.
-
-Now:
-
-- `/audit` and `/audit/verify` responses are normalized.
-- `events` is always an array.
-- Fetch/parse/verify failures set a visible error with a Retry button.
-- A Next.js error boundary catches any remaining render error.
-- Deep-link screenshot: [screenshots/audit_chain.png](screenshots/audit_chain.png).
-
-## Data Processing
-
-`GET /api/v1/deliverable/stats`:
-
-```json
-{
-  "deliverableRows": 45,
-  "transactionRows": 397853,
-  "clientRows": 5493,
-  "bytesScanned": 36972049,
-  "loadMs": 48.9,
-  "source": "ČNB official dataset"
-}
-```
-
-`POST /api/v1/deliverable/reprocess` re-runs the scan and returns `{summary, rows}`. The button is wired to it.
-
-## Bedrock Status — Probe-Driven
-
-The badge is not hardcoded. The latest probe returned:
-
-```json
-{
-  "mode": "LIVE_BEDROCK_CACHED",
-  "latency_ms": 1229,
-  "error": "The SSL connection could not be established, see inner exception."
-}
-```
-
-Earlier probes returned `LIVE_BEDROCK` (1207ms probe, 12706ms investigation). The live path is intermittent. The UI correctly shows **CACHED** when the probe fails, and the cassette is labeled. Do not claim live unless the badge and panel say `LIVE_BEDROCK`.
+The hero client K005397 is **1.71x volume / 1.71x count** (39,819.67 CZK declared vs 68,262.30 actual; 7 vs 12 transactions). The brief's 8.20x/4.51M values are not in the official data. The cluster shows the real numbers; the pattern is 5 sub-threshold transfers in 48h totaling 23,778.04 CZK. Do not say 8.20x on stage.
 
 ## Verified
 
-- `dotnet test` — **24 passed, 0 failed**.
-- `npm run build` — green.
-- CSV header — exact 11 columns.
-- 4-eyes — same person 400; independent 200.
-- Stats — 397,853 transactions / 5,493 clients / 45 alerts.
-- Reprocess — 200, 45 rows, ~37ms.
-- Audit — `DEMO_STATIC`, 5/5, no crash; deep link verified.
-- Normal Chrome on `http://localhost:3100`; no security flags.
-- GitHub — public, `main` pushed.
+- `dotnet test`: **24/24**
+- `npm run build`: green
+- CSV: exact 11 columns
+- 4-eyes: same person 400; independent 200
+- Audit: `FILE_CHAIN`, 6/6 after approval, refresh-persistent
+- Priority breakdown: 45/45 sums match
+- Cluster: ~7ms warm, ~21ms first; actual values
+- Diff: 5 rows, OVERRIDDEN + FAIL_CLOSED
+- Debug strings: none in `apps/web/`
+- GitHub: public `main`
 
-## Honest Win Probability
+## Honest win probability
 
 | State | Probability |
 |---|---:|
-| Current: polished cockpit, cached Bedrock, no human rehearsal | **50%** |
-| After three rehearsals of the 5-minute script | **55–60%** |
-| If the Bedrock probe is stably live | **60–65%** |
+| Current, no human rehearsal | **55–60%** |
+| After three rehearsals of the actual 1.71x path | **60–65%** |
+| If live Bedrock is stable and <2.5s | **65–70%** |
 
-## Human Actions
+## Human actions
 
-1. Pre-warm the investigation before the timer; confirm the badge/panel mode and use the matching script path.
-2. Rehearse [DEMO_SCRIPT.md](DEMO_SCRIPT.md) three times on `http://localhost:3100`.
+1. Verify the 9 steps in [FORENSIC_UI_REPORT.md](FORENSIC_UI_REPORT.md).
+2. Rehearse [DEMO_SCRIPT.md](DEMO_SCRIPT.md) three times on 3100; use the actual 1.71x numbers.
 3. Record `backup_video.mp4`.
-4. If Bedrock is cached, say “cached for demo stability” — never “live.”
-
-## Links
-
-- [screenshots/cockpit_light.png](screenshots/cockpit_light.png)
-- [screenshots/audit_chain.png](screenshots/audit_chain.png)
-- [AWS_BEDROCK_STATUS.md](AWS_BEDROCK_STATUS.md)
-- [DEMO_SCRIPT.md](DEMO_SCRIPT.md)
+4. Confirm the audit persists after refresh; `data/audit_ledger.json` is gitignored runtime state.
