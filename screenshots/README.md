@@ -2,7 +2,7 @@
 
 Visual screenshot:
 
-- `cockpit_fixed.png` — normal Chrome (no `--disable-web-security`) on `http://127.0.0.1:3100`, showing the **CACHED · Bedrock offline** badge and the 11-column table.
+- `cockpit_light.png` — normal Chrome (no `--disable-web-security`) on `http://127.0.0.1:3100`, showing the LIVE · Sonnet 4.5 badge, KPI strip, filters, and all 11 FINREG columns.
 
 API proof (no 4-eyes PNG; Playwright/Puppeteer are not installed):
 
@@ -11,4 +11,4 @@ API proof (no 4-eyes PNG; Playwright/Puppeteer are not installed):
 - `audit_chain_verify.json` — 5/5, `mode: DEMO_STATIC`.
 - `csv_header.txt` — the exact 11-column header.
 
-The fixed screenshot is the visual proof that CORS and the honest badge work in a normal browser.
+The light screenshot is the visual proof that CORS, the live badge, and the 11-column table work in a normal browser.

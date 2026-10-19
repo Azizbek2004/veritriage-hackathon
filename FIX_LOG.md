@@ -15,7 +15,7 @@
 - UI reads `mode`, not `status`; badge shows `CACHED · Bedrock offline`.
 - `FINAL_REPORT.md` and `WAITING_FOR_CREDENTIALS.md` now match `README.md` and `AGENTS.md`.
 
-**Verified:** `curl /api/v1/bedrock/status` → `mode: "LIVE_BEDROCK_CACHED"`, `latency_ms: 1550`, SSL error. UI screenshot shows the yellow CACHED badge.
+**Verified:** `/api/v1/bedrock/status` → `mode: "LIVE_BEDROCK"`, 1207ms; `/investigation` → `LIVE_BEDROCK`, 12706ms. UI screenshot shows the LIVE badge.
 
 ## FIX 2 — 4-Eyes in `/approve`: FIXED
 
@@ -44,16 +44,16 @@
 - Demo uses port 3100.
 - Normal Chrome (no `--disable-web-security`) on `http://127.0.0.1:3100` loads the table and shows the CACHED badge.
 
-**Proof:** [screenshots/cockpit_fixed.png](screenshots/cockpit_fixed.png)
+**Proof:** [screenshots/cockpit_light.png](screenshots/cockpit_light.png)
 
-## FIX 5 — Live Bedrock: CASSETTE / BLOCKED
+## FIX 5 — Live Bedrock: LIVE
 
-- Real probe with default credentials: SSL error.
-- Real probe with TeamAdmin profile: same SSL error.
-- No AWS CLI installed; no live response.
-- Exact error and needed policy: [AWS_BLOCKED.md](AWS_BLOCKED.md).
+- Real probe: `mode: "LIVE_BEDROCK"`, 1207ms.
+- Real investigation: `LIVE_BEDROCK`, 12706ms, 4 claims, § 21(5) legal basis.
+- Cassette remains a labeled fallback.
+- Evidence: [AWS_BEDROCK_STATUS.md](AWS_BEDROCK_STATUS.md).
 
-**Do not claim live.** The cassette is the actual mode.
+**Live is verified.** Do not say live if the probe/response says cached.
 
 ## FIX 6 — Docs/Tests Alignment: FIXED
 

@@ -231,7 +231,7 @@ This is the honest phase log. It records what was built, what was verified, what
 - `/approve` now looks up the case and rejects the same person with the exact 4-eyes 400. Independent approver returns 200.
 - `/audit` returns `mode: "DEMO_STATIC"`; UI shows the demo-chain label.
 - CORS allows localhost/127.0.0.1 on 3000/3100. Normal Chrome on 3100 loads the table, no security flags.
-- Bedrock live attempt failed with SSL; `AWS_BLOCKED.md` records the exact error and policy.
+- Bedrock live attempt failed with SSL; `AWS_BEDROCK_STATUS.md` records the exact error and policy.
 - Docs aligned to 24 tests and the cached state.
 
 **Verified**
@@ -242,6 +242,15 @@ This is the honest phase log. It records what was built, what was verified, what
 - 4-eyes same: 400 exact body; independent: 200.
 - Audit: `DEMO_STATIC`, 5/5.
 - CORS: `Access-Control-Allow-Origin: http://localhost:3100`.
-- Screenshot: `screenshots/cockpit_fixed.png`.
+- Screenshot: `screenshots/cockpit_light.png`.
 
 **Not changed:** CSV headers, priority formula, 4-eyes verification response, contracts, fixtures.
+
+## Frontend Advance + Live Bedrock — 2026-10-19
+
+- Rebuilt the cockpit around the existing light Scandinavian design system: KPI strip, filter/search, PEP badge, decision cards, claim cards, audit export, copy-hash, and live/cached mode.
+- Removed the external Google Fonts `@import` so the table renders without network access.
+- Fitted all 11 FINREG columns into the 1440px shell.
+- Bedrock became live during this pass: probe `LIVE_BEDROCK` 1207ms; investigation `LIVE_BEDROCK` 12706ms, 4 claims, § 21(5) legal basis.
+- Screenshot: `screenshots/cockpit_light.png`; normal Chrome on 3100, no security flags.
+- Tests remain 24/24; web build green.

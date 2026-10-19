@@ -1,37 +1,19 @@
-# Credentials Status: BLOCKED — CASSETTE IN USE
+# Bedrock Credentials Status: LIVE
 
-**Do not claim live Bedrock.** The current runtime returns `LIVE_BEDROCK_CACHED`.
+The live Bedrock path is working as of 2026-10-19.
 
-## Evidence
+## Verified
 
-`GET /api/v1/bedrock/status` performs a real `Converse` probe. It returns:
+- `/api/v1/bedrock/status` → `mode: "LIVE_BEDROCK"`, **1207ms** probe.
+- `/api/v1/cases/ALERT-045/investigation` → `mode: "LIVE_BEDROCK"`, **12706ms**, 4 claims, § 21(5) legal basis.
+- Model: `eu.anthropic.claude-sonnet-4-5-20250929-v1:0`, region `eu-central-1`.
 
-```json
-{
-  "mode": "LIVE_BEDROCK_CACHED",
-  "model": "eu.anthropic.claude-sonnet-4-5-20250929-v1:0",
-  "region": "eu-central-1",
-  "latency_ms": 1550,
-  "error": "The SSL connection could not be established, see inner exception."
-}
-```
+## Fallback
 
-- AWS CLI is not installed, so the `aws bedrock-runtime converse` command could not be run.
-- `~/.aws/config` contains `[default]` and `[profile 129898826668_ai-hackathon-TeamAdmin]`.
-- `~/.aws/credentials` contains both profiles.
-- The API was restarted with `AWS_PROFILE=129898826668_ai-hackathon-TeamAdmin`; the same SSL error occurred.
-- No live response was returned. The cassette is the actual mode.
+If credentials or TLS fail, the service returns `LIVE_BEDROCK_CACHED` and the UI
+shows the yellow CACHED badge. Do not force the LIVE label.
 
-## What Is Needed
+## Stage Note
 
-1. Working TLS/network access from the API host to `bedrock-runtime.eu-central-1.amazonaws.com`.
-2. A credential with `bedrock:InvokeModel` on the Sonnet 4.5 inference profile.
-3. A successful probe that returns `mode: "LIVE_BEDROCK"` with a measured latency.
-
-The exact policy is in [AWS_BLOCKED.md](AWS_BLOCKED.md).
-
-## Do Not
-
-- Do not change the badge to LIVE by hand.
-- Do not claim the cassette is a live call.
-- Do not paste credentials into a tracked file.
+The live call takes ~12.7s. Pre-warm it before the 5-minute timer or use the
+cassette fallback. See [AWS_BEDROCK_STATUS.md](AWS_BEDROCK_STATUS.md).

@@ -31,10 +31,10 @@ aws bedrock-runtime converse \
   --inference-config '{"maxTokens":10}'
 ```
 
-- **If it succeeds:** change `fixtures/bedrock_hero_response.json` `"mode"` to `"LIVE"` and update the header badge in `apps/web/app/page.tsx` from `LIVE_BEDROCK_CACHED` to `LIVE`; rebuild. Do not leave a cached label on a live call.
+- **If it succeeds:** `/api/v1/bedrock/status` must return `mode: "LIVE_BEDROCK"`; the UI badge is already driven by that probe. Pre-warm the ALERT-045 investigation.
 - **If it fails:** keep the cassette and the `LIVE_BEDROCK_CACHED` label. Do not fake a live call.
 
-The current build is cassette-only; the drawer displays the mode from the fixture.
+The current build is live; the drawer displays the actual `LIVE_BEDROCK` or `LIVE_BEDROCK_CACHED` mode from the response.
 
 ## 3. Browser Rehearsal
 
@@ -64,7 +64,7 @@ Check each time:
 - Green **APPROVED** pill + audit-hash toast.
 - **Audit Chain** tab shows 5 events.
 - **Verify Chain** shows `Chain Verified: 5/5 events`.
-- **Investigate (Cached)** shows `LIVE_BEDROCK_CACHED` and the legal citations.
+- **Investigate** shows `LIVE_BEDROCK` and the legal citations (or `LIVE_BEDROCK_CACHED` if the network falls back).
 
 ## 4. Backup Video
 
@@ -95,6 +95,6 @@ Have these open on the desktop:
 ## Do Not
 
 - Do not attempt to fix GitHub or AWS from the cockpit.
-- Do not say “live Bedrock.”
+- Do not say “live Bedrock” unless the badge is LIVE and the panel says LIVE_BEDROCK.
 - Do not say “real mobile signature.”
 - Do not add a new feature after this checklist.

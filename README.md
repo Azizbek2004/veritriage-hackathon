@@ -1,6 +1,6 @@
 # VeriTriage — Agent Environment
 
-This repository is the VeriTriage agent environment plus a green backend verifier/rules slice and a FINREG cockpit. The mobile app, real signing, persistent audit storage, and live Bedrock call are not built. A visible 5-event demo audit chain is built; Bedrock runs in honest cached mode. See `FINAL_REPORT.md` and `BUILD_LOG.md` for the exact state.
+This repository is the VeriTriage agent environment plus a green backend verifier/rules slice and a FINREG cockpit. The mobile app, real signing, and persistent audit storage are not built. A visible 5-event demo audit chain is built. Bedrock is live; the cassette remains a labeled fallback. See `FINAL_REPORT.md` and `BUILD_LOG.md` for the exact state.
 
 ## What Is Here
 
@@ -21,7 +21,7 @@ This repository is the VeriTriage agent environment plus a green backend verifie
 ## What Is Intentionally Absent
 
 - `apps/web` and `apps/mobile` — not built.
-- Real mobile signing, persistent audit storage, and live Bedrock — not built. A visible 5-event demo audit chain is built; Bedrock is cached.
+- Real mobile signing and persistent audit storage — not built. A visible 5-event demo audit chain is built. Bedrock is live; the cassette remains a labeled fallback.
 - `fixtures/` committed data — official data stays in `datasets/` (gitignored).
 - `tests/golden/` snapshots — not created yet.
 - `node_modules`, build outputs, SDKs.
@@ -32,7 +32,7 @@ Backend baseline: `dotnet build` green, `dotnet test` 24/24. `npm run build` gre
 
 1. **Human:** read `contracts/README.md`, `fixtures/README.md`, `evaluation/README.md`, and `REMEDIATION.md`. Populate fixtures. Approve the package set. Confirm the 68–72% post-remediation estimate, not 81%.
 2. **Build state:** B-000/B-001/B-002 are complete. Next: B-003/B-004 (web/mobile shells), then API/cockpit/mobile. See `BUILD_LOG.md`.
-3. **Bedrock:** cached because real probes fail with an SSL error; see `AWS_BLOCKED.md`.
+3. **Bedrock:** live via Sonnet 4.5; see `AWS_BEDROCK_STATUS.md`.
 4. **Datasets:** official data is in `datasets/`; see `DATASET_INVENTORY.md`.
 5. **Humans:** approve the frontend/mobile package set and decide the MCC mapping in `PROPOSAL.md`.
 

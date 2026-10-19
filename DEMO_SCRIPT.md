@@ -1,8 +1,8 @@
 # 5-Minute FINREG Demo Script
 
-**Target:** 4:30. **Hard stop:** 5:00.
+**Target:** 4:30. **Hard stop:** 5:00. Pre-warm the investigation before the timer.
 **App:** `http://localhost:3100` · API on `:5000`.
-**Rule:** never say “live Bedrock.” Say **“cached for demo stability.”**
+**Rule:** say “live Bedrock” only when the header badge is LIVE and the panel says LIVE_BEDROCK. Otherwise say “cached for demo stability.”
 
 ## Pre-roll (before the timer)
 
@@ -99,14 +99,14 @@ Chain Verified: 5/5 events
 
 ---
 
-## 4:30 – 5:00 [THE BEDROCK CASSETTE]
+## 4:30 – 5:00 [THE BEDROCK INVESTIGATION]
 
-**Action:** click the **Details** tab. Click **Investigate (Cached)**.
+**Action:** click the **Details** tab. Click **Investigate**. The live Sonnet 4.5 call takes about 12 seconds; the badge and panel must say LIVE_BEDROCK.
 
-**Show:** the `LIVE_BEDROCK_CACHED` label and the legal citation panel.
+**Show:** the `LIVE_BEDROCK` label and the legal citation panel.
 
 **Say:**
-> “The Bedrock agent assembled the legal dossier: § 21(5) for the PEP exposure and § 6(1)(a) for the monitoring duty. Live model calls are cached for demo stability; the citations are exact, and the label says so.”
+> “The Bedrock agent assembled the legal dossier live: § 21(5) for the PEP exposure and § 6(1)(a) for the monitoring duty. If the network falls back, the panel says LIVE_BEDROCK_CACHED — we never relabel the cassette.”
 
 **Close:** stop talking at 5:00. Do not add a new claim.
 
@@ -121,7 +121,7 @@ Chain Verified: 5/5 events
 
 ## Never Say
 
-- “Live Bedrock” — say “cached for demo stability.”
+- “Live Bedrock” only if the badge is LIVE and the panel says LIVE_BEDROCK; otherwise say “cached for demo stability.”
 - “Real mobile signature” — say “mock signature, real 4-eyes and hash.”
 - “100% compliance” — say “statutory guardrail demonstrated.”
 - Any number not on screen.

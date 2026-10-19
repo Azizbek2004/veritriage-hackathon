@@ -18,7 +18,7 @@
 
 ## Status
 
-This repository started as the **agent environment**. B-000, the backend verifier/rules slice, the FINREG CSV/4-eyes endpoints, and the Next.js cockpit are implemented and green. The mobile app, real ECDSA signing, persistent audit storage, and live Bedrock call are not built. A visible 5-event demo audit chain is built; Bedrock is cached because real probes fail with an SSL error. See `BUILD_LOG.md` and `FINAL_REPORT.md` for the exact state.
+This repository started as the **agent environment**. B-000, the backend verifier/rules slice, the FINREG CSV/4-eyes endpoints, and the Next.js cockpit are implemented and green. The mobile app, real ECDSA signing, and persistent audit storage are not built. A visible 5-event demo audit chain is built. Bedrock is LIVE: the status probe and the Sonnet 4.5 investigation both returned `LIVE_BEDROCK` on 2026-10-19, with the cassette retained as fallback. See `BUILD_LOG.md` and `FINAL_REPORT.md` for the exact state.
 
 FROZEN for the 30-hour build. If it is not in this file or in `contracts/`, it does not go on stage.
 
@@ -129,7 +129,7 @@ evaluation/                evaluation-input status, no fabricated report
 - `contracts/` is materialized and frozen. The approved deltas are included.
 - `fixtures/` has no committed data; official datasets are in `datasets/` (gitignored). See `DATASET_INVENTORY.md`.
 - `tests/golden/` contains policy only; no golden files yet.
-- `npm run build` is green; `npm test` exits 0 (zero Node tests). The Bedrock probe is real and returns `LIVE_BEDROCK_CACHED` with an SSL error.
+- `npm run build` is green; `npm test` exits 0 (zero Node tests). The Bedrock probe is real and returned `LIVE_BEDROCK` at 1207ms; the live investigation returned `LIVE_BEDROCK` at 12706ms.
 - The post-remediation narrative and QA are pre-staged in `AGENTS.md`, `pitch/`, and `.agents/QA_WAR_ROOM.md`.
 - The seven remediation changes remain partially pre-staged; the verifier/rules slice landed first.
 - The Track 5 AML additions are queued as VT-033 through VT-036. The `CnbAmlMetadata` delta is materialized.
@@ -397,7 +397,7 @@ The seven changes are specified in `REMEDIATION.md`. The documentation, Q&A, mat
 - Contracts, Domain, Verifier, Infrastructure, Api shell, and tests are built.
 - `dotnet build` is green; `dotnet test` is 24 passed, 0 failed, 0 skipped.
 - `apps/web` is built; `apps/mobile` is absent. The FINREG CSV and 4-eyes endpoints are live.
-- Bedrock invoke is blocked by a TLS/credential failure; the status probe returns `LIVE_BEDROCK_CACHED`. See `AWS_BLOCKED.md`.
+- Bedrock invoke is live; the status probe returns `LIVE_BEDROCK` and the cassette remains a labeled fallback. See `AWS_BEDROCK_STATUS.md`.
 - Official datasets are in `datasets/` (gitignored); see `DATASET_INVENTORY.md`. No fixture data is committed.
 - The next action is not `BOOTSTRAP.md`; B-000/B-001/B-002 are complete. See `BUILD_LOG.md` and `FINAL_REPORT.md`.
 
