@@ -32,6 +32,22 @@ app.MapPost("/api/v1/cases/verify-4-eyes", (FourEyesRequest request) =>
         ? Results.Ok(new { status = "ok" })
         : Results.Json(new { error = FinregDeliverableEngine.FourEyesViolation }, statusCode: 400));
 
+app.MapGet("/api/v1/cases/{id}/audit", (string id) =>
+    Results.Ok(AuditChainBuilder.Build(id)));
+
+app.MapGet("/api/v1/cases/{id}/audit/verify", (string id) =>
+{
+    var events = AuditChainBuilder.Build(id);
+    var valid = AuditChainBuilder.Verify(id, events);
+    return Results.Ok(new
+    {
+        chain_valid = valid,
+        verified_events = valid ? events.Count : 0,
+        total_events = events.Count,
+        events,
+    });
+});
+
 app.MapPost("/api/v1/cases/{id}/approve", (string id, ApproveRequest request) =>
 {
     if (string.IsNullOrWhiteSpace(request.ApproverId) || request.SignatureB64 is null || !request.SignatureB64.StartsWith("mock_sig_", StringComparison.Ordinal))

@@ -140,7 +140,7 @@ This is the honest phase log. It records what was built, what was verified, what
 | API | Health endpoint only |
 | Frontend | FINREG cockpit built; npm run build green |
 | Mobile | Absent |
-| Backend tests | 18 passed, 0 failed |
+| Backend tests | 20 passed, 0 failed |
 | AWS datasets | Acquired in `datasets/` |
 | Bedrock invoke | Blocked |
 | Demo | FINREG CSV + 4-eyes demo path; not rehearsed |
@@ -177,7 +177,7 @@ This is the honest phase log. It records what was built, what was verified, what
 - Exact FINREG header order is unverified because the promised engine code was absent. See `PROPOSAL.md` P3.
 - GitHub push still fails: no auth; deploy key not added.
 - No live Bedrock.
-- No real mobile signature, audit chain, E2E, or 5-minute rehearsal.
+- No real mobile signature, persistent audit chain, E2E, or 5-minute human rehearsal.
 
 **Time elapsed:** ~35 minutes.
 
@@ -206,3 +206,12 @@ This is the honest phase log. It records what was built, what was verified, what
 - GitHub push blocked (invalid gh token, no token file, deploy key not added).
 - No live Bedrock, real mobile signing, audit chain, or human 5-minute rehearsal.
 - The exact FINREG engine values beyond headers are an interpretation; the promised code was absent.
+
+## Stage Readiness Pass — 2026-10-19
+
+- Added `AuditChainBuilder` and two endpoints: `/audit` and `/audit/verify`.
+- Added the **Audit Chain** drawer tab, timeline, green checks, and **Verify Chain** status.
+- Added `DEMO_SCRIPT.md`, `PRE_STAGE_CHECKLIST.md`, and `screenshots/` API proof.
+- `dotnet test` 20/20; `npm run build` green.
+- Playwright/Puppeteer unavailable; no visual screenshot captured.
+- GitHub/AWS not attempted; human action remains.

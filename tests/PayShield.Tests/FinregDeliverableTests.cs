@@ -110,3 +110,25 @@ public sealed class FinregDeliverableTests
         return rows;
     }
 }
+
+public sealed class AuditChainTests
+{
+    [Fact]
+    public void AuditChain_HasFiveEvents_AndVerifies()
+    {
+        var events = AuditChainBuilder.Build("ALERT-045");
+        Assert.Equal(5, events.Count);
+        Assert.Equal("ALERT_INGESTED", events[0].Event);
+        Assert.Equal("APPROVED", events[4].Event);
+        Assert.All(events, e => Assert.StartsWith("sha256:", e.Hash));
+        Assert.True(AuditChainBuilder.Verify("ALERT-045", events));
+    }
+
+    [Fact]
+    public void AuditChain_TamperFails()
+    {
+        var events = AuditChainBuilder.Build("ALERT-045").ToList();
+        events[2] = events[2] with { Hash = "sha256:tampered" };
+        Assert.False(AuditChainBuilder.Verify("ALERT-045", events));
+    }
+}

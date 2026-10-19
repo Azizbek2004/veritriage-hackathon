@@ -23,9 +23,24 @@ type Investigation = {
   legalBasis: string;
 };
 
+type AuditEvent = {
+  event: string;
+  timestamp: string;
+  hash: string;
+};
+
+type AuditVerification = {
+  chain_valid: boolean;
+  verified_events: number;
+  total_events: number;
+  events: AuditEvent[];
+};
+
+type Tab = "details" | "audit";
+
 const API = process.env.NEXT_PUBLIC_API_BASE ?? "http://127.0.0.1:5000";
 const SAME = "Ing. Jan Novák (Same as Executive)";
-const INDEPENDENT = "Ing. Jana Dvořáková (Independent)";
+const INDEPENDENT = "Marie Svobodová (MLRO)";
 
 function priorityClass(priority: number) {
   if (priority >= 75) return "priority red";
@@ -44,6 +59,11 @@ export default function Home() {
   const [bedrockBusy, setBedrockBusy] = useState(false);
   const [signingBusy, setSigningBusy] = useState(false);
   const [approved, setApproved] = useState<Set<string>>(new Set());
+  const [tab, setTab] = useState<Tab>("details");
+  const [audit, setAudit] = useState<AuditEvent[]>([]);
+  const [auditBusy, setAuditBusy] = useState(false);
+  const [chainValid, setChainValid] = useState(true);
+  const [chainStatus, setChainStatus] = useState("");
 
   useEffect(() => {
     fetch(`${API}/api/v1/deliverable/sample`)
@@ -60,12 +80,16 @@ export default function Home() {
     setApprover(INDEPENDENT);
     setBanner("");
     setInvestigation(null);
+    setTab("details");
+    setAudit([]);
+    setChainStatus("");
+    setChainValid(true);
   }
 
   async function chooseApprover(value: string) {
     setApprover(value);
     if (!selected) return;
-    const approverName = value === SAME ? selected.executivePerson : "Ing. Jana Dvořáková";
+    const approverName = value === SAME ? selected.executivePerson : "Marie Svobodová";
     const response = await fetch(`${API}/api/v1/cases/verify-4-eyes`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -100,7 +124,7 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           signature_b64: "mock_sig_123",
-          approver_id: approver === SAME ? selected.executivePerson : "Ing. Jana Dvořáková",
+          approver_id: "Marie Svobodová",
         }),
       });
       const body = await response.json();
@@ -114,6 +138,42 @@ export default function Home() {
     } finally {
       setSigningBusy(false);
     }
+  }
+
+  async function loadAudit() {
+    if (!selected) return;
+    setAuditBusy(true);
+    try {
+      const response = await fetch(`${API}/api/v1/cases/${selected.alertId}/audit`);
+      const data: AuditEvent[] = await response.json();
+      setAudit(data);
+      setChainValid(true);
+    } finally {
+      setAuditBusy(false);
+    }
+  }
+
+  async function verifyChain() {
+    if (!selected) return;
+    setAuditBusy(true);
+    try {
+      const response = await fetch(`${API}/api/v1/cases/${selected.alertId}/audit/verify`);
+      const data: AuditVerification = await response.json();
+      setAudit(data.events);
+      setChainValid(data.chain_valid);
+      setChainStatus(
+        data.chain_valid
+          ? `Chain Verified: ${data.verified_events}/${data.total_events} events`
+          : `Chain Invalid: ${data.verified_events}/${data.total_events} events`,
+      );
+    } finally {
+      setAuditBusy(false);
+    }
+  }
+
+  function showAudit() {
+    setTab("audit");
+    if (audit.length === 0) void loadAudit();
   }
 
   return (
@@ -195,28 +255,60 @@ export default function Home() {
           <div className="kicker">{selected.alertId} · {selected.alertType}</div>
           <h2>{selected.clientId}</h2>
           <p className="muted">{selected.executiveRole} · priority {selected.priority}</p>
-          <div className="reason">{selected.reason}</div>
-          <button className="ghost" onClick={runInvestigation} disabled={bedrockBusy}>
-            {bedrockBusy ? "Loading cached investigation…" : "Run Bedrock Investigation (Cached)"}
-          </button>
-          {investigation && (
-            <div className="cassette">
-              <div className="kicker">{investigation.mode}</div>
-              <p>{investigation.evidence_summary}</p>
-              <p className="muted">{investigation.rationale}</p>
-              <p className="legal">{investigation.legalBasis}</p>
+
+          <div className="tabs">
+            <button className={tab === "details" ? "tab active" : "tab"} onClick={() => setTab("details")}>Details</button>
+            <button className={tab === "audit" ? "tab active" : "tab"} onClick={showAudit}>Audit Chain</button>
+          </div>
+
+          {banner && <div className="banner danger small">{banner}</div>}
+
+          {tab === "details" ? (
+            <>
+              <div className="reason">{selected.reason}</div>
+              <button className="ghost" onClick={runInvestigation} disabled={bedrockBusy}>
+                {bedrockBusy ? "Loading cached investigation…" : "Investigate (Cached)"}
+              </button>
+              {investigation && (
+                <div className="cassette">
+                  <div className="kicker">{investigation.mode}</div>
+                  <p>{investigation.evidence_summary}</p>
+                  <p className="muted">{investigation.rationale}</p>
+                  <p className="legal">{investigation.legalBasis}</p>
+                </div>
+              )}
+              <label className="label" htmlFor="approver">Assign Approver</label>
+              <select id="approver" value={approver} onChange={(event) => chooseApprover(event.target.value)}>
+                <option>{INDEPENDENT}</option>
+                <option>{SAME}</option>
+              </select>
+              <button className="primary" disabled={approver === SAME || signingBusy} onClick={signAndApprove}>
+                {signingBusy ? "Signing…" : "Sign & Approve"}
+              </button>
+              <p className="muted small">4-eyes rule: the approver must differ from the executive. The same-person option is the demo trap.</p>
+            </>
+          ) : (
+            <div className="audit-panel">
+              <div className="timeline">
+                {audit.map((event) => (
+                  <div className="event" key={event.hash}>
+                    <div className={chainValid ? "tick" : "cross"}>{chainValid ? "✓" : "!"}</div>
+                    <div>
+                      <div className="event-name">{event.event}</div>
+                      <div className="muted small">{event.timestamp}</div>
+                      <div className="mono hash">{event.hash.slice(0, 12)}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {audit.length === 0 && !auditBusy && <p className="muted small">No audit events loaded.</p>}
+              <button className="primary" onClick={verifyChain} disabled={auditBusy}>
+                {auditBusy ? "Verifying…" : "Verify Chain"}
+              </button>
+              {chainStatus && <div className={chainValid ? "banner ok small" : "banner danger small"}>{chainStatus}</div>}
+              <p className="muted small">Each event hash is computed over the previous hash plus the event data.</p>
             </div>
           )}
-          <label className="label" htmlFor="approver">Assign Approver</label>
-          <select id="approver" value={approver} onChange={(event) => chooseApprover(event.target.value)}>
-            <option>{INDEPENDENT}</option>
-            <option>{SAME}</option>
-          </select>
-          {banner && <div className="banner danger small">{banner}</div>}
-          <button className="primary" disabled={approver === SAME || signingBusy} onClick={signAndApprove}>
-            {signingBusy ? "Signing…" : "Sign & Approve (Mock)"}
-          </button>
-          <p className="muted small">4-eyes rule: the approver must differ from the executive. The same-person option is the demo trap.</p>
         </aside>
       )}
     </main>

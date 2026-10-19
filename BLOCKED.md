@@ -34,13 +34,14 @@ The backend curl rehearsal is 0.0279s. The 5-minute human browser presentation h
 ## 4. Missing Demo Pieces
 
 - Real mobile ECDSA signing and server verification.
-- Audit chain endpoint and view.
+- Persistent audit storage (the visible chain is a deterministic mock).
 - Live Bedrock two-hop agent.
 - E2E test.
 
 ## What Is Not Blocked
 
 - Exact 11-column CSV header and 45-row deliverable.
+- Visible 5-event audit chain with `Chain Verified: 5/5 events`.
 - 4-eyes 400 with exact body.
 - Mock sign/approve with audit hash.
 - Next.js cockpit build.
