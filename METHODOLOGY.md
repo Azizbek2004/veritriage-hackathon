@@ -108,3 +108,14 @@ The gate is not a UI preference. The same person cannot be both the executive wh
 ### Legal note
 
 This is a hackathon methodology document, not legal advice. The citations are used to explain the design; the team must not improvise new legal claims on stage.
+
+## Graph Roadmap (Corrected POC)
+
+Kùzu is **archived** (GitHub API `archived: true`, verified 2026-10-19). It is not the Phase 2 engine.
+
+| Phase | Engine | Why |
+|---|---|---|
+| **1 — Current / Hackathon** | In-memory C# adjacency graph | Sub-millisecond 3-hop traversal over 397,853 transactions; zero external container; 100% deterministic. |
+| **2 — Bank POC (3–6 months)** | **DuckDB.NET** (`DuckDB.NET.Data.Full`) + **DuckPGQ** SQL/PGQ extension | Embedded in-process, ACID persistence, first-class .NET bindings; graph queries stay next to the ledger. |
+| **3 — Enterprise Production (12+ months)** | **Memgraph** (C++ in-memory, no JVM GC pauses) or **Neo4j** + Kafka ingestion | Streaming graph at bank scale; deterministic risk scoring stays in C#. |
+

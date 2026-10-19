@@ -132,3 +132,9 @@ The three traps, the Mastercard concession, and the NEVER SAY list come from the
 
 **"Did the model call the tool?"**
 > "The deterministic agent pipeline calls the tool before the model invocation and logs `lookup_statutory_provision`; the retrieved text is injected into the prompt. We do not claim the LLM autonomously selected the tool."
+
+**"Why not Kùzu for the graph roadmap?"**
+> "Kùzu is archived — GitHub reports `archived: true`. Phase 1 is our in-memory C# adjacency graph; Phase 2 is embedded DuckDB.NET with the DuckPGQ extension; Phase 3 is Memgraph or Neo4j with Kafka ingestion. We keep deterministic scoring in C# in every phase."
+
+**"How many legal sections are in the corpus?"**
+> "Thirteen verified/reference entries: Act § 6(1)(a), § 6(1)(b), § 6(1)(c), § 9(2)(b), § 9a(2)(c), § 18(1), § 21(2), § 21a, § 22(1); Decree § 7, § 8(2)/§ 9(1)(a), § 12; FAU Guideline No. 4."
