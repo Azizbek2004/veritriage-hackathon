@@ -22,5 +22,6 @@
   <ItemGroup>
     <ProjectReference Include="../../src/PayShield.Domain/PayShield.Domain.csproj" />
     <ProjectReference Include="../../src/PayShield.Verifier/PayShield.Verifier.csproj" />
+    <ProjectReference Include="../../src/PayShield.Infrastructure/PayShield.Infrastructure.csproj" />
   </ItemGroup>
 </Project>

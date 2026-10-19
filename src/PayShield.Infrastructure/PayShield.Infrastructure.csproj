@@ -8,4 +8,7 @@
   <ItemGroup>
     <ProjectReference Include="../PayShield.Domain/PayShield.Domain.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="AWSSDK.BedrockRuntime" Version="4.0.101.11" />
+  </ItemGroup>
 </Project>

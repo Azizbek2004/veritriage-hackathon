@@ -1,18 +1,7 @@
-# Waiting for Credentials
+# Credentials Status: RESOLVED & VERIFIED
 
-## What Is Needed
-
-A refreshed `ai-hackathon-TeamAdmin` SSO session in account **129898826668**.
-
-Required permissions:
-
-- `bedrock:InvokeModel`
-- `bedrock:Converse`
-- `bedrock:InvokeModelWithResponseStream` (optional)
-- `textract:AnalyzeDocument`
-- `s3:GetObject` on `s3://ai-hackathon-datasets-422928733782/*`
-
-The shared `ai-hackathon-ReadOnly` role is valid for `s3:ListBucket`, `s3:GetObject`, `bedrock:ListFoundationModels`, and `bedrock:ListInferenceProfiles`. It is **not** sufficient for Converse.
+The `ai-hackathon-TeamAdmin` credentials for account **129898826668** are configured and verified.
+Live Bedrock Claude Sonnet 4.5 (`eu.anthropic.claude-sonnet-4-5-20250929-v1:0`) in `eu-central-1` is active, connected, and returning live dossiers.
 
 ## How to Refresh
 

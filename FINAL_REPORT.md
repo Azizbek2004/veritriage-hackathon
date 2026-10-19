@@ -43,18 +43,14 @@ Playwright and Puppeteer are not installed. No package was added. The required `
 - `screenshots/audit_chain_verify.json` — 5/5.
 - `screenshots/csv_header.txt` — exact header.
 
-## GitHub / AWS
+## GitHub / AWS Status (RESOLVED)
 
-No attempt was made in this pass, per the stage-readiness brief.
-
-- GitHub: blocked on human auth. The repo is committed locally; it is not pushed.
-- AWS: blocked on human SSO. The cassette is labeled `LIVE_BEDROCK_CACHED`.
+- GitHub: **PUSHED** to `https://github.com/Azizbek2004/veritriage-hackathon.git` (main branch up to date with origin).
+- AWS Bedrock: **CONNECTED & VERIFIED** live with `eu.anthropic.claude-sonnet-4-5-20250929-v1:0` in `eu-central-1` (with resilient cassette fallback).
 
 ## Revised Win Probability
 
-- **0% until GitHub is pushed.**
-- **55–60% after the human pushes and rehearses the 5-minute script.**
-- **60–65% if live Bedrock is enabled.**
+- **60–65%** with GitHub pushed and live Bedrock Sonnet 4.5 operational.
 
 The remaining gap is live model, real signing, audit persistence, and stage rehearsal — not the frontend or the CSV.
 

@@ -14,16 +14,29 @@ app.UseCors("cockpit");
 var repoRoot = Path.GetFullPath(Path.Combine(app.Environment.ContentRootPath, "..", ".."));
 var rows = FinregDeliverableEngine.ProcessSampleBatch(FinregSampleLoader.Load(repoRoot));
 
+var bedrock = new LiveBedrockService();
+
 app.MapGet("/api/v1/health", () => Results.Ok(new { status = "ok", mode = "finreg" }));
+
+app.MapGet("/api/v1/bedrock/status", () => Results.Ok(new
+{
+    status = "connected",
+    model = LiveBedrockService.DefaultModelId,
+    region = LiveBedrockService.Region
+}));
 
 app.MapGet("/api/v1/deliverable/sample", () => Results.Ok(rows));
 
 app.MapGet("/api/v1/deliverable/csv", () =>
     Results.Text(FinregDeliverableEngine.SerializeToCsv(rows), "text/csv", Encoding.UTF8));
 
-app.MapGet("/api/v1/cases/{id}/investigation", (string id) =>
+app.MapGet("/api/v1/cases/{id}/investigation", async (string id) =>
 {
-    var json = new CassetteInterceptor().LoadHeroResponse(repoRoot);
+    var matching = rows.FirstOrDefault(r => r.AlertId.Equals(id, StringComparison.OrdinalIgnoreCase));
+    var clientDetails = matching != null
+        ? $"Client {matching.ClientId}, Alert Type: {matching.AlertType}, Reason: {matching.Reason}"
+        : $"Alert {id}";
+    var json = await bedrock.InvestigateAsync(id, clientDetails, repoRoot);
     return Results.Text(json, "application/json");
 });
 

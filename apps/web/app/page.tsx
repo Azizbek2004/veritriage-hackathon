@@ -18,6 +18,8 @@ type Row = {
 
 type Investigation = {
   mode: string;
+  model?: string;
+  latency_ms?: number;
   evidence_summary: string;
   rationale: string;
   legalBasis: string;
@@ -64,6 +66,7 @@ export default function Home() {
   const [auditBusy, setAuditBusy] = useState(false);
   const [chainValid, setChainValid] = useState(true);
   const [chainStatus, setChainStatus] = useState("");
+  const [bedrockOnline, setBedrockOnline] = useState(false);
 
   useEffect(() => {
     fetch(`${API}/api/v1/deliverable/sample`)
@@ -73,6 +76,13 @@ export default function Home() {
       })
       .then((data: Row[]) => setRows(data))
       .catch((error: unknown) => setApiError(String(error)));
+
+    fetch(`${API}/api/v1/bedrock/status`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.status === "connected") setBedrockOnline(true);
+      })
+      .catch(() => setBedrockOnline(false));
   }, []);
 
   function openRow(row: Row) {
@@ -184,7 +194,9 @@ export default function Home() {
           <div className="sub">FINREG Track 5 · AML deliverable cockpit</div>
         </div>
         <div className="actions">
-          <span className="badge">Bedrock: LIVE_BEDROCK_CACHED</span>
+          <span className={bedrockOnline ? "badge live" : "badge"}>
+            Bedrock: {bedrockOnline ? "LIVE (Sonnet 4.5)" : "LIVE_BEDROCK_CACHED"}
+          </span>
           <a className="download" href={`${API}/api/v1/deliverable/csv`}>
             Download FINREG Deliverable CSV
           </a>
@@ -267,11 +279,19 @@ export default function Home() {
             <>
               <div className="reason">{selected.reason}</div>
               <button className="ghost" onClick={runInvestigation} disabled={bedrockBusy}>
-                {bedrockBusy ? "Loading cached investigation…" : "Investigate (Cached)"}
+                {bedrockBusy
+                  ? "Querying Bedrock Sonnet 4.5…"
+                  : bedrockOnline
+                  ? "Investigate (Live Bedrock Sonnet 4.5)"
+                  : "Investigate (Cached)"}
               </button>
               {investigation && (
                 <div className="cassette">
-                  <div className="kicker">{investigation.mode}</div>
+                  <div className="kicker">
+                    {investigation.mode}
+                    {investigation.model ? ` · ${investigation.model}` : ""}
+                    {investigation.latency_ms ? ` · ${investigation.latency_ms}ms` : ""}
+                  </div>
                   <p>{investigation.evidence_summary}</p>
                   <p className="muted">{investigation.rationale}</p>
                   <p className="legal">{investigation.legalBasis}</p>
