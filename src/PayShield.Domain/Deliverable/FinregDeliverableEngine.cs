@@ -42,6 +42,17 @@ public static class FinregDeliverableEngine
             var alertId = $"ALERT-{i + 1:000}";
             var log = BuildLog(alertId, alertType, input.ClientId, transactionId, triage, priority, executiveRole, input.ExecutivePerson, input.Approver, reason);
 
+            var raw = bd.Base + bd.Vol + bd.Pep + bd.Struct + bd.Channel;
+            var tier = input.RiskScore >= 80 ? "high" : input.RiskScore >= 50 ? "medium" : "low";
+            var confidence = ComputeConfidence(new ConfidenceEvidence(
+                input.ExpectedVolume > 0, input.ExpectedVolume > 0,
+                input.ExpectedCount > 0, input.ExpectedCount > 0,
+                0m, input.ActualCount));
+            var inputs = new PriorityInputs(tier,
+                input.ExpectedVolume > 0 ? Math.Round(input.ActualVolume / input.ExpectedVolume, 2) : 0m,
+                input.ExpectedCount > 0 ? Math.Round((decimal)input.ActualCount / input.ExpectedCount, 2) : 0m,
+                input.Pep, bd.Struct > 0, false,
+                bd.Base, bd.Vol, bd.Pep, bd.Struct, bd.Channel);
             rows.Add(new DeliverableCsvRow(
                 alertId,
                 alertType,
@@ -54,10 +65,21 @@ public static class FinregDeliverableEngine
                 input.Approver,
                 reason,
                 log,
-                bd));
+                bd,
+                raw,
+                0,
+                rows.Count + 1,
+                priority,
+                confidence,
+                inputs));
         }
 
-        return rows;
+        var ranked = rows.OrderByDescending(r => r.PriorityRaw)
+            .ThenByDescending(r => r.ConfidenceScore)
+            .ThenBy(r => r.AlertId, StringComparer.Ordinal)
+            .ToList();
+        var rank = ranked.Select((r, i) => (r.AlertId, Rank: i + 1)).ToDictionary(x => x.AlertId, x => x.Rank, StringComparer.Ordinal);
+        return rows.Select(r => r with { Rank = rank[r.AlertId], RankTotal = rows.Count }).ToList();
     }
 
     public static string BuildStatutoryReason(CnbAlertInput input, int priority, PriorityBreakdown bd, bool isFp)
@@ -110,6 +132,22 @@ public static class FinregDeliverableEngine
 
         return string.Join("; ", parts) + $"; {components}";
     }
+    public static PriorityResult ComputePriority(PriorityComponents components)
+    {
+        var raw = (int)Math.Round((decimal)(components.Base + components.Vol + components.Pep + components.Struct + components.Channel), MidpointRounding.AwayFromZero);
+        return new PriorityResult(raw, Math.Min(100, raw));
+    }
+
+    public static int ComputeConfidence(ConfidenceEvidence e)
+    {
+        var score = 0;
+        if (e.AresBasicFetched && e.AresIcoMatches) score += 40;
+        if (e.AresVrFetched && e.ActiveDirectorsResolved) score += 25;
+        if (e.OcrConfidence >= 0.80m) score += 20;
+        if (e.CounterpartySiblingCount >= 5) score += 15;
+        return Math.Min(100, score);
+    }
+
     private static PriorityBreakdown BuildBreakdown(int priority, CnbAlertInput input, bool isFp)
     {
         var baseScore = isFp ? 10 : 40;

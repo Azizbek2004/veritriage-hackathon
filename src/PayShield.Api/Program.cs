@@ -82,6 +82,15 @@ app.MapGet("/api/v1/bedrock/status", async (IBedrockService bedrock) =>
     }
 });
 
+app.MapGet("/api/v1/cases", (DeliverableState state) =>
+    Results.Ok(state.Rows.OrderBy(r => r.Rank).ThenBy(r => r.AlertId, StringComparer.Ordinal)));
+
+app.MapGet("/api/v1/cases/{id}", (string id, DeliverableState state) =>
+{
+    var row = state.QueueRows.FirstOrDefault(r => r.AlertId.Equals(id, StringComparison.OrdinalIgnoreCase));
+    return row is null ? Results.NotFound() : Results.Ok(row);
+});
+
 app.MapGet("/api/v1/deliverable/sample", (DeliverableState state) => Results.Ok(state.QueueRows));
 
 app.MapGet("/api/v1/deliverable/stats", (DeliverableState state) => Results.Ok(state.Stats));
