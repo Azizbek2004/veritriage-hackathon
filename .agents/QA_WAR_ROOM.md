@@ -138,3 +138,9 @@ The three traps, the Mastercard concession, and the NEVER SAY list come from the
 
 **"How many legal sections are in the corpus?"**
 > "Thirteen verified/reference entries: Act § 6(1)(a), § 6(1)(b), § 6(1)(c), § 9(2)(b), § 9a(2)(c), § 18(1), § 21(2), § 21a, § 22(1); Decree § 7, § 8(2)/§ 9(1)(a), § 12; FAU Guideline No. 4."
+
+**"How do you distinguish a mule from a taken client?"**
+> "The topology engine separates them: a mule aggregator has at least three shared counterparties or a high-centrality hub with under-six-hour pass-through; a compromised victim is a low/medium-tier client with a sudden 2.5x drain into that hub. That distinction prevents filing a hostile SAR against a phished retail victim while still freezing the outbound transfer."
+
+**"What is the radar distance?"**
+> "R = 1.0 minus the weighted centrality score. R 0.00 is the mule core; R 1.00 is isolated periphery. The radar is additive forensic evidence; it never changes priority or the 5-component parity."

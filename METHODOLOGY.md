@@ -119,3 +119,40 @@ Kùzu is **archived** (GitHub API `archived: true`, verified 2026-10-19). It is 
 | **2 — Bank POC (3–6 months)** | **DuckDB.NET** (`DuckDB.NET.Data.Full`) + **DuckPGQ** SQL/PGQ extension | Embedded in-process, ACID persistence, first-class .NET bindings; graph queries stay next to the ledger. |
 | **3 — Enterprise Production (12+ months)** | **Memgraph** (C++ in-memory, no JVM GC pauses) or **Neo4j** + Kafka ingestion | Streaming graph at bank scale; deterministic risk scoring stays in C#. |
 
+
+## Topological Centrality & Forensic Role Differentiation
+
+The topological radar adds a second, additive forensic axis; it does not alter `priority`, `priority_raw`, or the 5-component formula.
+
+**Concentric centrality**
+
+```
+rawTopology = 0.40 * C_degree + 0.35 * C_clustering + 0.25 * C_diffusion
+topologyScore = round(rawTopology)
+R = 1.00 - topologyScore / 100
+```
+
+- `C_degree = min(100, shared_counterparty_count * 25)`
+- `C_clustering`: 100 for a directed cycle, 60 for a multi-hop chain with shared hub, 35 for shared hub only, 0 otherwise.
+- `C_diffusion`: rapid pass-through (`<=6h`, in/out 0.80–1.10) or PEP/high-risk link.
+
+**Forensic roles — complicit vs compromised**
+
+| Role | Signature | Legal handling |
+|---|---|---|
+| `MULE_AGGREGATOR` | `shared >= 3` or topology ≥75 with `pass_through_hours <= 6` | Freeze, file SAR, name as suspect |
+| `CAROUSEL_RING` | Directed cycle or clustering ≥60 with shared ≥2 | Collusive layering; freeze and investigate |
+| `COMPROMISED_VICTIM` | low/medium tier with vol ≥2.5 or new remote, linked to mule/ring | Protect the client; freeze outbound; do not file hostile SAR against the victim |
+| `ISOLATED_ANOMALY` | R ≥ 0.65 and no network pattern | Peripheral alert |
+
+The **compromised-victim** class is the safeguard against filing a criminal SAR against a phished ATO/APP victim while still freezing the outbound transfer.
+
+**Account correlation**
+
+```
+score = 0.35 * IBAN_Jaccard + 0.30 * temporal_sync + 0.20 * amount_mirror + 0.15 * statutory_entity
+```
+
+Top 5 correlated accounts with score ≥35 are attached to each case.
+
+**Czech statutory grounding:** Act No. 253/2008 Coll. § 6(1)(g) (network lacking economic rationale), § 6(1)(b) (multi-account structuring), and ČNB Decree No. 67/2018 Coll. § 6(1)(b).
