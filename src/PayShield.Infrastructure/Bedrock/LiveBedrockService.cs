@@ -57,8 +57,13 @@ public sealed class LiveBedrockService : IBedrockService
         catch (Exception ex)
         {
             sw.Stop();
-            var errMsg = ex.InnerException != null ? $"{ex.Message} -> {ex.InnerException.Message}" : ex.Message;
-            return new BedrockProbeResult(false, sw.ElapsedMilliseconds, errMsg);
+            var sb = new System.Text.StringBuilder();
+            for (var curr = ex; curr != null; curr = curr.InnerException)
+            {
+                if (sb.Length > 0) sb.Append(" ---> ");
+                sb.Append(curr.GetType().Name).Append(": ").Append(curr.Message);
+            }
+            return new BedrockProbeResult(false, sw.ElapsedMilliseconds, sb.ToString());
         }
     }
 
