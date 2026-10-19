@@ -123,16 +123,20 @@ export default function Home() {
 
   const sameApprover = approver === SAME;
 
-  const stats = useMemo(() => ({
-    total: rows.length,
-    fp: rows.filter((row) => row.alertType === "FP").length,
-    review: rows.filter((row) => row.alertType === "REVIEW").length,
-    high: rows.filter((row) => row.priority >= 75).length,
-    pep: rows.filter((row) => row.reason.includes("§ 21(5)")).length,
-    approved: approved.size,
-  }), [rows, approved]);
+  const stats = useMemo(() => {
+    const list = Array.isArray(rows) ? rows : [];
+    return {
+      total: list.length,
+      fp: list.filter((row) => row.alertType === "FP").length,
+      review: list.filter((row) => row.alertType === "REVIEW").length,
+      high: list.filter((row) => row.priority >= 75).length,
+      pep: list.filter((row) => row.reason?.includes("§ 21(5)")).length,
+      approved: approved.size,
+    };
+  }, [rows, approved]);
 
   const filteredRows = useMemo(() => {
+    if (!Array.isArray(rows)) return [];
     const needle = query.trim().toLowerCase();
     return rows.filter((row) => {
       const matchesFilter =
@@ -153,17 +157,21 @@ export default function Home() {
         return response.json();
       })
       .then((data: Row[]) => {
-        setRows(data);
+        const list = Array.isArray(data) ? data : [];
+        setRows(list);
         const params = new URLSearchParams(window.location.search);
         const caseId = params.get("case");
-        const row = caseId ? data.find((item) => item.alertId === caseId) : undefined;
+        const row = caseId ? list.find((item) => item.alertId === caseId) : undefined;
         if (row) {
           setSelected(row);
           setApprover(INDEPENDENT);
           setTab(params.get("tab") === "audit" ? "audit" : "details");
         }
       })
-      .catch((error: unknown) => setApiError(String(error)))
+      .catch((error: unknown) => {
+        setRows([]);
+        setApiError(String(error));
+      })
       .finally(() => setRowsLoading(false));
 
     fetch(`${API}/api/v1/deliverable/stats`)
@@ -233,6 +241,9 @@ export default function Home() {
     try {
       const response = await fetch(`${API}/api/v1/cases/${selected.alertId}/investigation`);
       const data: Investigation = await response.json();
+      if (data && !Array.isArray(data.claims)) {
+        data.claims = [];
+      }
       setInvestigation(data);
     } finally {
       setBedrockBusy(false);
@@ -326,10 +337,11 @@ export default function Home() {
       const response = await fetch(`${API}/api/v1/deliverable/reprocess`, { method: "POST" });
       if (!response.ok) throw new Error(`Reprocess ${response.status}`);
       const data: { summary: DataStats; rows: Row[] } = await response.json();
-      setRows(data.rows);
-      setDataStats(data.summary);
+      const list = Array.isArray(data?.rows) ? data.rows : [];
+      setRows(list);
+      setDataStats(data?.summary ?? null);
       setApiError("");
-      setToast(`Reprocessed ${formatNumber(data.summary.transactionRows)} transactions in ${Math.round(data.summary.loadMs)} ms`);
+      setToast(`Reprocessed ${formatNumber(data?.summary?.transactionRows)} transactions in ${Math.round(data?.summary?.loadMs ?? 0)} ms`);
     } catch {
       setToast("Reprocess failed. Check the API and try again.");
     } finally {
@@ -456,7 +468,7 @@ export default function Home() {
 
       <section className="toolbar" aria-label="Filter alerts">
         <div className="filter-group">
-          {filters.map((item) => (
+          {Array.isArray(filters) && filters.map((item) => (
             <button
               key={item.key}
               className={filter === item.key ? "filter-btn active" : "filter-btn"}
@@ -507,7 +519,7 @@ export default function Home() {
             <tbody>
               {rowsLoading ? (
                 <tr><td colSpan={11} className="loading-row">Loading 45 FINREG alerts…</td></tr>
-              ) : filteredRows.length === 0 ? (
+              ) : !Array.isArray(filteredRows) || filteredRows.length === 0 ? (
                 <tr><td colSpan={11} className="loading-row">No alerts match this filter.</td></tr>
               ) : (
                 filteredRows.map((row) => {
@@ -615,7 +627,7 @@ export default function Home() {
                       <>
                         <p className="detail-value">{investigation.evidence_summary}</p>
                         <p className="brand-subtitle">{investigation.rationale}</p>
-                        {investigation.claims && investigation.claims.length > 0 && (
+                        {Array.isArray(investigation?.claims) && investigation.claims.length > 0 && (
                           <div className="ai-claims-list">
                             {investigation.claims.map((claim) => (
                               <div className="ai-claim-item" key={claim.claimId}>
@@ -666,7 +678,7 @@ export default function Home() {
                     </div>
                   )}
                   <div className="timeline">
-                    {audit.map((event, index) => (
+                    {Array.isArray(audit) && audit.map((event, index) => (
                       <div className="timeline-item" key={`${event.event}-${index}`}>
                         <div className={chainValid ? "timeline-dot" : "timeline-dot invalid"}>{chainValid ? "✓" : "!"}</div>
                         <div className="timeline-content">
