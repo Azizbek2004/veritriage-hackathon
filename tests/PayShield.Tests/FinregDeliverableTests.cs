@@ -68,6 +68,8 @@ public sealed class FinregDeliverableTests
         Assert.Equal(10, rows.Count(r => r.AlertType == "REVIEW" && r.Priority is >= 40 and < 75));
         Assert.Equal(5, rows.Count(r => r.AlertType == "REVIEW" && r.Priority >= 75));
         Assert.Contains(rows, r => r.Priority >= 75 && r.Reason.Contains("§ 21(5)"));
+        Assert.Contains(rows, r => r.Reason.Contains("[R-REVIEW-PRIORITY-01 v1.0.0]"));
+        Assert.Contains(rows, r => r.Reason.Contains("[R-VOLUME-AML-01 v1.0.0]"));
     }
 
     [Fact]
@@ -115,6 +117,32 @@ public sealed class FinregDeliverableTests
     }
 }
 
+public sealed class PriorityVerificationTests
+{
+    [Theory]
+    [InlineData("PRI-01", 10, 1.0, 0.0, false, false, false, 10, "FP band (< 40)")]
+    [InlineData("PRI-02", 25, 3.0, 0.0, false, false, false, 45, "REVIEW band (40–74)")]
+    [InlineData("PRI-03", 40, 5.0, 0.0, true, true, true, 100, "High band (≥ 75)")]
+    [InlineData("PRI-04", 10, 1.2, 0.0, false, false, false, 12, "FP band")]
+    [InlineData("PRI-05", 25, 2.5, 0.0, false, true, false, 60, "REVIEW band")]
+    public void Priority_Formula_PassesExpectedCases(
+        string testId, int baseScore, double volRatio, double countRatio,
+        bool pep, bool structPattern, bool channel, int expectedPriority, string band)
+    {
+        Assert.False(string.IsNullOrEmpty(testId));
+        var priority = FinregDeliverableEngine.ComputePriorityFormula(
+            baseScore, (decimal)volRatio, (decimal)countRatio, pep, structPattern, channel);
+        Assert.Equal(expectedPriority, priority);
+
+        if (expectedPriority < 40)
+            Assert.Contains("FP", band);
+        else if (expectedPriority < 75)
+            Assert.Contains("REVIEW", band);
+        else
+            Assert.Contains("High", band);
+    }
+}
+
 public sealed class AuditChainTests
 {
     [Fact]
@@ -134,6 +162,30 @@ public sealed class AuditChainTests
         var events = AuditChainBuilder.Build("ALERT-045").ToList();
         events[2] = events[2] with { Hash = "sha256:tampered" };
         Assert.False(AuditChainBuilder.Verify("ALERT-045", events));
+    }
+
+    [Fact]
+    public void Audit_TamperedEventFailsVerification()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), "payshield-audit-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            var ledger = new VeriTriage.Infrastructure.Audit.FileAuditLedger(tempDir);
+            var caseId = "ALERT-045";
+            Assert.True(ledger.Verify(caseId));
+
+            var ledgerPath = Path.Combine(tempDir, "data", "audit_ledger.json");
+            var text = File.ReadAllText(ledgerPath);
+            var tampered = text.Replace("\"Event\": \"APPROVED\"", "\"Event\": \"TAMPERED_EVENT\"");
+            File.WriteAllText(ledgerPath, tampered);
+
+            Assert.False(ledger.Verify(caseId));
+        }
+        finally
+        {
+            try { Directory.Delete(tempDir, true); } catch { }
+        }
     }
 }
 

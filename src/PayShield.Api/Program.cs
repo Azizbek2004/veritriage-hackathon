@@ -34,7 +34,10 @@ static string FindRepoRoot(string startDir)
 }
 
 var repoRoot = FindRepoRoot(builder.Environment.ContentRootPath);
-builder.Services.AddSingleton(_ => LegalCorpus.Load(Path.Combine(repoRoot, "fixtures", "legal_corpus_cnb_aml.json")));
+var corpusPath = Directory.Exists(Path.Combine(repoRoot, "legal", "corpus"))
+    ? Path.Combine(repoRoot, "legal", "corpus")
+    : Path.Combine(repoRoot, "fixtures", "legal_corpus_cnb_aml.json");
+builder.Services.AddSingleton(_ => LegalCorpus.Load(corpusPath));
 builder.Services.AddSingleton<IBedrockService>(sp => new LiveBedrockService(null, sp.GetRequiredService<LegalCorpus>()));
 builder.Services.AddSingleton(_ => new DeliverableState(repoRoot));
 builder.Services.AddSingleton(_ => CnbTransactionIndex.Load(Path.Combine(repoRoot, "datasets", "CNB")));

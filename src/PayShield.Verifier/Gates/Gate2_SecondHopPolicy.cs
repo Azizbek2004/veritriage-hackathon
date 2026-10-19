@@ -22,9 +22,13 @@ public static class Gate2_SecondHopPolicy
         }
 
         var envelopeIco = envelope.Root?["supplier"]?["ico"]?.ToString();
-        var hop2Ico = hops[1]?["targetIco"]?.ToString();
-        var sameIco = !string.IsNullOrWhiteSpace(envelopeIco) && envelopeIco == hop2Ico;
-        steps.Add(new ProofStep(null, null, null, null, "scope_invariant: hop_count <= 2 AND hop2.ico == hop1.ico", null, sameIco, sameIco, null));
+        var sameIco = true;
+        if (count == 2)
+        {
+            var hop2Ico = hops[1]?["targetIco"]?.ToString();
+            sameIco = !string.IsNullOrWhiteSpace(envelopeIco) && envelopeIco == hop2Ico;
+        }
+        steps.Add(new ProofStep(null, null, null, null, "scope_invariant: hop_count <= 2 AND (hop_count == 1 OR hop2.ico == hop1.ico)", null, sameIco, sameIco, null));
 
         if (!sameIco)
         {

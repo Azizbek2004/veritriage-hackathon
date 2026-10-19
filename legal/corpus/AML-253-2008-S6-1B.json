@@ -1,0 +1,11 @@
+{
+  "clause_id": "AML-253-2008-S6-1B",
+  "statute": "Act No. 253/2008 Coll. (Czech AML Act)",
+  "section": "§ 6(1)(b)",
+  "title": "Suspicious Transaction — Structuring / Smurfing",
+  "text_cs": "Podezřelým obchodem je obchod, u něhož dochází k účelovému dělení transakcí na menší částky s cílem vyhnout se identifikační nebo kontrolní povinnosti.",
+  "text_en": "Deliberate splitting of transfers into sub-threshold amounts to evade statutory AML identification or monitoring thresholds.",
+  "url": "https://www.zakonyprolidi.cz/cs/2008-253#p6",
+  "retrieved_at": "2026-10-19T17:30:00+02:00",
+  "source": "human_approved"
+}

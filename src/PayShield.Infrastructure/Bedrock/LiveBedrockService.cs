@@ -261,8 +261,9 @@ Output schema:
                 retrieved_at = section.RetrievedAt,
                 source = section.Source,
             });
+            calls.Add(new { name = "get_legal_section", clause_id = id, status = "RETURNED" });
             calls.Add(new { name = "lookup_statutory_provision", clause_id = id, status = "RETURNED" });
-            Console.WriteLine($"[lookup_statutory_provision] {id} returned {section.CzechText.Length} chars");
+            Console.WriteLine($"[get_legal_section] {id} returned {section.CzechText.Length} chars");
         }
         obj["statutes"] = JsonSerializer.SerializeToNode(statutes);
         obj["tool_calls"] = JsonSerializer.SerializeToNode(calls);

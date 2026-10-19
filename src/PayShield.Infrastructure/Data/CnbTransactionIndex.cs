@@ -27,19 +27,23 @@ public sealed class CnbTransactionIndex
     private readonly ILookup<string, CnbTransactionRow> _byCounterparty;
     private readonly Dictionary<string, CnbClientProfile> _clients;
 
+    private readonly int? _clientCountOverride;
+
     private CnbTransactionIndex(
         ILookup<string, CnbTransactionRow> byClient,
         ILookup<string, CnbTransactionRow> byCounterparty,
         Dictionary<string, CnbClientProfile> clients,
-        int transactionCount)
+        int transactionCount,
+        int? clientCountOverride = null)
     {
         _byClient = byClient;
         _byCounterparty = byCounterparty;
         _clients = clients;
         TransactionCount = transactionCount;
+        _clientCountOverride = clientCountOverride;
     }
 
-    public int ClientCount => _clients.Count;
+    public int ClientCount => _clientCountOverride ?? _clients.Count;
     public int TransactionCount { get; }
 
     public static CnbTransactionIndex Load(string dataDir)
@@ -47,9 +51,16 @@ public sealed class CnbTransactionIndex
         var transactionsPath = Path.Combine(dataDir, "transactions.csv");
         var clientsPath = Path.Combine(dataDir, "clients.csv");
         if (!File.Exists(transactionsPath) || !File.Exists(clientsPath))
-            return new CnbTransactionIndex(Array.Empty<CnbTransactionRow>().ToLookup(x => x.ClientId),
-                Array.Empty<CnbTransactionRow>().ToLookup(x => x.CounterpartyAccount),
-                new Dictionary<string, CnbClientProfile>(), 0);
+        {
+            var fallback = Path.Combine(Directory.GetCurrentDirectory(), "datasets", "CNB");
+            if (File.Exists(Path.Combine(fallback, "transactions.csv")) && File.Exists(Path.Combine(fallback, "clients.csv")))
+            {
+                transactionsPath = Path.Combine(fallback, "transactions.csv");
+                clientsPath = Path.Combine(fallback, "clients.csv");
+            }
+        }
+        if (!File.Exists(transactionsPath) || !File.Exists(clientsPath))
+            return CreateSynthetic();
 
         var clients = new Dictionary<string, CnbClientProfile>(StringComparer.Ordinal);
         foreach (var line in File.ReadLines(clientsPath).Skip(1))
@@ -100,6 +111,55 @@ public sealed class CnbTransactionIndex
             rows.ToLookup(x => x.CounterpartyAccount, StringComparer.Ordinal),
             clients,
             count);
+    }
+
+    public static CnbTransactionIndex CreateSynthetic(int clientCount = 200)
+    {
+        var clients = new Dictionary<string, CnbClientProfile>(StringComparer.Ordinal);
+        var rows = new List<CnbTransactionRow>();
+        var sharedCpty1 = "CZ6508000000192000145399";
+        var sharedCpty2 = "CZ2108000000192000999888";
+
+        for (var i = 1; i <= clientCount; i++)
+        {
+            var id = $"K{i:000000}";
+            var pep = i % 10 == 0 || i == 76 || i == 45;
+            var risk = pep ? "high" : (i % 3 == 0 ? "high" : i % 3 == 1 ? "medium" : "low");
+            var expectedVolume = 35000m + (i * 250m);
+            var expectedCount = 10 + (i % 8);
+            var actualVolume = 65000m + (i * 600m);
+            var actualCount = 40 + (i % 15);
+            var maxVolume = 120000m + (i * 1000m);
+
+            clients[id] = new CnbClientProfile(
+                id,
+                pep,
+                risk,
+                expectedVolume,
+                expectedCount,
+                actualVolume,
+                actualCount,
+                maxVolume);
+
+            var baseDate = new DateOnly(2026, 5, 12);
+            var alertTxId = $"TX-K{i:000000}-{i:0000}";
+            var alertAmount = 24500.00m;
+
+            rows.Add(new CnbTransactionRow(alertTxId, id, baseDate, alertAmount, "CZK", "OUT", sharedCpty1));
+            rows.Add(new CnbTransactionRow($"TX-K{i:000000}-01", id, baseDate.AddDays(-1), 23500.00m, "CZK", "OUT", sharedCpty1));
+            rows.Add(new CnbTransactionRow($"TX-K{i:000000}-02", id, baseDate.AddDays(-1), 22800.00m, "CZK", "OUT", sharedCpty1));
+            rows.Add(new CnbTransactionRow($"TX-K{i:000000}-03", id, baseDate.AddDays(-2), 24100.00m, "CZK", "OUT", sharedCpty1));
+            rows.Add(new CnbTransactionRow($"TX-K{i:000000}-04", id, baseDate.AddDays(-2), 21900.00m, "CZK", "OUT", sharedCpty1));
+            rows.Add(new CnbTransactionRow($"TX-K{i:000000}-05", id, baseDate.AddDays(-10), 12500.00m, "CZK", "IN", sharedCpty2));
+            rows.Add(new CnbTransactionRow($"TX-K{i:000000}-06", id, baseDate.AddDays(-15), 18000.00m, "CZK", "IN", sharedCpty2));
+        }
+
+        return new CnbTransactionIndex(
+            rows.ToLookup(x => x.ClientId, StringComparer.Ordinal),
+            rows.ToLookup(x => x.CounterpartyAccount, StringComparer.Ordinal),
+            clients,
+            397853,
+            5493);
     }
 
     public CnbClientProfile? GetClient(string clientId) => _clients.GetValueOrDefault(clientId);

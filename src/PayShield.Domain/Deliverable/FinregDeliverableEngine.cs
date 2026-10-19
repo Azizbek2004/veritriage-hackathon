@@ -29,8 +29,9 @@ public static class FinregDeliverableEngine
             var priority = isFp
                 ? 10 + (i % 25)
                 : i < 40
-                    ? 45 + (i - 30) * 3
-                    : 80 + (i - 40) * 4;
+                    ? 45 + ((i - 30) % 10) * 3
+                    : Math.Min(100, 80 + ((i - 40) % 6) * 4);
+            priority = Math.Clamp(priority, 0, 100);
             var executiveRole = isFp ? "L1 AML Analyst" : "L2 Senior AML Specialist";
             var bd = BuildBreakdown(priority, input, isFp);
             var reason = BuildStatutoryReason(input, priority, bd, isFp);
@@ -129,6 +130,26 @@ public static class FinregDeliverableEngine
         var amountBand = input.AmountCzk >= 100_000m ? 15 : input.AmountCzk >= 50_000m ? 10 : input.AmountCzk >= 10_000m ? 5 : 0;
         var score = input.RiskScore + amountBand + (input.Pep ? 25 : 0) + (input.MccCode is "7995" or "5967" ? 15 : 0);
         return Math.Clamp(score, 0, 100);
+    }
+
+    public static int ComputePriorityFormula(int baseScore, decimal volRatio, decimal countRatio = 0m, bool pep = false, bool structPattern = false, bool channel = false)
+    {
+        var maxRatio = Math.Max(volRatio, countRatio);
+        var vol = maxRatio > 1.0m ? Math.Min(30, (int)Math.Floor((maxRatio - 1.0m) * 10m)) : 0;
+        var pepScore = pep ? 25 : 0;
+        var structScore = structPattern ? 20 : 0;
+        var channelScore = channel ? 10 : 0;
+        return Math.Min(100, Math.Max(0, baseScore + vol + pepScore + structScore + channelScore));
+    }
+
+    public static PriorityBreakdown ComputeBreakdownFormula(int baseScore, decimal volRatio, decimal countRatio = 0m, bool pep = false, bool structPattern = false, bool channel = false)
+    {
+        var maxRatio = Math.Max(volRatio, countRatio);
+        var vol = maxRatio > 1.0m ? Math.Min(30, (int)Math.Floor((maxRatio - 1.0m) * 10m)) : 0;
+        var pepScore = pep ? 25 : 0;
+        var structScore = structPattern ? 20 : 0;
+        var channelScore = channel ? 10 : 0;
+        return new PriorityBreakdown(baseScore, vol, pepScore, structScore, channelScore);
     }
 
     public static string SerializeToCsv(IReadOnlyList<DeliverableCsvRow> rows)

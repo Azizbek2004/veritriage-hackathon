@@ -11,7 +11,8 @@ public sealed record LegalSection(
     string EnglishSummary,
     string Url,
     string RetrievedAt,
-    string Source);
+    string Source,
+    bool Unavailable = false);
 
 public sealed class LegalCorpus
 {
@@ -19,26 +20,67 @@ public sealed class LegalCorpus
 
     private LegalCorpus(Dictionary<string, LegalSection> byId) => _byId = byId;
 
+    public int Count => _byId.Count;
+    public IReadOnlyCollection<LegalSection> All => _byId.Values;
+
     public static LegalCorpus Load(string path)
     {
-        if (!File.Exists(path)) return new LegalCorpus(new Dictionary<string, LegalSection>(StringComparer.Ordinal));
-        using var doc = JsonDocument.Parse(File.ReadAllText(path));
         var map = new Dictionary<string, LegalSection>(StringComparer.Ordinal);
-        foreach (var item in doc.RootElement.EnumerateArray())
+        if (Directory.Exists(path))
         {
-            var section = new LegalSection(
-                item.GetProperty("clause_id").GetString() ?? "",
-                item.GetProperty("statute").GetString() ?? "",
-                item.GetProperty("section").GetString() ?? "",
-                item.GetProperty("title").GetString() ?? "",
-                item.GetProperty("text_cs").GetString() ?? "",
-                item.GetProperty("text_en").GetString() ?? "",
-                item.GetProperty("url").GetString() ?? "",
-                item.GetProperty("retrieved_at").GetString() ?? "",
-                item.GetProperty("source").GetString() ?? "");
-            if (!string.IsNullOrWhiteSpace(section.ClauseId)) map[section.ClauseId] = section;
+            foreach (var file in Directory.EnumerateFiles(path, "*.json"))
+            {
+                try
+                {
+                    using var doc = JsonDocument.Parse(File.ReadAllText(file));
+                    ParseElement(doc.RootElement, map);
+                }
+                catch { }
+            }
+        }
+        else if (File.Exists(path))
+        {
+            try
+            {
+                using var doc = JsonDocument.Parse(File.ReadAllText(path));
+                ParseElement(doc.RootElement, map);
+            }
+            catch { }
         }
         return new LegalCorpus(map);
+    }
+
+    private static void ParseElement(JsonElement root, Dictionary<string, LegalSection> map)
+    {
+        if (root.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var item in root.EnumerateArray())
+            {
+                var s = ParseSection(item);
+                if (!string.IsNullOrWhiteSpace(s.ClauseId)) map[s.ClauseId] = s;
+            }
+        }
+        else if (root.ValueKind == JsonValueKind.Object)
+        {
+            var s = ParseSection(root);
+            if (!string.IsNullOrWhiteSpace(s.ClauseId)) map[s.ClauseId] = s;
+        }
+    }
+
+    private static LegalSection ParseSection(JsonElement item)
+    {
+        var unavailable = item.TryGetProperty("unavailable", out var unav) && unav.GetBoolean();
+        return new LegalSection(
+            item.TryGetProperty("clause_id", out var cid) ? cid.GetString() ?? "" : "",
+            item.TryGetProperty("statute", out var st) ? st.GetString() ?? "" : "",
+            item.TryGetProperty("section", out var sc) ? sc.GetString() ?? "" : "",
+            item.TryGetProperty("title", out var ti) ? ti.GetString() ?? "" : "",
+            item.TryGetProperty("text_cs", out var tc) ? tc.GetString() ?? "" : "",
+            item.TryGetProperty("text_en", out var te) ? te.GetString() ?? "" : "",
+            item.TryGetProperty("url", out var ur) ? ur.GetString() ?? "" : "",
+            item.TryGetProperty("retrieved_at", out var ra) ? ra.GetString() ?? "" : "",
+            item.TryGetProperty("source", out var sr) ? sr.GetString() ?? "" : "",
+            unavailable);
     }
 
     public LegalSection? Lookup(string clauseId) => _byId.GetValueOrDefault(clauseId);

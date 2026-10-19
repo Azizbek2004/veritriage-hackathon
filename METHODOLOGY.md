@@ -34,16 +34,27 @@ The FINREG sample must contain exactly 30 `FP`, 10 `REVIEW` 40–74, and 5 `REVI
 
 The one highest-raw row is forced to `PEP = true` so the 75+ band contains at least one PEP escalation. The calibration is deterministic and is recorded in the CSV's `reason` column. Production would use the raw formula without rank calibration.
 
+### Statutory Escalation Matrix (20% FINREG Escalation Score)
+
+The escalation matrix maps priority bands directly to statutory roles and regulatory authorities:
+
+| Priority Band | Executive Role | Approver Role | Statutory Basis |
+|---|---|---|---|
+| 0–39 (FP) | L1 Analyst | Team Lead | Decree 67/2018 § 7 |
+| 40–74 (REVIEW) | L2 Specialist | Deputy MLRO | AML Act § 6 & § 21(2) |
+| 75–100 (REVIEW) | MLRO | Board Member | AML Act § 18 & § 22 |
+| Any PEP | MLRO | CRO | AML Act § 21(5) |
+
 ### The 4-eyes matrix
 
 | Executive role | Approver role | Same person? | Result |
 |---|---|---|---|
 | Any | Any | Yes | **400** — `4-EYES VIOLATION [§ 21 AML Act / § 12 Decree 67/2018]` |
-| Triage analyst | Compliance reviewer | No | OK |
-| Compliance reviewer | MLRO | No | OK |
-| MLRO | Another MLRO | No | OK |
+| L1 Analyst / Triage | Team Lead | No | OK (Decree 67/2018 § 7) |
+| L2 Specialist | Deputy MLRO | No | OK (AML Act § 6 & § 21(2)) |
+| MLRO | Board Member | No | OK (AML Act § 18 & § 22) |
+| MLRO (PEP case) | CRO | No | OK (AML Act § 21(5)) |
 | Any | No named approver | — | OK only for `FP`; `REVIEW` is blocked |
-| Priority 75+ or PEP | Any approver | No | OK, but the approver must be MLRO |
 | Priority 75+ or PEP | Same executive | Yes | **400** — no self-approval on enhanced review |
 
 The server enforces the rule, not the UI. `POST /api/v1/cases/verify-4-eyes` compares the executive and approver strings and returns the exact 400 body. The UI's “Same as Executive” option is the demo trap; it must never be a valid path.

@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using VeriTriage.Domain;
 
 namespace VeriTriage.Verifier;
@@ -16,7 +17,15 @@ public static class Gate5_ClaimGrounding
                 count++;
                 var pointer = claim.JsonPointers[i];
                 var expected = claim.ExpectedValues[i];
-                var resolved = JsonPointerResolver.Resolve(envelope.Root, pointer);
+                JsonNode? resolved = null;
+                try
+                {
+                    resolved = JsonPointerResolver.Resolve(envelope.Root, pointer);
+                }
+                catch
+                {
+                    resolved = null;
+                }
                 var valid = resolved is not null && resolved.ToString() == expected;
                 steps.Add(new ProofStep(claim.ClaimId, null, null, null, null, pointer, valid, valid, null));
                 if (!valid)
