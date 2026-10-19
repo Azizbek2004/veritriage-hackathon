@@ -29,3 +29,5 @@ Forensic views:
 - `METHODOLOGY_2PAGER.pdf` — two-page FINREG methodology (formula, vectors, 4-eyes, dual-mode).
 
 - `priority_hardening.png` — 45-row priority table with confidence, V11/S20 breakdown, and 0-mismatch sensitivity panel.
+
+- `topology_radar.png` — concentric AML radar with role strip, correlation inspector, and 45 client nodes.

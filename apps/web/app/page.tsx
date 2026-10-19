@@ -1229,7 +1229,7 @@ export default function Home() {
               <div>
                 <div className="brand-subtitle">{selected.alertId} · {selected.alertType}</div>
                 <div className="brand-title">{selected.clientId}</div>
-                <div className="brand-subtitle">{selected.executiveRole} · priority {selected.priority}</div>
+                <div className="brand-subtitle">{selected.executiveRole} · priority {selected.priority}{selected.topology ? ` · ${selected.topology.forensic_role_label} · R ${selected.topology.radial_distance.toFixed(2)}` : ""}</div>
               </div>
               <button className="drawer-close" onClick={() => setSelected(null)} aria-label="Close case">×</button>
             </div>
