@@ -25,3 +25,6 @@ REVIEW.md
 PONYTAIL_REPORT.md
 
 .gh-config/
+.local/
+.nuget/
+Library/
