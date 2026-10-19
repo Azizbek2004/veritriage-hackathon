@@ -34,6 +34,32 @@ static string FindRepoRoot(string startDir)
 }
 
 var repoRoot = FindRepoRoot(builder.Environment.ContentRootPath);
+
+static void EnsureAwsCredentialsLoaded(string root)
+{
+    if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AWS_ACCESS_KEY_ID")))
+        return;
+
+    var envFile = Path.Combine(root, "secrets", "aws_credentials.env");
+    if (!File.Exists(envFile)) return;
+
+    foreach (var line in File.ReadAllLines(envFile))
+    {
+        var trimmed = line.Trim();
+        if (trimmed.StartsWith("export "))
+            trimmed = trimmed[7..].Trim();
+        var eqIdx = trimmed.IndexOf('=');
+        if (eqIdx > 0)
+        {
+            var key = trimmed[..eqIdx].Trim();
+            var val = trimmed[(eqIdx + 1)..].Trim().Trim('"').Trim('\'');
+            Environment.SetEnvironmentVariable(key, val);
+        }
+    }
+}
+
+EnsureAwsCredentialsLoaded(repoRoot);
+
 var corpusPath = Directory.Exists(Path.Combine(repoRoot, "legal", "corpus"))
     ? Path.Combine(repoRoot, "legal", "corpus")
     : Path.Combine(repoRoot, "fixtures", "legal_corpus_cnb_aml.json");
