@@ -46,3 +46,7 @@ The backend curl rehearsal is 0.0279s. The 5-minute human browser presentation h
 - Mock sign/approve with audit hash.
 - Next.js cockpit build.
 - `dotnet test` 18/18.
+
+## Legal Grounding Sprint — APPROVED & COMPLETED
+
+The prior file-mapping blocker is cleared. The 12-section corpus, deterministic legal lookup, quoted CSV reasons, golden test, and pitch artifacts are implemented. See `LEGAL_GROUNDING_REPORT.md`.

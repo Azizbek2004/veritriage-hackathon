@@ -124,7 +124,7 @@ evaluation/                evaluation-input status, no fabricated report
 
 ## Environment State
 
-- The backend is built: contracts, Domain, Verifier, Infrastructure, Api shell, and tests. `dotnet build` is green and `dotnet test` is 24/24. `npm run build` is green.
+- The backend is built: contracts, Domain, Verifier, Infrastructure, Api shell, and tests. `dotnet build` is green and `dotnet test` is 25/25. `npm run build` is green.
 - `apps/web` is built (FINREG cockpit); `apps/mobile` is absent. Real mobile signing is not built.
 - `contracts/` is materialized and frozen. The approved deltas are included.
 - `fixtures/` has no committed data; official datasets are in `datasets/` (gitignored). See `DATASET_INVENTORY.md`.
@@ -395,7 +395,7 @@ The seven changes are specified in `REMEDIATION.md`. The documentation, Q&A, mat
 ## Current Environment State
 
 - Contracts, Domain, Verifier, Infrastructure, Api shell, and tests are built.
-- `dotnet build` is green; `dotnet test` is 24 passed, 0 failed, 0 skipped.
+- `dotnet build` is green; `dotnet test` is 25 passed, 0 failed, 0 skipped.
 - `apps/web` is built; `apps/mobile` is absent. The FINREG CSV and 4-eyes endpoints are live.
 - Bedrock is probe-driven; the latest probe may be live or cached. The cassette remains labeled. See `AWS_BEDROCK_STATUS.md`.
 - Official datasets are in `datasets/` (gitignored); see `DATASET_INVENTORY.md`. No fixture data is committed.

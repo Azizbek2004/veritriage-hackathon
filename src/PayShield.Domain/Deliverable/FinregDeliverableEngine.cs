@@ -32,13 +32,12 @@ public static class FinregDeliverableEngine
                     ? 45 + (i - 30) * 3
                     : 80 + (i - 40) * 4;
             var executiveRole = isFp ? "L1 AML Analyst" : "L2 Senior AML Specialist";
-            var reason = isFp
-                ? $"§ 6(1)(a) AML Act — standard monitoring disposition; priority {priority}; client {input.ClientId}"
-                : input.Pep
-                    ? $"§ 21(5) AML Act — PEP exposure requires enhanced review; priority {priority}; client {input.ClientId}"
-                    : $"§ 6(1)(a) AML Act — unusual transaction pattern; priority {priority}; client {input.ClientId}";
+            var bd = BuildBreakdown(priority, input, isFp);
+            var reason = BuildStatutoryReason(input, priority, bd, isFp);
 
-            var transactionId = input.AlertId;
+            var transactionId = input.AlertId.StartsWith("TX", StringComparison.OrdinalIgnoreCase)
+                ? input.AlertId
+                : $"TX-{input.ClientId}-{i + 1:0000}";
             var alertId = $"ALERT-{i + 1:000}";
             var log = BuildLog(alertId, alertType, input.ClientId, transactionId, triage, priority, executiveRole, input.ExecutivePerson, input.Approver, reason);
 
@@ -54,12 +53,57 @@ public static class FinregDeliverableEngine
                 input.Approver,
                 reason,
                 log,
-                BuildBreakdown(priority, input, isFp)));
+                bd));
         }
 
         return rows;
     }
 
+    public static string BuildStatutoryReason(CnbAlertInput input, int priority, PriorityBreakdown bd, bool isFp)
+    {
+        var s21_2 = LegalQuotes.Get("AML-253-2008-S21-2");
+        var s6a = LegalQuotes.Get("AML-253-2008-S6-1A");
+        var s6b = LegalQuotes.Get("AML-253-2008-S6-1B");
+        var s21_5 = LegalQuotes.Get("AML-253-2008-S21-5");
+        var quote = (LegalProvision? p) => p is null
+            ? "(section text unavailable)"
+            : $"[{p.ClauseId}] {p.Citation} \"{p.CzechText}\" — {p.Url}";
+
+        var components = $"priority {priority}/100 = B{bd.Base} + V{bd.Vol} + P{bd.Pep} + S{bd.Struct} + C{bd.Channel}";
+        if (isFp)
+        {
+            return $"{quote(s21_2)}; standard monitoring disposition (client {input.ClientId}); {components}";
+        }
+
+        var parts = new List<string>();
+        if (bd.Vol > 0)
+        {
+            var ratio = input.ExpectedVolume > 0 && input.ActualVolume > 0
+                ? $"{ (input.ActualVolume / input.ExpectedVolume).ToString("0.00", CultureInfo.InvariantCulture)}x (actual {input.ActualVolume.ToString("N2", CultureInfo.InvariantCulture)} / declared {input.ExpectedVolume.ToString("N2", CultureInfo.InvariantCulture)} CZK)"
+                : "volume deviation (client baseline unavailable)";
+            var count = input.ExpectedCount > 0 && input.ActualCount > 0
+                ? $"; count {(input.ActualCount / (decimal)input.ExpectedCount).ToString("0.00", CultureInfo.InvariantCulture)}x ({input.ActualCount}/{input.ExpectedCount})"
+                : string.Empty;
+            parts.Add($"{quote(s6a)}; volume deviation {ratio}{count}");
+        }
+
+        if (bd.Struct > 0)
+        {
+            parts.Add($"{quote(s6b)}; structuring component S{bd.Struct} (sub-threshold transfer pattern)");
+        }
+
+        if (input.Pep || bd.Pep > 0)
+        {
+            parts.Add($"{quote(s21_5)}; PEP flag (client {input.ClientId})");
+        }
+
+        if (parts.Count == 0)
+        {
+            parts.Add($"{quote(s6a)}; elevated transaction profile (client {input.ClientId})");
+        }
+
+        return string.Join("; ", parts) + $"; {components}";
+    }
     private static PriorityBreakdown BuildBreakdown(int priority, CnbAlertInput input, bool isFp)
     {
         var baseScore = isFp ? 10 : 40;

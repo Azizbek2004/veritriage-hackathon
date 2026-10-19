@@ -20,7 +20,7 @@ The hero client K005397 is **1.71x volume / 1.71x count** (39,819.67 CZK declare
 
 ## Verified
 
-- `dotnet test`: **24/24**
+- `dotnet test`: **25/25**
 - `npm run build`: green
 - CSV: exact 11 columns
 - 4-eyes: same person 400; independent 200
@@ -45,3 +45,12 @@ The hero client K005397 is **1.71x volume / 1.71x count** (39,819.67 CZK declare
 2. Rehearse [DEMO_SCRIPT.md](DEMO_SCRIPT.md) three times on 3100; use the actual 1.71x numbers.
 3. Record `backup_video.mp4`.
 4. Confirm the audit persists after refresh; `data/audit_ledger.json` is gitignored runtime state.
+
+
+## Legal grounding
+
+- 12/12 human-approved Czech AML/ČNB/FAU provisions in `fixtures/legal_corpus_cnb_aml.json`.
+- `lookup_statutory_provision` is a deterministic agent-pipeline tool; it logs 4 calls for the PEP hero case and returns quoted `text_cs`.
+- CSV `reason` now contains the exact quoted Czech clause and the actual 1.71x ratios.
+- `SOLUTION_2PAGE.md` and the QA war room are updated.
+- Honest boundary: the LLM does not autonomously select the tool; the deterministic pipeline retrieves and injects the excerpts. Do not claim autonomous model tool use.

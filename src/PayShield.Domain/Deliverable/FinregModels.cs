@@ -12,7 +12,11 @@ public sealed record CnbAlertInput(
     bool Pep,
     string MccCode,
     string ExecutivePerson,
-    string Approver);
+    string Approver,
+    decimal ExpectedVolume = 0m,
+    decimal ActualVolume = 0m,
+    int ExpectedCount = 0,
+    int ActualCount = 0);
 
 public sealed record PriorityBreakdown(
     int Base,
@@ -45,3 +49,5 @@ public sealed record ApproveRequest(
 public sealed record ApproveResponse(
     string Status,
     [property: JsonPropertyName("audit_hash")] string AuditHash);
+
+public sealed record StressTestRequest([property: JsonPropertyName("sample_size")] int SampleSize);

@@ -118,3 +118,17 @@ Rehearse each answer with a timer. If it runs past 20 seconds, cut a sentence. T
 ## Source
 
 The three traps, the Mastercard concession, and the NEVER SAY list come from the human-provided Remediation Architect brief. `AGENTS.md` repeats the three answers. If they diverge, `AGENTS.md` wins and this file is fixed.
+
+## Legal Grounding Q&A
+
+**"Did the LLM invent the legal citation?"**
+> "No. The agent pipeline calls `lookup_statutory_provision`, retrieves the verbatim Czech text from our 12-section corpus, and injects it into the prompt. The finding carries the quoted clause, not a template. If the clause is missing, the pipeline says `(section text unavailable)` and the model must not cite it. The retrieval is deterministic C# in the pipeline, not the model autonomously choosing a tool."
+
+**"How do you know the retrieved text is current?"**
+> "Every corpus entry records its URL, `retrieved_at`, and `source: human_approved`. The corpus lives in `fixtures/legal_corpus_cnb_aml.json`; a production deployment would re-ingest and diff on a schedule."
+
+**"Why not a vector database?"**
+> "The corpus is 12 sections. Keyword search over 12 documents is deterministic and sub-millisecond. A vector database adds no value; the tool interface lets us swap in a full RAG backend later without changing the agent contract."
+
+**"Did the model call the tool?"**
+> "The deterministic agent pipeline calls the tool before the model invocation and logs `lookup_statutory_provision`; the retrieved text is injected into the prompt. We do not claim the LLM autonomously selected the tool."

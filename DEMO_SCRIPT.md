@@ -109,7 +109,10 @@ Chain Verified: 5/5 events
 
 **Action:** click the **Details** tab. Click **Investigate**. If the badge says LIVE, the call takes about 12 seconds; if it says CACHED, the cassette returns immediately. Read the badge and panel before speaking.
 
-**Show:** the actual mode label (`LIVE_BEDROCK` or `LIVE_BEDROCK_CACHED`) and the legal citation panel.
+**Show:** the actual mode label (`LIVE` or `SNAPSHOT`), the tool calls, and the quoted statutory panel.
+
+**Point at the legal card and say:**
+> “The agent didn’t guess the section. The pipeline called `lookup_statutory_provision`, retrieved the Czech statutory text, and quoted it. Here is the actual clause: ‘Podezřelým obchodem se rozumí…’. If the corpus has no text, we say ‘section text unavailable’ and do not cite it.”
 
 **Say:**
 > “The Bedrock agent assembled the legal dossier live: § 21(5) for the PEP exposure and § 6(1)(a) for the monitoring duty. If the network falls back, the panel says LIVE_BEDROCK_CACHED — we never relabel the cassette.”

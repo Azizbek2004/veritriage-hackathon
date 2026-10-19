@@ -1,28 +1,103 @@
 {
   "_synthetic": true,
   "mode": "LIVE_BEDROCK_CACHED",
-  "evidence_summary": "Client K005397: PEP flag, high AML risk score, unusual 24h velocity against a 90-day baseline.",
+  "evidence_summary": "Client K005397: 1.71x volume deviation (actual 68,262 CZK / declared 39,819 CZK). 5 sub-threshold transfers totaling 23,778 CZK within 48h. PEP flag set.",
+  "findings": [
+    {
+      "claim": "Volume deviation 1.71x",
+      "jsonPointer": "/client/vol_ratio",
+      "value": 1.71,
+      "statute": "§ 6(1)(a)"
+    },
+    {
+      "claim": "5 sub-threshold transfers within 48h",
+      "jsonPointer": "/txCluster/structuring",
+      "value": 5,
+      "statute": "§ 6(1)(b)"
+    },
+    {
+      "claim": "PEP flag set",
+      "jsonPointer": "/client/pep_flag",
+      "value": true,
+      "statute": "§ 21(5)"
+    }
+  ],
   "claims": [
     {
       "claimId": "C-AML-01",
-      "claimType": "VELOCITY_RATIO",
-      "narrativeTemplate": "24h transaction count {0} is {1}x the 90-day baseline.",
-      "jsonPointers": ["/transaction/velocity"],
-      "expectedValues": ["3.2"],
+      "claimType": "VOL_RATIO",
+      "narrativeTemplate": "Volume deviation 1.71x (actual 68,262 CZK / declared 39,819 CZK).",
+      "jsonPointers": [
+        "/client/vol_ratio"
+      ],
+      "expectedValues": [
+        "1.71"
+      ],
       "documentProvenance": null
     },
     {
       "claimId": "C-AML-02",
       "claimType": "PEP_EXPOSURE",
       "narrativeTemplate": "Client is a politically exposed person under § 21(5).",
-      "jsonPointers": ["/client/pep"],
-      "expectedValues": ["true"],
+      "jsonPointers": [
+        "/client/pep_flag"
+      ],
+      "expectedValues": [
+        "true"
+      ],
       "documentProvenance": null
     }
   ],
+  "statutes": [
+    {
+      "clause_id": "AML-253-2008-S6-1A",
+      "citation": "Act No. 253/2008 Coll. (Czech AML Act) § 6(1)(a)",
+      "title": "Suspicious Transaction — Unusual Volume or Character",
+      "quoted_clause": "Podezřelým obchodem se rozumí obchod uskutečněný za okolností vyvolávajících podezření ze snahy o legalizaci výnosů z trestné činnosti, zejména výrazný nepoměr objemu nebo povahy obchodu k dosavadní činnosti nebo majetkovým poměrům klienta.",
+      "url": "https://www.zakonyprolidi.cz/cs/2008-253#p6",
+      "retrieved_at": "2026-10-19T17:30:00+02:00",
+      "source": "human_approved"
+    },
+    {
+      "clause_id": "AML-253-2008-S6-1B",
+      "citation": "Act No. 253/2008 Coll. (Czech AML Act) § 6(1)(b)",
+      "title": "Suspicious Transaction — Structuring / Smurfing",
+      "quoted_clause": "Podezřelým obchodem je obchod, u něhož dochází k účelovému dělení transakcí na menší částky s cílem vyhnout se identifikační nebo kontrolní povinnosti.",
+      "url": "https://www.zakonyprolidi.cz/cs/2008-253#p6",
+      "retrieved_at": "2026-10-19T17:30:00+02:00",
+      "source": "human_approved"
+    },
+    {
+      "clause_id": "AML-253-2008-S21-5",
+      "citation": "Act No. 253/2008 Coll. (Czech AML Act) § 21(5)",
+      "title": "Politically Exposed Person (PEP) Senior Management Approval",
+      "quoted_clause": "Pokračování v obchodním vztahu nebo provedení obchodu s politicky exponovanou osobou podléhá souhlasu člena statutárního orgánu nebo osoby pověřené řízením v oblasti AML.",
+      "url": "https://www.zakonyprolidi.cz/cs/2008-253#p21",
+      "retrieved_at": "2026-10-19T17:30:00+02:00",
+      "source": "human_approved"
+    }
+  ],
+  "action": "Escalate to MLRO under § 21(5)",
   "recommendedOutcome": "ESCALATE",
   "recommendedRiskScore": 96,
-  "rationale": "§ 21(5) AML Act — PEP exposure and unusual velocity require enhanced review.",
-  "legalBasis": "AML Act No. 253/2008 Sb. § 21(5)",
-  "_note": "Pre-baked demo cassette. Not a live Bedrock response."
+  "rationale": "Volume deviation 1.71x and 5 sub-threshold transfers within 48h require escalation under § 21(5).",
+  "legalBasis": "AML-253-2008-S6-1A § 6(1)(a); AML-253-2008-S6-1B § 6(1)(b); AML-253-2008-S21-5 § 21(5)",
+  "_note": "Pre-baked demo cassette. Deterministic fallback.",
+  "tool_calls": [
+    {
+      "name": "lookup_statutory_provision",
+      "clause_id": "AML-253-2008-S6-1A",
+      "status": "RETURNED"
+    },
+    {
+      "name": "lookup_statutory_provision",
+      "clause_id": "AML-253-2008-S6-1B",
+      "status": "RETURNED"
+    },
+    {
+      "name": "lookup_statutory_provision",
+      "clause_id": "AML-253-2008-S21-5",
+      "status": "RETURNED"
+    }
+  ]
 }

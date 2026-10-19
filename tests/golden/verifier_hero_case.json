@@ -1,0 +1,13 @@
+{
+  "alert_id": "ALERT-045",
+  "priority": 96,
+  "executive_person": "Ing. Jan Novák",
+  "approver": "Ing. Jana Dvořáková",
+  "four_eyes_independent": true,
+  "legal_clause_ids": [
+    "AML-253-2008-S6-1A",
+    "AML-253-2008-S6-1B",
+    "AML-253-2008-S21-5"
+  ],
+  "quoted_phrase": "Podezřelým obchodem"
+}

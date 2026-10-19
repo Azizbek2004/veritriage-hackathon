@@ -1,0 +1,134 @@
+[
+  {
+    "clause_id": "AML-253-2008-S6-1A",
+    "statute": "Act No. 253/2008 Coll. (Czech AML Act)",
+    "section": "§ 6(1)(a)",
+    "title": "Suspicious Transaction — Unusual Volume or Character",
+    "text_cs": "Podezřelým obchodem se rozumí obchod uskutečněný za okolností vyvolávajících podezření ze snahy o legalizaci výnosů z trestné činnosti, zejména výrazný nepoměr objemu nebo povahy obchodu k dosavadní činnosti nebo majetkovým poměrům klienta.",
+    "text_en": "Transaction volume or nature is demonstrably disproportionate to the client's declared business profile or historical baseline.",
+    "url": "https://www.zakonyprolidi.cz/cs/2008-253#p6",
+    "retrieved_at": "2026-10-19T17:30:00+02:00",
+    "source": "human_approved"
+  },
+  {
+    "clause_id": "AML-253-2008-S6-1B",
+    "statute": "Act No. 253/2008 Coll. (Czech AML Act)",
+    "section": "§ 6(1)(b)",
+    "title": "Suspicious Transaction — Structuring / Smurfing",
+    "text_cs": "Podezřelým obchodem je obchod, u něhož dochází k účelovému dělení transakcí na menší částky s cílem vyhnout se identifikační nebo kontrolní povinnosti.",
+    "text_en": "Deliberate splitting of transfers into sub-threshold amounts to evade statutory AML identification or monitoring thresholds.",
+    "url": "https://www.zakonyprolidi.cz/cs/2008-253#p6",
+    "retrieved_at": "2026-10-19T17:30:00+02:00",
+    "source": "human_approved"
+  },
+  {
+    "clause_id": "AML-253-2008-S6-1C",
+    "statute": "Act No. 253/2008 Coll. (Czech AML Act)",
+    "section": "§ 6(1)(c)",
+    "title": "Suspicious Transaction — Lack of Economic Rationale",
+    "text_cs": "Obchod, který nemá zřejmý ekonomický důvod nebo zjevný zákonný účel.",
+    "text_en": "Transaction lacks an apparent economic rationale or verifiable lawful business purpose.",
+    "url": "https://www.zakonyprolidi.cz/cs/2008-253#p6",
+    "retrieved_at": "2026-10-19T17:30:00+02:00",
+    "source": "human_approved"
+  },
+  {
+    "clause_id": "AML-253-2008-S9-2B",
+    "statute": "Act No. 253/2008 Coll. (Czech AML Act)",
+    "section": "§ 9(2)(b)",
+    "title": "Ongoing Monitoring of Business Relationship",
+    "text_cs": "Kontrola klienta zahrnuje průběžné sledování obchodního vztahu včetně přezkoumávání obchodů prováděných v průběhu daného vztahu za účelem zjištění, zda obchody jsou v souladu s tím, co povinná osoba ví o klientovi a jeho rizikovém profilu.",
+    "text_en": "Mandatory continuous monitoring of transactions to verify alignment with the client's established KYC and risk profile.",
+    "url": "https://www.zakonyprolidi.cz/cs/2008-253#p9",
+    "retrieved_at": "2026-10-19T17:30:00+02:00",
+    "source": "human_approved"
+  },
+  {
+    "clause_id": "AML-253-2008-S18-1",
+    "statute": "Act No. 253/2008 Coll. (Czech AML Act)",
+    "section": "§ 18(1)",
+    "title": "Statutory Obligation to File Suspicious Transaction Report (OPO / STR)",
+    "text_cs": "Zjistí-li povinná osoba v souvislosti se svou činností podezřelý obchod, oznámí to Finančnímu analytickému úřadu bez zbytečného odkladu, nejpozději do 5 kalendářních dnů.",
+    "text_en": "Mandatory filing of a Suspicious Transaction Report (Oznámení o podezřelém obchodu) to the FAU without undue delay (within 5 calendar days).",
+    "url": "https://www.zakonyprolidi.cz/cs/2008-253#p18",
+    "retrieved_at": "2026-10-19T17:30:00+02:00",
+    "source": "human_approved"
+  },
+  {
+    "clause_id": "AML-253-2008-S21-2",
+    "statute": "Act No. 253/2008 Coll. (Czech AML Act)",
+    "section": "§ 21(2)",
+    "title": "System of Internal Principles (Systém vnitřních zásad)",
+    "text_cs": "Povinná osoba zavede a uplatňuje odpovídající strategie a postupy vnitřní kontroly a komunikace ke zmírňování a účinnému řízení rizik legalizace výnosů z trestné činnosti.",
+    "text_en": "Obligation to enforce deterministic internal control procedures and risk-scoring methodologies.",
+    "url": "https://www.zakonyprolidi.cz/cs/2008-253#p21",
+    "retrieved_at": "2026-10-19T17:30:00+02:00",
+    "source": "human_approved"
+  },
+  {
+    "clause_id": "AML-253-2008-S21-5",
+    "statute": "Act No. 253/2008 Coll. (Czech AML Act)",
+    "section": "§ 21(5)",
+    "title": "Politically Exposed Person (PEP) Senior Management Approval",
+    "text_cs": "Pokračování v obchodním vztahu nebo provedení obchodu s politicky exponovanou osobou podléhá souhlasu člena statutárního orgánu nebo osoby pověřené řízením v oblasti AML.",
+    "text_en": "Any continuation of business or execution of anomalous transactions involving a PEP requires explicit approval from a statutory body member or designated MLRO.",
+    "url": "https://www.zakonyprolidi.cz/cs/2008-253#p21",
+    "retrieved_at": "2026-10-19T17:30:00+02:00",
+    "source": "human_approved"
+  },
+  {
+    "clause_id": "AML-253-2008-S22-1",
+    "statute": "Act No. 253/2008 Coll. (Czech AML Act)",
+    "section": "§ 22(1)",
+    "title": "Designated Contact Person (Kontaktní osoba / MLRO)",
+    "text_cs": "Povinná osoba určí člena statutárního orgánu a kontaktní osobu pro plnění oznamovací povinnosti vůči Finančnímu analytickému úřadu.",
+    "text_en": "Mandatory designation of an independent MLRO and statutory board member responsible for FAU escalations.",
+    "url": "https://www.zakonyprolidi.cz/cs/2008-253#p22",
+    "retrieved_at": "2026-10-19T17:30:00+02:00",
+    "source": "human_approved"
+  },
+  {
+    "clause_id": "CNB-67-2018-S7",
+    "statute": "ČNB Decree No. 67/2018 Coll.",
+    "section": "§ 7",
+    "title": "Risk Evaluation & Alert Triage Baseline",
+    "text_cs": "Instituce při hodnocení rizik zohlední rizikové faktory týkající se typu klienta, účelu obchodního vztahu, objemu vkladů nebo transakcí a pravidelnosti nebo délky trvání obchodního vztahu.",
+    "text_en": "Risk triage must evaluate client type, transaction volume, frequency, and relationship duration against baseline profiles.",
+    "url": "https://www.zakonyprolidi.cz/cs/2018-67#p7",
+    "retrieved_at": "2026-10-19T17:30:00+02:00",
+    "source": "human_approved"
+  },
+  {
+    "clause_id": "CNB-67-2018-S8-2",
+    "statute": "ČNB Decree No. 67/2018 Coll.",
+    "section": "§ 8(2) & § 9(1)(a)",
+    "title": "High-Risk Onboarding & Non-Face-to-Face Channel Risk",
+    "text_cs": "Za potenciálně vyšší riziko instituce považuje zejména obchodní vztah uzavíraný bez fyzické přítomnosti klienta (distanční kanál) spojený s rychlým nárůstem objemu transakcí krátce po navázání vztahu.",
+    "text_en": "Remote/online onboarding combined with rapid transaction velocity spikes shortly after contract inception requires elevated risk scoring.",
+    "url": "https://www.zakonyprolidi.cz/cs/2018-67#p8",
+    "retrieved_at": "2026-10-19T17:30:00+02:00",
+    "source": "human_approved"
+  },
+  {
+    "clause_id": "CNB-67-2018-S12",
+    "statute": "ČNB Decree No. 67/2018 Coll.",
+    "section": "§ 12",
+    "title": "Separation of Duties & Conflict-of-Interest Prevention (4-Eyes Rule)",
+    "text_cs": "Instituce zajistí, aby výkon vnitřní kontroly a posuzování podezřelých obchodů byly organizačně odděleny od útvarů odpovědných za sjednávání obchodů a aby nedocházelo ke střetu zájmů.",
+    "text_en": "Strict separation of duties (4-eyes principle); the reviewer/approver must be independent from the originating officer.",
+    "url": "https://www.zakonyprolidi.cz/cs/2018-67#p12",
+    "retrieved_at": "2026-10-19T17:30:00+02:00",
+    "source": "human_approved"
+  },
+  {
+    "clause_id": "FAU-GL-04-EBA-2021",
+    "statute": "FAU Methodological Guideline No. 4 & EBA/GL/2021/02",
+    "section": "FAU GL No. 4 / EBA/GL/2021/02",
+    "title": "Typology Indicators for Structuring & Velocity Anomalies",
+    "text_cs": "Indikátorem podezřelého obchodu dle metodického pokynu FAÚ č. 4 je náhlé zvýšení obratu na účtu (více než 3násobek deklarovaného očekávaného objemu) nebo opakované podlimitní převody v krátkém časovém úseku.",
+    "text_en": "FAU Typology Indicator: sudden account turnover exceeding 3x declared expected volume or repeated sub-threshold transfers within a short window.",
+    "url": "https://www.financnisprava.gov.cz/",
+    "retrieved_at": "2026-10-19T17:30:00+02:00",
+    "source": "human_approved"
+  }
+]

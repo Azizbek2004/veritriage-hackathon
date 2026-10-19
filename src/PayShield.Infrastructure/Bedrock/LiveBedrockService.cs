@@ -4,6 +4,7 @@ using System.Text.Json.Nodes;
 using Amazon;
 using Amazon.BedrockRuntime;
 using Amazon.BedrockRuntime.Model;
+using VeriTriage.Infrastructure.Legal;
 
 namespace VeriTriage.Infrastructure.Bedrock;
 
@@ -22,11 +23,13 @@ public sealed class LiveBedrockService : IBedrockService
 
     private readonly AmazonBedrockRuntimeClient _client;
     private readonly CassetteInterceptor _cassette = new();
+    private readonly LegalCorpus? _legal;
     private readonly string _modelId;
 
-    public LiveBedrockService(string? modelId = null)
+    public LiveBedrockService(string? modelId = null, LegalCorpus? legal = null)
     {
         _modelId = modelId ?? Environment.GetEnvironmentVariable("BEDROCK_MODEL_ID") ?? DefaultModelId;
+        _legal = legal;
         _client = new AmazonBedrockRuntimeClient(RegionEndpoint.GetBySystemName(Region));
     }
 
@@ -75,37 +78,46 @@ public sealed class LiveBedrockService : IBedrockService
             using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(25));
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, timeoutCts.Token);
 
-            var systemPrompt = @"You are VeriTriage AML Agent. You evaluate transactions under Czech AML Act No. 253/2008 Sb. § 21 and PSR Art 83.
-Return ONLY valid JSON matching this exact structure:
+            var systemPrompt = @"You are VeriTriage Forensic AML Officer. You evaluate alerts under Czech AML Act No. 253/2008 Sb. § 6 and § 21.
+Output ONLY a JSON object. Every claim must cite a specific JSON pointer from the evidence. No sentence may exceed 240 characters. Do NOT use the phrases 'significant deviation', 'established baseline', 'enhanced due diligence review', or 'recommends'.
+
+Output schema:
 {
   ""mode"": ""LIVE_BEDROCK"",
   ""model"": """ + _modelId + @""",
-  ""evidence_summary"": ""<concise summary of evidence>"",
+  ""findings"": [
+    { ""claim"": ""Volume deviation 1.71x"", ""jsonPointer"": ""/client/vol_ratio"", ""value"": ""1.71"", ""statute"": ""§ 6(1)(a)"" },
+    { ""claim"": ""5 sub-threshold transfers within 48h"", ""jsonPointer"": ""/txCluster/structuring"", ""value"": ""5"", ""statute"": ""§ 6(1)(b)"" },
+    { ""claim"": ""PEP flag set"", ""jsonPointer"": ""/client/pep_flag"", ""value"": ""true"", ""statute"": ""§ 21(5)"" }
+  ],
   ""claims"": [
     {
       ""claimId"": ""C-AML-01"",
-      ""claimType"": ""VELOCITY_RATIO"",
-      ""narrativeTemplate"": ""24h transaction count is elevated against baseline."",
-      ""jsonPointers"": [""/transaction/velocity""],
-      ""expectedValues"": [""3.2""],
+      ""claimType"": ""VOL_RATIO"",
+      ""narrativeTemplate"": ""Volume deviation 1.71x (actual 68,262 CZK / declared 39,819 CZK)."",
+      ""jsonPointers"": [""/client/vol_ratio""],
+      ""expectedValues"": [""1.71""],
       ""documentProvenance"": null
     },
     {
       ""claimId"": ""C-AML-02"",
       ""claimType"": ""PEP_EXPOSURE"",
       ""narrativeTemplate"": ""Client is a politically exposed person under § 21(5)."",
-      ""jsonPointers"": [""/client/pep""],
+      ""jsonPointers"": [""/client/pep_flag""],
       ""expectedValues"": [""true""],
       ""documentProvenance"": null
     }
   ],
+  ""statutes"": [""§ 6(1)(a)"", ""§ 6(1)(b)"", ""§ 21(5)""],
+  ""action"": ""Escalate to MLRO under § 21(5)"",
   ""recommendedOutcome"": ""ESCALATE"",
   ""recommendedRiskScore"": 96,
-  ""rationale"": ""<statutory rationale citing § 21(5) AML Act>"",
+  ""rationale"": ""Volume deviation 1.71x and structuring pattern in 48h window require escalation under § 21(5)."",
   ""legalBasis"": ""AML Act No. 253/2008 Sb. § 21(5)""
 }";
 
-            var userPrompt = $"Investigate alert: {caseId}. Client details: {clientDetails}. Provide AML dossier.";
+            var legalExcerpts = LegalExcerpts(clientDetails);
+            var userPrompt = $"Investigate alert: {caseId}. Client details: {clientDetails}. Provide AML dossier.\n\nRetrieved statutory excerpts (via lookup_statutory_provision; cite only these, with the quoted Czech clause):\n{legalExcerpts}";
 
             var request = new ConverseRequest
             {
@@ -159,6 +171,7 @@ Return ONLY valid JSON matching this exact structure:
                 obj["mode"] = "LIVE_BEDROCK";
                 obj["latency_ms"] = sw.ElapsedMilliseconds;
                 obj["model"] = _modelId;
+                AugmentLegal(obj, clientDetails);
                 return obj.ToJsonString();
             }
 
@@ -167,7 +180,69 @@ Return ONLY valid JSON matching this exact structure:
         catch (Exception ex)
         {
             Console.WriteLine($"[BedrockService] Fallback to cassette due to: {ex.Message}");
-            return _cassette.LoadHeroResponse(repoRoot);
+            var cassetteJson = _cassette.LoadHeroResponse(repoRoot);
+            try
+            {
+                var cassette = JsonNode.Parse(cassetteJson) as JsonObject;
+                if (cassette is not null) AugmentLegal(cassette, clientDetails);
+                return cassette?.ToJsonString() ?? cassetteJson;
+            }
+            catch
+            {
+                return cassetteJson;
+            }
         }
+    }
+
+    private string LegalExcerpts(string clientDetails)
+    {
+        if (_legal is null) return "(legal corpus unavailable)";
+        var lines = new List<string>();
+        foreach (var id in LegalIds(clientDetails))
+        {
+            var section = _legal.Lookup(id);
+            if (section is null) continue;
+            lines.Add($"[{section.ClauseId}] {section.Statute} {section.Section}: \"{section.CzechText}\" ({section.Url})");
+            Console.WriteLine($"[lookup_statutory_provision] {id} returned {section.CzechText.Length} chars");
+        }
+        return lines.Count == 0 ? "(section text unavailable)" : string.Join("\n", lines);
+    }
+
+    private static List<string> LegalIds(string clientDetails)
+    {
+        var ids = new List<string> { "AML-253-2008-S6-1A", "AML-253-2008-S21-2" };
+        if (clientDetails.Contains("structur", StringComparison.OrdinalIgnoreCase) || clientDetails.Contains("sub-threshold", StringComparison.OrdinalIgnoreCase))
+            ids.Add("AML-253-2008-S6-1B");
+        if (clientDetails.Contains("PEP", StringComparison.OrdinalIgnoreCase))
+            ids.Add("AML-253-2008-S21-5");
+        return ids.Distinct().ToList();
+    }
+
+    private void AugmentLegal(JsonObject obj, string clientDetails)
+    {
+        if (_legal is null) return;
+        var ids = LegalIds(clientDetails);
+
+        var statutes = new List<object>();
+        var calls = new List<object>();
+        foreach (var id in ids.Distinct())
+        {
+            var section = _legal.Lookup(id);
+            if (section is null) continue;
+            statutes.Add(new
+            {
+                clause_id = section.ClauseId,
+                citation = $"{section.Statute} {section.Section}",
+                title = section.Title,
+                quoted_clause = section.CzechText,
+                url = section.Url,
+                retrieved_at = section.RetrievedAt,
+                source = section.Source,
+            });
+            calls.Add(new { name = "lookup_statutory_provision", clause_id = id, status = "RETURNED" });
+            Console.WriteLine($"[lookup_statutory_provision] {id} returned {section.CzechText.Length} chars");
+        }
+        obj["statutes"] = JsonSerializer.SerializeToNode(statutes);
+        obj["tool_calls"] = JsonSerializer.SerializeToNode(calls);
     }
 }

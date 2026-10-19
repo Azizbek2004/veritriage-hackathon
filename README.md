@@ -26,7 +26,7 @@ This repository is the VeriTriage agent environment plus a green backend verifie
 - `tests/golden/` snapshots — not created yet.
 - `node_modules`, build outputs, SDKs.
 
-Backend baseline: `dotnet build` green, `dotnet test` 24/24. `npm run build` green. FINREG CSV and 4-eyes endpoints are live. See `BUILD_LOG.md` and `FINAL_REPORT.md`.
+Backend baseline: `dotnet build` green, `dotnet test` 25/25. `npm run build` green. FINREG CSV and 4-eyes endpoints are live. See `BUILD_LOG.md` and `FINAL_REPORT.md`.
 
 ## Start Order
 

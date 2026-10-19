@@ -52,7 +52,7 @@ public sealed class FinregDeliverableTests
             Assert.False(string.IsNullOrWhiteSpace(columns[7]));
             Assert.False(string.IsNullOrWhiteSpace(columns[8]));
             Assert.NotEqual(columns[7], columns[8]);
-            Assert.True(columns[9].Contains("§ 6(1)(a)") || columns[9].Contains("§ 21(5)"));
+            Assert.True(columns[9].Contains("§ 6(1)(a)") || columns[9].Contains("§ 21(2)") || columns[9].Contains("§ 21(5)"));
 
             using var log = JsonDocument.Parse(columns[10]);
             Assert.StartsWith("sha256:", log.RootElement.GetProperty("hash").GetString());

@@ -24,4 +24,7 @@
     <ProjectReference Include="../../src/PayShield.Verifier/PayShield.Verifier.csproj" />
     <ProjectReference Include="../../src/PayShield.Infrastructure/PayShield.Infrastructure.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="../golden/verifier_hero_case.json" Link="golden/verifier_hero_case.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>

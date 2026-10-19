@@ -1082,6 +1082,73 @@ tbody td { white-space: nowrap; }
 .diff-table .gate { white-space: normal; }
 .diff-table th, .diff-table td { white-space: normal; }
 .diff-table td.llm, .diff-table td.verifier { word-break: break-word; overflow-wrap: anywhere; }
-.mono-cell, .priority-badge, .breakdown, .timeline-meta, .cluster-bar-label strong, .cluster-ratio, .sibling-table td, .diff-table td.verifier, .kpi-value {
+.mono-cell, .priority-badge, .breakdown, .timeline-meta, .cluster-bar-label strong, .cluster-ratio, .sibling-table td, .diff-table td.verifier, .kpi-value, .font-mono, .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
+
+/* Fix 1: Real Data Strip */
+.source-official { background: var(--tertiary-container); color: var(--on-tertiary); border: 1px solid var(--tertiary-border); }
+.source-synthetic { background: var(--warn-container); color: var(--on-warn); border: 1px solid var(--warn-border); }
+.data-source-badge { border-right: 0 !important; align-items: center; justify-content: center; }
+
+/* Fix 4: Structured Bedrock Findings */
+.ai-findings-table { display: flex; flex-direction: column; gap: 8px; margin: 10px 0; }
+.ai-finding-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: var(--surface-dim); border: 1px solid var(--outline-variant); border-radius: 6px; font-size: 12px; }
+.ai-finding-claim { display: flex; align-items: center; gap: 8px; }
+.ai-finding-meta { display: flex; align-items: center; gap: 6px; }
+.mono-chip { font-family: var(--font-mono); background: #e0f2fe; color: #0369a1; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+.pointer-chip { font-family: var(--font-mono); background: #f1f5f9; color: #475569; padding: 2px 6px; border-radius: 4px; font-size: 10px; border: 1px solid var(--outline); }
+.legal-chip { background: #fef3c7; color: #92400e; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; }
+.ai-action-card { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: #166534; display: flex; gap: 8px; align-items: center; }
+.ai-action-label { color: #15803d; font-weight: 600; text-transform: uppercase; font-size: 10px; letter-spacing: 0.05em; }
+
+/* Fix 6: Audit Chain timeline verify buttons */
+.timeline-actions { display: flex; gap: 6px; margin-top: 4px; }
+.timeline-actions .btn-verify { background: #f8fafc; border: 1px solid var(--outline); font-size: 11px; padding: 2px 8px; border-radius: 4px; cursor: pointer; color: var(--on-surface); }
+.timeline-actions .btn-verify.verified { background: #ecfdf5; border-color: #a7f3d0; color: #047857; font-weight: 600; }
+
+/* Fix 7: Full Transaction Detail View */
+.tx-detail-panel { display: flex; flex-direction: column; gap: 16px; }
+.tx-section-card { background: var(--surface); border: 1px solid var(--outline-variant); border-radius: 8px; padding: 14px 16px; }
+.tx-section-title { font-size: 11px; font-weight: 700; color: var(--secondary); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 10px; }
+.tx-grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px 16px; }
+.tx-field { display: flex; flex-direction: column; gap: 2px; }
+.tx-field-label { font-size: 10px; color: var(--muted); text-transform: uppercase; font-weight: 600; }
+.tx-field-value { font-size: 12px; font-weight: 600; color: var(--on-surface); }
+.tx-field-value.amount { font-family: var(--font-mono); font-size: 15px; color: var(--primary); }
+.sibling-table-wrap { overflow-x: auto; margin-top: 8px; }
+.sibling-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+.sibling-table th { text-align: left; padding: 6px 8px; font-size: 9px; text-transform: uppercase; color: var(--secondary); border-bottom: 1px solid var(--outline); }
+.sibling-table td { padding: 6px 8px; border-bottom: 1px solid var(--outline-subtle); }
+.sibling-row.this-alert { background: #fffbeb !important; font-weight: 700; }
+.sibling-row.this-alert td:first-child { color: #b45309; }
+.pattern-bracket { margin-top: 10px; background: #fffbeb; border: 1px dashed #f59e0b; border-radius: 6px; padding: 8px 12px; font-size: 11px; color: #92400e; font-weight: 600; }
+
+/* Fix 8: Stress Test Simulator Modal */
+.modal-backdrop { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(4px); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.stress-modal { background: var(--surface); border: 1px solid var(--outline); border-radius: 12px; width: 100%; max-width: 580px; box-shadow: var(--shadow-modal); display: flex; flex-direction: column; overflow: hidden; }
+.stress-header { display: flex; justify-content: space-between; align-items: center; padding: 18px 24px; border-bottom: 1px solid var(--outline-variant); }
+.stress-header h2 { font-size: 16px; font-weight: 700; color: var(--on-surface); display: flex; align-items: center; gap: 8px; }
+.stress-body { padding: 24px; display: flex; flex-direction: column; gap: 20px; }
+.sample-selector { display: flex; gap: 8px; }
+.sample-btn { flex: 1; padding: 10px 12px; border: 1px solid var(--outline); border-radius: 8px; background: var(--surface-dim); font-size: 12px; font-weight: 600; cursor: pointer; text-align: center; color: var(--on-surface); }
+.sample-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.stress-progress-box { display: flex; flex-direction: column; gap: 6px; }
+.stress-progress-bar { height: 10px; background: #e2e8f0; border-radius: 5px; overflow: hidden; }
+.stress-progress-fill { height: 100%; background: var(--primary); transition: width 0.3s ease; }
+.stress-results { display: flex; flex-direction: column; gap: 14px; background: var(--surface-dim); border: 1px solid var(--outline-variant); border-radius: 8px; padding: 16px; }
+.stress-kpi-row { display: flex; justify-content: space-between; align-items: baseline; }
+.stress-kpi-large { font-size: 20px; font-weight: 800; font-family: var(--font-mono); color: var(--primary); }
+.stress-tiers-pill { font-size: 11px; color: var(--secondary); font-family: var(--font-mono); }
+.cost-compare-card { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px 14px; }
+.cost-compare-title { font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--secondary); letter-spacing: 0.05em; margin-bottom: 8px; }
+.cost-compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 12px; }
+.cost-item strong { display: block; font-family: var(--font-mono); font-size: 14px; color: var(--on-surface); }
+.cost-item small { color: var(--muted); font-size: 11px; }
+.stress-footer { padding: 16px 24px; border-top: 1px solid var(--outline-variant); display: flex; justify-content: flex-end; gap: 10px; }
+
+.legal-list { display: flex; flex-direction: column; gap: 6px; margin: 10px 0; }
+.legal-item { background: var(--surface); border: 1px solid var(--outline-variant); border-radius: 8px; padding: 8px 10px; }
+.legal-head { display: flex; justify-content: space-between; gap: 10px; font: 700 10px var(--font-mono); color: var(--primary); }
+.legal-head span { color: var(--secondary); font-weight: 500; text-align: right; }
+.legal-item p { margin: 5px 0 0; color: var(--on-surface-variant); font-size: 10px; line-height: 1.45; }

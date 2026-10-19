@@ -276,3 +276,12 @@ This is the honest phase log. It records what was built, what was verified, what
 - Removed debug labels from UI; dual ENGINE/BEDROCK badges.
 - Added live deep-trace button/endpoint with 2.5s snapshot fallback.
 - 24/24 tests; build green; screenshots `forensic_drawer.png`, `audit_chain.png`.
+
+
+## Legal Grounding Sprint — 2026-10-19
+
+- Added 12-section human-approved Czech AML/ČNB/FAU corpus (`fixtures/legal_corpus_cnb_aml.json`).
+- Added `LegalCorpus`, `lookup_statutory_provision`/`search_legal_text` endpoints, and deterministic legal excerpt injection in `LiveBedrockService`.
+- `BuildStatutoryReason` now embeds exact quoted Czech clauses and actual 1.71x volume/count ratios.
+- Added `tests/golden/verifier_hero_case.json` and golden test; suite 25/25.
+- Updated `SOLUTION_2PAGE.md`, `DEMO_SCRIPT.md`, `.agents/QA_WAR_ROOM.md`, and `LEGAL_GROUNDING_REPORT.md`.

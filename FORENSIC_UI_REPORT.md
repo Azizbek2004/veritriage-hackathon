@@ -31,7 +31,7 @@
 
 ## Verified
 
-- `dotnet test`: **24/24 passed**
+- `dotnet test`: **25/25 passed**
 - `npm run build`: green
 - CSV header: intact (11 columns)
 - 4-eyes bypass: **blocked** (400)
