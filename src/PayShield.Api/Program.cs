@@ -72,6 +72,7 @@ builder.Services.AddSingleton(_ => CnbTransactionIndex.Load(Path.Combine(repoRoo
 builder.Services.AddSingleton(_ => new FileAuditLedger(repoRoot));
 builder.Services.AddSingleton(_ => FatfCorpus.Load(Path.Combine(repoRoot, "fixtures", "fatf_references.json")));
 builder.Services.AddSingleton<ICaseRepository, CaseRepository>();
+builder.Services.AddSingleton<TopologicalForensicsAnalyzer>();
 builder.Services.AddSingleton<DeterministicForensicAnalyzer>();
 builder.Services.AddSingleton(sp => new LegalDossierService(repoRoot, sp.GetRequiredService<FileAuditLedger>(), sp.GetRequiredService<DeterministicForensicAnalyzer>(), sp.GetRequiredService<DeliverableState>()));
 builder.Services.AddSingleton(sp => new DeepAnalysisService(repoRoot, sp.GetRequiredService<CnbTransactionIndex>(), sp.GetRequiredService<FileAuditLedger>(), sp.GetRequiredService<FatfCorpus>(), sp.GetRequiredService<DeterministicForensicAnalyzer>()));
@@ -81,6 +82,14 @@ var app = builder.Build();
 app.UseCors("cockpit");
 app.Services.GetRequiredService<CnbTransactionIndex>();
 app.Services.GetRequiredService<LegalDossierService>();
+
+static object WithTopology(VeriTriage.Domain.DeliverableCsvRow row, TopologyDto topology)
+{
+    var options = new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase };
+    var node = System.Text.Json.Nodes.JsonNode.Parse(System.Text.Json.JsonSerializer.Serialize(row, options)) as System.Text.Json.Nodes.JsonObject ?? new System.Text.Json.Nodes.JsonObject();
+    node["topology"] = System.Text.Json.Nodes.JsonNode.Parse(System.Text.Json.JsonSerializer.Serialize(topology, options));
+    return node;
+}
 
 app.MapGet("/api/v1/health", () => Results.Ok(new { status = "ok", mode = "finreg" }));
 
@@ -120,16 +129,29 @@ app.MapGet("/api/v1/priority/weights", (PriorityWeights weights) => Results.Ok(n
     max_raw = weights.MaxRaw,
 }));
 
-app.MapGet("/api/v1/cases", (DeliverableState state) =>
-    Results.Ok(state.Rows.OrderBy(r => r.Rank).ThenBy(r => r.AlertId, StringComparer.Ordinal)));
-
-app.MapGet("/api/v1/cases/{id}", (string id, DeliverableState state) =>
+app.MapGet("/api/v1/cases", (DeliverableState state, TopologicalForensicsAnalyzer topology) =>
 {
-    var row = state.QueueRows.FirstOrDefault(r => r.AlertId.Equals(id, StringComparison.OrdinalIgnoreCase));
-    return row is null ? Results.NotFound() : Results.Ok(row);
+    var map = topology.Analyze(state.Rows);
+    return Results.Ok(state.Rows.OrderBy(r => r.Rank).ThenBy(r => r.AlertId, StringComparer.Ordinal)
+        .Select(r => WithTopology(r, map[r.AlertId])));
 });
 
-app.MapGet("/api/v1/deliverable/sample", (DeliverableState state) => Results.Ok(state.Rows));
+app.MapGet("/api/v1/cases/{id}", (string id, DeliverableState state, TopologicalForensicsAnalyzer topology) =>
+{
+    var row = state.QueueRows.FirstOrDefault(r => r.AlertId.Equals(id, StringComparison.OrdinalIgnoreCase));
+    if (row is null) return Results.NotFound();
+    var map = topology.Analyze(state.Rows);
+    return map.TryGetValue(row.AlertId, out var t) ? Results.Ok(WithTopology(row, t)) : Results.Ok(row);
+});
+
+app.MapGet("/api/v1/forensics/radar", (DeliverableState state, TopologicalForensicsAnalyzer topology) =>
+    Results.Ok(topology.Radar(state.Rows)));
+
+app.MapGet("/api/v1/deliverable/sample", (DeliverableState state, TopologicalForensicsAnalyzer topology) =>
+{
+    var map = topology.Analyze(state.Rows);
+    return Results.Ok(state.Rows.Select(r => WithTopology(r, map[r.AlertId])));
+});
 
 app.MapGet("/api/v1/deliverable/stats", (DeliverableState state) => Results.Ok(state.Stats));
 
