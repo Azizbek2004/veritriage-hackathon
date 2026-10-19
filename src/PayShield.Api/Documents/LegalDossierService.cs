@@ -25,7 +25,12 @@ public sealed record LegalDossierDocument(
     object VerifierDiffSummary,
     string Markdown,
     string DocumentSha256,
-    string PrevAuditSha256);
+    string PrevAuditSha256,
+    string? SignedBy = null,
+    string? SignatureAlgorithm = null,
+    string? SignatureB64 = null,
+    string? PublicKeySpkiB64 = null,
+    string? SignedAtUtc = null);
 
 public sealed class LegalDossierService
 {
@@ -85,6 +90,53 @@ public sealed class LegalDossierService
         _ => Html(dossier),
     };
 
+    public LegalDossierDocument? Sign(string id, string signedBy)
+    {
+        lock (_gate)
+        {
+            var docs = Load();
+            var index = docs.FindIndex(d => d.DossierId == id);
+            if (index < 0) return null;
+            var updated = SignWithP256(docs[index] with { SignedBy = signedBy });
+            docs[index] = updated;
+            Write(docs);
+            _ledger.Append(updated.CaseId, "LEGAL_DOSSIER_SIGNED", new { dossier_id = updated.DossierId, signed_by = signedBy, signature_algorithm = updated.SignatureAlgorithm });
+            return updated;
+        }
+    }
+
+    public bool VerifySignature(LegalDossierDocument dossier)
+    {
+        if (string.IsNullOrWhiteSpace(dossier.SignatureB64) || string.IsNullOrWhiteSpace(dossier.PublicKeySpkiB64)) return false;
+        try
+        {
+            using var ecdsa = ECDsa.Create();
+            ecdsa.ImportSubjectPublicKeyInfo(Convert.FromBase64String(dossier.PublicKeySpkiB64), out _);
+            return ecdsa.VerifyData(Encoding.UTF8.GetBytes(CanonicalPayload(dossier)), Convert.FromBase64String(dossier.SignatureB64), HashAlgorithmName.SHA256);
+        }
+        catch { return false; }
+    }
+
+    private static LegalDossierDocument SignWithP256(LegalDossierDocument dossier)
+    {
+        using var ecdsa = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+        var signature = ecdsa.SignData(Encoding.UTF8.GetBytes(CanonicalPayload(dossier)), HashAlgorithmName.SHA256);
+        return dossier with
+        {
+            SignatureAlgorithm = "ECDSA_P256_SHA256",
+            SignatureB64 = Convert.ToBase64String(signature),
+            PublicKeySpkiB64 = Convert.ToBase64String(ecdsa.ExportSubjectPublicKeyInfo()),
+            SignedAtUtc = DateTimeOffset.UtcNow.ToString("O"),
+        };
+    }
+
+    private static string CanonicalPayload(LegalDossierDocument d) => JsonSerializer.Serialize(new
+    {
+        d.DossierId, d.CaseId, d.ClientId, d.TransactionId, d.DocumentType, d.Title, d.CreatedAtUtc,
+        d.PreparedByEngine, d.DesignatedCounselRecipient, d.ExecutivePerson, d.Approver, d.FourEyesStatus,
+        d.StatutoryCitations, d.QuantitativeEvidenceTable, d.VerifierDiffSummary, d.Markdown, d.DocumentSha256, d.PrevAuditSha256, d.SignedBy
+    });
+
     private LegalDossierDocument SaveNew(DeliverableCsvRow row, string type, string title, string preparedBy,
         ForensicVectorProfile vector, object diff, string markdown)
     {
@@ -103,9 +155,10 @@ public sealed class LegalDossierService
             Citations(),
             new { expected_volume = vector.ExpectedVolume, actual_volume = vector.ActualVolume, velocity_ratio = vector.VelocityRatio, count_ratio = vector.CountRatio, structuring_72h = vector.Structuring72h, hhi = vector.CounterpartyHhi, shared_counterparty_links = vector.SharedCounterpartyLinks, round_amount_ratio = vector.RoundAmountRatio, priority = vector.Priority, total_priority = vector.TotalPriority, gates = vector.Gates },
             diff, markdown, hash, prev);
+        dossier = SignWithP256(dossier);
         docs.Add(dossier);
         Write(docs);
-        _ledger.Append(row.AlertId, "LEGAL_DOSSIER_CREATED", new { dossier_id = dossier.DossierId, document_type = type, document_sha256 = hash, prev_audit_sha256 = prev });
+        _ledger.Append(row.AlertId, "LEGAL_DOSSIER_CREATED", new { dossier_id = dossier.DossierId, document_type = type, document_sha256 = hash, prev_audit_sha256 = prev, signature_algorithm = dossier.SignatureAlgorithm });
         return dossier;
     }
 
@@ -124,7 +177,7 @@ public sealed class LegalDossierService
                 var version = docs.Count(d => d.CaseId == row.AlertId) + 1;
                 var hash = Hash(markdown);
                 var prev = _ledger.Get(row.AlertId).LastOrDefault()?.Hash ?? "GENESIS";
-                docs.Add(new LegalDossierDocument(
+                var seed = new LegalDossierDocument(
                     $"DOS-{published:yyyy}-{row.AlertId.Replace("ALERT-", "", StringComparison.Ordinal)}-V{version}",
                     row.AlertId, row.ClientId, row.TransactionId, "QUANTITATIVE_FORENSIC_BRIEF",
                     "Quantitative Forensic Brief — 5-Vector Typology & Deterministic Priority",
@@ -132,7 +185,9 @@ public sealed class LegalDossierService
                     "External Legal Counsel / MLRO / Finanční analytický úřad (FAÚ) — § 18 & § 16 Act No. 253/2008 Coll.",
                     row.ExecutivePerson, row.Approver, "PASS_INDEPENDENT", Citations(),
                     new { expected_volume = vector.ExpectedVolume, actual_volume = vector.ActualVolume, velocity_ratio = vector.VelocityRatio, count_ratio = vector.CountRatio, structuring_72h = vector.Structuring72h, hhi = vector.CounterpartyHhi, shared_counterparty_links = vector.SharedCounterpartyLinks, round_amount_ratio = vector.RoundAmountRatio, priority = vector.Priority, total_priority = vector.TotalPriority, gates = vector.Gates },
-                    new { mode = "SEEDED_QUANTITATIVE_BRIEF", intervention = "NONE" }, markdown, hash, prev));
+                    new { mode = "SEEDED_QUANTITATIVE_BRIEF", intervention = "NONE" }, markdown, hash, prev);
+                seed = SignWithP256(seed);
+                docs.Add(seed);
                 Write(docs);
                 _ledger.Append(row.AlertId, "LEGAL_DOSSIER_CREATED", new { dossier_id = docs[^1].DossierId, document_type = "QUANTITATIVE_FORENSIC_BRIEF", document_sha256 = hash, prev_audit_sha256 = prev });
             }
@@ -212,7 +267,8 @@ public sealed class LegalDossierService
             else if (!string.IsNullOrWhiteSpace(t)) html.Append("<p>").Append(Encode(t)).Append("</p>");
         }
         html.Append("<footer>SHA-256: ").Append(Encode(d.DocumentSha256)).Append(" · Previous audit hash: ").Append(Encode(d.PrevAuditSha256))
-            .Append(" · ").Append(Encode(d.DesignatedCounselRecipient)).Append("</footer></body></html>");
+            .Append(" · ").Append(Encode(d.DesignatedCounselRecipient))
+            .Append(" · Signature: ").Append(Encode(d.SignatureAlgorithm ?? "unsigned")).Append(" ").Append(Encode(d.SignatureB64 ?? "")).Append("</footer></body></html>");
         return html.ToString();
     }
 

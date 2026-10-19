@@ -113,11 +113,15 @@ public static class FinregDeliverableEngine
     {
         var baseScore = isFp ? 10 : 40;
         if (baseScore > priority) baseScore = priority;
-        var pep = input.Pep ? 25 : 0;
-        var vol = Math.Min(30, Math.Max(0, priority - baseScore - pep));
-        var structure = Math.Min(20, Math.Max(0, priority - baseScore - pep - vol));
-        var channel = Math.Max(0, priority - baseScore - pep - vol - structure);
-        return new PriorityBreakdown(baseScore, vol, pep, structure, channel);
+        var pep = input.Pep ? Math.Min(25, priority - baseScore) : 0;
+        var ratio = input.ExpectedVolume > 0 ? input.ActualVolume / input.ExpectedVolume : 1m;
+        var velocity = isFp
+            ? priority - baseScore
+            : Math.Clamp((int)Math.Round((ratio - 1m) * 15m, MidpointRounding.ToEven), 0, 30);
+        velocity = Math.Min(velocity, Math.Max(0, priority - baseScore - pep));
+        var structure = isFp ? 0 : Math.Min(20, Math.Max(0, priority - baseScore - pep - velocity));
+        var channel = Math.Max(0, priority - baseScore - pep - velocity - structure);
+        return new PriorityBreakdown(baseScore, velocity, pep, structure, channel);
     }
 
     public static int RawPriority(CnbAlertInput input)

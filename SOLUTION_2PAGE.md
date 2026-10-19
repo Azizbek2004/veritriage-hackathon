@@ -21,9 +21,9 @@ Every component is returned in the CSV API as `priority_breakdown`; the table sh
 - Declared 2Q2026: **39,819.67 CZK / 7 transactions**
 - Actual 2Q2026: **68,262.30 CZK / 12 transactions**
 - Volume ratio: **1.71x**; count ratio: **1.71x**
-- Structuring: **5 sub-threshold transfers in 48h, 23,778.04 CZK**
+- Structuring: **13 sub-threshold transfers in 72h, 95,511.91 CZK**
 - PEP: **true**; risk: **high**
-- Priority: **96/100 = B40 + V30 + P25 + S1**
+- Priority: **96/100 = B40 + V11 + P25 + S20**
 - Legal quotes: `AML-253-2008-S6-1A` (volume), `AML-253-2008-S6-1B` (structuring), `AML-253-2008-S21-5` (PEP)
 
 The brief’s 8.20x / 4.51M illustration is **not** this client. We do not fabricate it.

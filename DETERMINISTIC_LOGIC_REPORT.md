@@ -13,7 +13,7 @@
   - round-amount ratio;
   - priority breakdown and 5 gate results.
 - **Measured:** vectors **1.7ms**; deep analysis **4.9ms** (under the 15ms target).
-- **Hero vector:** 1.71x volume, 1.71x count, 72h cluster **13 transfers / 95,511.91 CZK**, HHI **916**, round ratio **0.00%**, priority **96** (`B40+V30+P25+S1`).
+- **Hero vector:** 1.71x volume, 1.71x count, 72h cluster **13 transfers / 95,511.91 CZK**, HHI **916**, round ratio **0.00%**, priority **96** (`B40+V11+P25+S20`).
 - The 13-transfer figure is the maximum 72h sub-threshold window; the previous 5-transfer/23,778 figure was a curated subset. The UI/docs now use the max window.
 
 ## Part 2 — Investigation vs. deep analysis
@@ -35,7 +35,7 @@
 - **Six-section memo:** executive classification, quantitative forensics, cluster/typology, MRM/neuro-symbolic, statutory basis, 4-eyes + SHA-256 receipt.
 - **HTML export:** print-ready `@media print` court typography; tested 12,825 bytes.
 - **Audit events:** `LEGAL_DOSSIER_CREATED`; `DEEP_ANALYSIS_GENERATED`; `DEEP_ANALYSIS_SIGNED`; file ledger `FILE_CHAIN` (8/8 after seeding; grows with new docs).
-- **Signature:** mock MLRO sign with SHA-256; not real ECDSA.
+- **Signature:** real NIST P-256 ECDSA (`ECDSA_P256_SHA256`); `ExportSubjectPublicKeyInfo` public key stored in the dossier and export; `POST /dossiers/{id}/sign` re-signs; `GET /dossiers/{id}/verify` returns valid. The separate payment-approval ceremony remains mocked.
 
 ## Part 4 — Queue and UX
 
@@ -60,7 +60,15 @@
 
 - Advanced deterministic logic is **aligned** on the 5 vectors, versioned rules, determinism and audit binding.
 - The **deep analysis is genuinely zero-LLM**; the investigation is neuro-symbolic with a deterministic C# diff.
-- The **dossier is lawyer-ready Markdown/HTML**, not a PDF, and the signature is a mock.
+- The **dossier is lawyer-ready Markdown/HTML**; the dossier signature is real P-256 ECDSA. PDF is deferred, but the 2-page methodology PDF exists (`METHODOLOGY_2PAGER.pdf`).
 - The **72h cluster is 13/95,511.91 CZK**, not the earlier 5/23,778 subset.
 - FATF integration is curated references, not live MCP scraping.
 - New analyzer/dossier endpoints lack dedicated unit tests; do not claim otherwise.
+
+
+## ECDSA verification
+
+- Seeded dossiers and new dossiers carry `ECDSA_P256_SHA256`, base64 signature, SPKI public key and signed-at timestamp.
+- `POST /api/v1/dossiers/{id}/sign` re-signs; `GET /api/v1/dossiers/{id}/verify` returns `valid: true`.
+- The HTML export prints the algorithm and signature.
+- Real ECDSA is not the same as the payment-approval mock; do not conflate them.

@@ -79,6 +79,10 @@ type Dossier = {
   documentSha256: string;
   prevAuditSha256: string;
   markdown: string;
+  signedBy?: string | null;
+  signatureAlgorithm?: string | null;
+  signatureB64?: string | null;
+  publicKeySpkiB64?: string | null;
 };
 
 type AuditEvent = {
@@ -574,6 +578,32 @@ export default function Home() {
   function showDeepAnalysis() {
     setTab("deep");
     void loadDocuments();
+  }
+
+  async function verifyDossier(id: string) {
+    try {
+      const response = await fetch(`${API}/api/v1/dossiers/${id}/verify`);
+      if (!response.ok) throw new Error("verify failed");
+      const data = await response.json();
+      setToast(data.valid ? `P-256 signature valid · ${data.signature_algorithm}` : "P-256 signature INVALID");
+    } catch {
+      setToast("Dossier signature verification failed");
+    }
+  }
+
+  async function signDossier(id: string) {
+    try {
+      const response = await fetch(`${API}/api/v1/dossiers/${id}/sign`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ signedBy: "MLRO Marie Svobodová" }),
+      });
+      if (!response.ok) throw new Error("sign failed");
+      setToast("Dossier re-signed with NIST P-256");
+      await loadDossiers();
+    } catch {
+      setToast("Dossier signing failed");
+    }
   }
 
   async function loadDossiers() {
@@ -1402,11 +1432,13 @@ export default function Home() {
                           <div>
                             <div className="detail-label">{dossier.documentType === "STATUTORY_FAU_OPO_LEGAL_MEMO" ? "FAÚ § 18 LEGAL MEMO" : "QUANTITATIVE BRIEF"} · {dossier.createdAtUtc.slice(0, 19)}</div>
                             <div className="mono doc-id">{dossier.dossierId}</div>
-                            <div className="brand-subtitle">SHA-256 {dossier.documentSha256.slice(0, 22)}…</div>
+                            <div className="brand-subtitle">SHA-256 {dossier.documentSha256.slice(0, 22)}… · {dossier.signatureAlgorithm ?? "unsigned"} · {dossier.signedBy ?? "engine-signed"}</div>
                           </div>
                           <div className="doc-actions">
                             <a className="btn-outline" href={`${API}/api/v1/dossiers/${dossier.dossierId}/export?format=html`} target="_blank" rel="noreferrer">Open Lawyer-Ready Brief</a>
                             <a className="btn-outline" href={`${API}/api/v1/dossiers/${dossier.dossierId}/export?format=md`} target="_blank" rel="noreferrer">Markdown</a>
+                            <button className="btn-outline" onClick={() => verifyDossier(dossier.dossierId)}>Verify P-256</button>
+                            <button className="btn-outline" onClick={() => signDossier(dossier.dossierId)}>Sign P-256</button>
                           </div>
                         </div>
                       ))}

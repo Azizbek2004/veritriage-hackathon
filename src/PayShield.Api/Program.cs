@@ -208,6 +208,18 @@ app.MapPost("/api/v1/cases/{id}/investigate", async (string id, ICaseRepository 
 
 app.MapGet("/api/v1/dossiers", (LegalDossierService dossiers) => Results.Ok(dossiers.List()));
 app.MapGet("/api/v1/cases/{id}/dossiers", (string id, LegalDossierService dossiers) => Results.Ok(dossiers.List(id)));
+app.MapPost("/api/v1/dossiers/{dossierId}/sign", (string dossierId, DocumentSignRequest request, LegalDossierService dossiers) =>
+{
+    var dossier = dossiers.Sign(dossierId, request.SignedBy);
+    return dossier is null ? Results.NotFound() : Results.Ok(new { status = "SIGNED", dossier_id = dossier.DossierId, signed_by = dossier.SignedBy, signature_algorithm = dossier.SignatureAlgorithm, signature_b64 = dossier.SignatureB64, public_key_spki_b64 = dossier.PublicKeySpkiB64 });
+});
+
+app.MapGet("/api/v1/dossiers/{dossierId}/verify", (string dossierId, LegalDossierService dossiers) =>
+{
+    var dossier = dossiers.Get(dossierId);
+    return dossier is null ? Results.NotFound() : Results.Ok(new { valid = dossiers.VerifySignature(dossier), signature_algorithm = dossier.SignatureAlgorithm, public_key_spki_b64 = dossier.PublicKeySpkiB64 });
+});
+
 app.MapGet("/api/v1/dossiers/{dossierId}/export", (string dossierId, string? format, LegalDossierService dossiers) =>
 {
     var dossier = dossiers.Get(dossierId);

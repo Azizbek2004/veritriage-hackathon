@@ -25,3 +25,5 @@ Forensic views:
 
 - `deep_analysis.png` — drawer Deep Analysis tab with dual actions, 5-vector cards, and document history.
 - `dossiers.png` — Legal Dossiers & History tab with seeded counsel archive and printable HTML links.
+
+- `METHODOLOGY_2PAGER.pdf` — two-page FINREG methodology (formula, vectors, 4-eyes, dual-mode).

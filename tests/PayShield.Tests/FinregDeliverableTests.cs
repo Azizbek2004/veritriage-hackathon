@@ -22,7 +22,11 @@ public sealed class FinregDeliverableTests
                 i == 45,
                 i % 10 == 0 ? "7995" : "UNKNOWN",
                 "Ing. Jan Novák",
-                "Ing. Jana Dvořáková"));
+                "Ing. Jana Dvořáková",
+                1_000m,
+                1_710m,
+                10,
+                17));
         }
         return list;
     }

@@ -11,7 +11,7 @@
   - Light Scandinavian system retained; typography is mono/tabular for numerics, tighter cards.
 - [x] **Task 2 — priority breakdown pills**
   - JSON `priority_breakdown` on each row.
-  - Table pill e.g. `B40 · V30 · P25 · S1`; tooltip with full formula.
+  - Table pill e.g. `B40 · V11 · P25 · S20`; tooltip with full formula.
   - Sum of components equals priority for all 45 rows (verified).
 - [x] **Task 3 — client transaction cluster**
   - `CnbTransactionIndex` prebuilt at startup over 397,853 transactions / 5,493 clients.

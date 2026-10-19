@@ -7,7 +7,7 @@
 
 - **Client transaction cluster:** 397,853-row index, 5,493 clients; baseline vs actual bars; sibling ledger; structuring pattern; shared counterparty.
 - **Verifier diff:** 5-row `LLM proposal (representative)` vs `C# verifier (executed)`; `OVERRIDDEN (+22)` highlighted; `FAIL_CLOSED` 4-eyes row.
-- **Priority breakdown:** `priority_breakdown` per row; sum equals displayed priority for all 45 CSV rows.
+- **Priority breakdown:** `priority_breakdown` per row; sum equals displayed priority for all 45 CSV rows. Hero math: `B40 + V11 + P25 + S20 + C0 = 96`.
 - **Persistent audit:** `FileAuditLedger` → `data/audit_ledger.json`; approve appends `APPROVED`; audit goes 5 → 6; refresh stable. API `ledger_mode: FILE_CHAIN`.
 - **Debug labels removed:** no `DEMO_STATIC`, `LIVE_BEDROCK_CACHED`, or uppercase `CACHED` in `apps/web/`.
 - **Dual operational badges:** `ENGINE: C# DETERMINISTIC · <ms>` and `BEDROCK: LIVE/SNAPSHOT`.
@@ -81,3 +81,8 @@ The hero client K005397 is **1.71x volume / 1.71x count** (39,819.67 CZK declare
 - Legal dossiers persisted in `data/legal_dossiers.json`; 3 seeded; HTML export.
 - Browse queue 200 rows; CSV remains 45; scroll loads +40.
 - Tests 26/26; new endpoints manually verified.
+
+- Measured dataset load: **75.9ms** (the earlier 37ms was a different run); deep analysis 4.9ms.
+- Browse queue 200 rows; CSV 45 rows; scroll +40; priority filter.
+- Legal dossiers: P-256 ECDSA signature; 3 seeded; HTML export.
+- Methodology PDF: `METHODOLOGY_2PAGER.pdf` (2 pages).

@@ -304,3 +304,11 @@ This is the honest phase log. It records what was built, what was verified, what
 - Browse queue 200 rows; CSV still 45; scroll load/priority filter.
 - Deep Analysis + Legal Dossiers tabs; screenshots `deep_analysis.png`, `dossiers.png`.
 - Tests 26/26; build green; new endpoints manually verified.
+
+
+## Audit Fixes & Methodology — 2026-10-19
+
+- Priority attribution fixed: ALERT-045 = B40 + V11 + P25 + S20 + C0.
+- Dossier signatures upgraded to NIST P-256 ECDSA; sign/verify endpoints.
+- 2-page `METHODOLOGY_2PAGER.md/.html/.pdf` created.
+- AWS live Bedrock remains snapshot: host .NET/AppleCrypto `bad certificate format`; not credentials.

@@ -40,13 +40,13 @@ alert_id,alert_type,client_id,transaction_id,triage,priority,executive_role,exec
 **Click:** close the drawer. Scroll to **ALERT-045**, the PEP REVIEW row (priority 96).
 
 **Say:**
-> “This is a PEP with elevated 24-hour velocity. Priority 96. It requires MLRO escalation under § 21(5).”
+> “This is a PEP with elevated 24-hour velocity. Priority 96 = B40 + V11 + P25 + S20 + C0. It requires MLRO escalation under § 21(5).”
 
 **Scroll:** in the drawer, show **Client transaction cluster**.
 > “This is the real index: 39,819 CZK declared vs 68,262 actual — 1.71x volume, 1.71x count. Thirteen sub-threshold transfers in 72 hours, 95,511.91 CZK total. The brief’s 8.20x is not this client; we show the actual number.”
 
 **Scroll:** show **Neuro-symbolic check**.
-> “The representative LLM proposed priority 74. The C# verifier recomputed 96 and marked it OVERRIDDEN. It also fail-closed the same-person approval.”
+> “The representative LLM proposed priority 74. The C# verifier recomputed 96 = B40 + V11 + P25 + S20 and marked it OVERRIDDEN. The 13-transfer/95,511.91 CZK 72h cluster drives the S20. It also fail-closed the same-person approval.”
 
 **Do not** claim “8x volume” or the brief’s 8.20x; the actual K005397 ratio is 1.71x.
 
@@ -128,6 +128,12 @@ Chain Verified: 5/5 events
 - Show the Markdown document sections: evidence, priority breakdown, rules, 4-eyes, audit excerpt, FATF references, disclaimer.
 - Download the **Bundle** (analysis.md, evidence.json, audit_chain.json, rule_registry.json, fatf_references.json, signatures.json).
 - Say: “This is the lawyer-ready Markdown bundle; PDF is intentionally deferred, and the document hash is verifiable.”
+
+## Legal Dossier Beat (if time)
+
+- Open **Legal Dossiers**.
+- Say: “These are freeze-on-write legal artifacts bound to the audit chain. The dossier is signed with a real NIST P-256 ECDSA key, and the public key is in the JSON export.”
+- Click **Open Lawyer-Ready Brief** → show the printable six-section § 18 memo.
 
 ## If Something Breaks
 
