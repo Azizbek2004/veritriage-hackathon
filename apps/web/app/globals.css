@@ -1503,3 +1503,11 @@ tbody td { white-space: nowrap; }
   margin: 24px 0;
 }
 
+.confidence-note { font: 9px var(--font-mono); margin-top: 4px; line-height: 1.35; }
+.confidence-note.low { color: var(--warning); }
+.confidence-note.high { color: var(--success); }
+.confidence-note.mid { color: var(--secondary); }
+.two-axis-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 8px 0; }
+.two-axis-grid div { border: 1px solid var(--outline-variant); border-radius: 6px; padding: 6px; background: var(--surface-container-low); }
+.two-axis-grid span { display: block; font: 700 8px var(--font-mono); color: var(--secondary); }
+.two-axis-grid strong { display: block; font: 700 13px var(--font-mono); color: var(--primary); margin-top: 3px; }

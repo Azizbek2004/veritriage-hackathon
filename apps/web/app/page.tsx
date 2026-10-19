@@ -17,6 +17,11 @@ type Row = {
   approver: string;
   reason: string;
   log: string;
+  priority_raw?: number;
+  rank?: number;
+  rank_total?: number;
+  evidence_score?: number;
+  confidence_score?: number;
   priority_breakdown?: {
     base: number;
     vol: number;
@@ -1045,6 +1050,9 @@ export default function Home() {
                                 .join(" · ")}
                             </span>
                           )}
+                          <div className={`confidence-note ${(row.confidence_score ?? 0) < 50 ? "low" : (row.confidence_score ?? 0) >= 80 ? "high" : "mid"}`}>
+                            confidence {row.confidence_score ?? 0}
+                          </div>
                         </div>
                       </td>
                       <td>{row.executiveRole}</td>
@@ -1253,6 +1261,18 @@ export default function Home() {
                       </div>
                     </div>
                   )}
+
+                  <div className="detail-card">
+                    <div className="detail-label">Two-axis scoring</div>
+                    <div className="two-axis-grid">
+                      <div><span>EVIDENCE</span><strong>{selected.evidence_score ?? selected.priority}/100</strong></div>
+                      <div><span>CONFIDENCE</span><strong>{selected.confidence_score ?? 0}/100</strong></div>
+                      <div><span>RAW</span><strong>{selected.priority_raw ?? selected.priority}/125</strong></div>
+                    </div>
+                    <div className={`confidence-note ${(selected.confidence_score ?? 0) < 50 ? "low" : (selected.confidence_score ?? 0) >= 80 ? "high" : "mid"}`}>
+                      {(selected.confidence_score ?? 0) < 50 ? "Low confidence — send RFI before escalation." : (selected.confidence_score ?? 0) >= 80 ? "High confidence — escalate." : "Medium confidence — analyst review."}
+                    </div>
+                  </div>
 
                   <div className="detail-card legal-card">
                     <div className="detail-label">Statutory basis</div>
