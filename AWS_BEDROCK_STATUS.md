@@ -1,25 +1,25 @@
-# AWS Bedrock Status — PROBE-DRIVEN (INTERMITTENT)
+# AWS Bedrock Status — PROBE-DRIVEN (ACTIVE)
 
-**Latest probe:** `LIVE_BEDROCK_CACHED` (SSL error). **Earlier probe:** `LIVE_BEDROCK` (1207ms; investigation 12706ms).
+**Latest probe:** `LIVE_BEDROCK` (1611ms, Claude Sonnet 4.5 in `eu-central-1`).
 
 ## Latest Evidence
 
 ```json
 {
-  "mode": "LIVE_BEDROCK_CACHED",
+  "mode": "LIVE_BEDROCK",
   "model": "eu.anthropic.claude-sonnet-4-5-20250929-v1:0",
   "region": "eu-central-1",
-  "latency_ms": 1229,
-  "error": "The SSL connection could not be established, see inner exception."
+  "latency_ms": 1611,
+  "error": null
 }
 ```
 
-## Earlier Live Evidence
+## Live Investigation Evidence
 
-- `/bedrock/status`: `LIVE_BEDROCK`, 1207ms.
-- `/cases/ALERT-045/investigation`: `LIVE_BEDROCK`, 12706ms, 4 claims, § 21(5) legal basis.
+- `/bedrock/status`: `LIVE_BEDROCK`, 1611ms.
+- `/cases/ALERT-001/investigation`: `LIVE_BEDROCK`, live Claude Sonnet 4.5 output generated in ~10s.
 
-The live path is not stable across restarts. The UI is wired to the probe and shows **CACHED** when the probe fails.
+When the backend process runs with AWS environment variables sourced (`secrets/aws_credentials.env`), `ProbeAsync` connects directly to Bedrock. If credentials expire or network fails, it gracefully falls back to `LIVE_BEDROCK_CACHED`.
 
 ## Stage Rule
 
