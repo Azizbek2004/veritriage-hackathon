@@ -22,12 +22,16 @@ public static class TopologyMath
     public static string ClassifyRole(int sharedCounterpartyCount, bool hasCyclicFlow, int cClustering,
         int topologyScore, decimal passThroughHours, string baseTier, decimal volRatio, bool isNewRemote, bool linkedToMuleHub)
     {
-        if (sharedCounterpartyCount >= 3 || (topologyScore >= 75 && passThroughHours <= 6m))
+        // Calibrated: only a true high-tier/high-score hub or a top collector hub is a mule.
+        if (baseTier == "high" && topologyScore >= 78 && sharedCounterpartyCount >= 3)
             return "MULE_AGGREGATOR";
-        if (hasCyclicFlow || (cClustering >= 60 && sharedCounterpartyCount >= 2))
+        // Cycles and tight shared-hub pairs are carousel/ring nodes before generic hubs.
+        if (hasCyclicFlow || (cClustering >= 60 && sharedCounterpartyCount == 2))
             return "CAROUSEL_RING";
+        if (sharedCounterpartyCount >= 12)
+            return "MULE_AGGREGATOR";
         var established = baseTier is "low" or "medium";
-        if (established && (volRatio >= 2.5m || isNewRemote) && linkedToMuleHub)
+        if (established && (volRatio >= 2.5m || isNewRemote) && (sharedCounterpartyCount >= 8 || (linkedToMuleHub && sharedCounterpartyCount >= 1 && topologyScore >= 55 && isNewRemote)))
             return "COMPROMISED_VICTIM";
         return "ISOLATED_ANOMALY";
     }

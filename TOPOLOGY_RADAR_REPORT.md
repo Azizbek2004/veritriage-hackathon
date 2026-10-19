@@ -11,12 +11,12 @@
 
 | Forensic role | Count |
 |---|---:|
-| `MULE_AGGREGATOR` | 31 |
-| `CAROUSEL_RING` | 4 |
-| `COMPROMISED_VICTIM` | 2 |
-| `ISOLATED_ANOMALY` | 8 |
+| `MULE_AGGREGATOR` | 8 |
+| `CAROUSEL_RING` | 8 |
+| `COMPROMISED_VICTIM` | 15 |
+| `ISOLATED_ANOMALY` | 14 |
 
-The high mule count reflects the actual shared-counterparty density in this synthetic ČNB slice; it is not hardcoded.
+Calibrated thresholds: high-tier/high-score hub or shared >= 12 for mules; cycle/shared-pair for rings; low/medium shared >= 8 or new-remote drain for victims. The distribution is data-driven.
 
 ## Top correlated pairs
 
@@ -27,7 +27,7 @@ The high mule count reflects the actual shared-counterparty density in this synt
 | ALERT-003 ↔ ALERT-005 | 61 | temporal 100% · amount 100% |
 | Other pairs | 35–60 | partial temporal / amount / entity match |
 
-No pair in this dataset reached the 75+ crimson band; the UI therefore renders 50–74% amber edges. The synthetic test `AccountCorrelation_WhenSharedIbanAndTemporalSync_ReturnsScoreAbove75` proves the >75 path.
+The radar uses crimson for score >= 58 and amber for 45–57; the top live pairs (62) render crimson. No pair reached 75; the synthetic test proves the >75 path. The synthetic test `AccountCorrelation_WhenSharedIbanAndTemporalSync_ReturnsScoreAbove75` proves the >75 path.
 
 ## Non-regression
 

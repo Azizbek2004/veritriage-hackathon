@@ -73,7 +73,10 @@ public sealed class TopologicalForensicsAnalyzer
             var t = TopologyMath.ComputeTopology(Math.Min(100, shared[r.AlertId] * 25), clustering, diffusion);
             return (Row: r, Degree: Math.Min(100, shared[r.AlertId] * 25), Clustering: clustering, Diffusion: diffusion, InOut: inOut, Pass: pass, Topology: t);
         }).ToList();
-        var muleHubAccounts = scoreRows.Where(x => x.Row.Inputs?.BaseTier == "high" && shared[x.Row.AlertId] >= 3)
+        var muleHubAccounts = scoreRows.Where(x => TopologyMath.ClassifyRole(
+                shared[x.Row.AlertId], cycle[x.Row.AlertId], x.Clustering, x.Topology.TopologyScore,
+                x.Pass, x.Row.Inputs?.BaseTier ?? "low", x.Row.Inputs?.VolRatio ?? 0m,
+                x.Row.Inputs?.IsNewRemote ?? false, false) == "MULE_AGGREGATOR")
             .Select(x => primary[x.Row.AlertId]).Where(x => x is not null).ToHashSet(StringComparer.Ordinal);
         var result = new Dictionary<string, TopologyDto>(StringComparer.Ordinal);
         foreach (var item in scoreRows)

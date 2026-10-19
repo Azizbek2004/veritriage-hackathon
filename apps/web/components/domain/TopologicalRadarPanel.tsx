@@ -64,7 +64,7 @@ function point(radial: number, angle: number) {
 }
 
 export default function TopologicalRadarPanel({ rows, selectedId, roleFilter, onSelect, onRoleFilter }: Props) {
-  const [showAll, setShowAll] = useState(false);
+  const [showAll, setShowAll] = useState(true);
   const nodes = rows.filter((r) => r.topology);
   const selected = rows.find((r) => r.alertId === selectedId) ?? null;
   const counts = useMemo(() => {
@@ -82,7 +82,7 @@ export default function TopologicalRadarPanel({ rows, selectedId, roleFilter, on
       if (!source.topology) continue;
       for (const edge of source.topology.correlated_accounts ?? []) {
         const to = byId.get(edge.target_alert_id);
-        if (to?.topology) list.push({ from: source, to, edge });
+        if (to?.topology && (!showAll || edge.correlation_score >= 55)) list.push({ from: source, to, edge });
       }
     }
     return list;
@@ -131,7 +131,7 @@ export default function TopologicalRadarPanel({ rows, selectedId, roleFilter, on
               const b = point(to.topology.radial_distance, to.topology.radar_angle_deg);
               const mx = (a.x + b.x) / 2 + (b.y - a.y) * 0.12;
               const my = (a.y + b.y) / 2 - (b.x - a.x) * 0.12;
-              return <path key={`${from.alertId}-${to.alertId}-${idx}`} d={`M ${a.x} ${a.y} Q ${mx} ${my} ${b.x} ${b.y}`} fill="none" stroke={edge.correlation_score >= 75 ? "#ef4444" : "#f59e0b"} strokeWidth={edge.correlation_score >= 75 ? 1.8 : 1.1} strokeDasharray={edge.correlation_score >= 75 ? "4 4" : undefined} opacity="0.75" />;
+              return <path key={`${from.alertId}-${to.alertId}-${idx}`} d={`M ${a.x} ${a.y} Q ${mx} ${my} ${b.x} ${b.y}`} fill="none" stroke={edge.correlation_score >= 58 ? "#ef4444" : "#f59e0b"} strokeWidth={edge.correlation_score >= 58 ? 1.8 : 1.1} strokeDasharray={edge.correlation_score >= 58 ? "4 4" : undefined} opacity="0.75" />;
             })}
             {nodes.map((row) => {
               if (!row.topology) return null;
