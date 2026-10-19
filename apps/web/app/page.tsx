@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import ClientTransactionCluster from "../components/domain/ClientTransactionCluster";
 import VerifierDiffTable from "../components/domain/VerifierDiffTable";
+import TopologicalRadarPanel from "../components/domain/TopologicalRadarPanel";
 import { MarkdownDocViewer } from "./MarkdownDocViewer";
 
 type Row = {
@@ -17,6 +18,15 @@ type Row = {
   approver: string;
   reason: string;
   log: string;
+  topology?: {
+    topology_score: number;
+    radial_distance: number;
+    radar_angle_deg: number;
+    forensic_role: string;
+    forensic_role_label: string;
+    statutory_basis: string;
+    correlated_accounts: unknown[];
+  };
   priority_breakdown?: {
     base: number;
     vol: number;
@@ -304,6 +314,7 @@ export default function Home() {
   const [filter, setFilter] = useState<Filter>("ALL");
   const [query, setQuery] = useState("");
   const [minPriority, setMinPriority] = useState(0);
+  const [roleFilter, setRoleFilter] = useState("");
   const [visibleCount, setVisibleCount] = useState(45);
   const [weights, setWeights] = useState<PriorityWeights | null>(null);
   const [sensitivity, setSensitivity] = useState({ pep: 25, perUnit: 10, struct: 20, cap: 30 });
@@ -441,9 +452,10 @@ export default function Home() {
         row.clientId.toLowerCase().includes(needle) ||
         row.transactionId.toLowerCase().includes(needle) ||
         row.reason.toLowerCase().includes(needle);
-      return matchesFilter && matchesQuery && row.priority >= minPriority;
+      const matchesRole = !roleFilter || row.topology?.forensic_role === roleFilter;
+      return matchesFilter && matchesQuery && row.priority >= minPriority && matchesRole;
     });
-  }, [rows, sensitivityRows, filter, query, minPriority]);
+  }, [rows, sensitivityRows, filter, query, minPriority, roleFilter]);
 
   const visibleRows = filteredRows.slice(0, visibleCount);
 
@@ -1104,6 +1116,14 @@ export default function Home() {
 
       {parityError && <div className="banner-violation" role="alert"><strong>{parityError}</strong></div>}
 
+      <TopologicalRadarPanel
+        rows={rows as any}
+        selectedId={selected?.alertId}
+        roleFilter={roleFilter}
+        onSelect={(row) => openRow(row as unknown as Row)}
+        onRoleFilter={(role) => { setRoleFilter(role); setVisibleCount(45); }}
+      />
+
       {apiError && (
         <div className="banner-violation">
           <strong>API unavailable:</strong> {apiError}. Start `dotnet run --project src/PayShield.Api` on :5000.
@@ -1150,7 +1170,7 @@ export default function Home() {
                       onClick={() => openRow(row)}
                       onKeyDown={(event) => onRowKey(event, row)}
                     >
-                      <td className="mono-cell">{row.alertId}{row.topBadge && <span className={`top-badge ${row.topBadge.includes("NEW") ? "new" : row.topBadge.includes("DROP") ? "drop" : "robust"}`}>{row.topBadge}</span>}</td>
+                      <td className="mono-cell">{row.alertId}{row.topBadge && <span className={`top-badge ${row.topBadge.includes("NEW") ? "new" : row.topBadge.includes("DROP") ? "drop" : "robust"}`}>{row.topBadge}</span>}{row.topology && <span className={`topo-role role-${row.topology.forensic_role.toLowerCase()}`}>{row.topology.forensic_role === "MULE_AGGREGATOR" ? "MULE" : row.topology.forensic_role === "CAROUSEL_RING" ? "RING" : row.topology.forensic_role === "COMPROMISED_VICTIM" ? "TAKEN" : "ISO"} · R{row.topology.radial_distance.toFixed(2)}</span>}</td>
                       <td>
                         <span className={`status-pill ${row.alertType === "FP" ? "fp" : "review"}`}>{row.alertType}</span>
                         {isPep && <span className="status-pill pep">PEP</span>}

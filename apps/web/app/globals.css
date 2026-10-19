@@ -1526,3 +1526,55 @@ tbody td { white-space: nowrap; }
 .top-badge.drop { color: var(--danger); background: var(--danger-container); }
 .raw-pill { display: inline-block; margin-left: 4px; font: 700 8px var(--font-mono); color: var(--secondary); }
 .status-pill.pep { margin-left: 4px; }
+.radar-workspace { margin: 0 0 12px; background: #0b1020; color: #e2e8f0; border: 1px solid #24324a; border-radius: 12px; padding: 12px; }
+.radar-heading { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+.radar-heading .eyebrow { color: #f59e0b; font: 700 9px var(--font-mono); letter-spacing: .12em; }
+.radar-heading h2 { margin: 3px 0 0; font: 700 16px Georgia, serif; color: #f8fafc; }
+.radar-heading-right { display: flex; align-items: center; gap: 9px; font: 9px var(--font-mono); color: #94a3b8; }
+.radar-heading-right .btn-outline { color: #cbd5e1; border-color: #334155; }
+.radar-role-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 10px 0; }
+.radar-role-card { display: flex; align-items: center; gap: 7px; text-align: left; background: #111a2e; border: 1px solid #26344d; border-radius: 8px; padding: 7px 8px; color: #e2e8f0; cursor: pointer; }
+.radar-role-card.active { border-color: #f59e0b; background: #1d2436; }
+.radar-role-dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+.radar-role-card strong { display: block; font: 700 15px var(--font-mono); color: #f8fafc; }
+.radar-role-card small { display: block; font: 8px var(--font-mono); color: #94a3b8; }
+.radar-body { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(300px, .85fr); gap: 10px; }
+.radar-canvas-wrap { background: #080d19; border: 1px solid #1e293b; border-radius: 10px; padding: 4px; }
+.radar-svg { width: 100%; display: block; }
+.radar-axis { fill: #94a3b8; font: 8px var(--font-mono); letter-spacing: .06em; }
+.radar-ring-label { fill: #64748b; font: 7px var(--font-mono); }
+.radar-core-label { fill: #fca5a5; font: 7px var(--font-mono); letter-spacing: .08em; }
+.radar-node { cursor: pointer; }
+.radar-node-label { fill: #cbd5e1; font: 6.5px var(--font-mono); pointer-events: none; }
+.radar-pulse { animation: radarPulse 1.8s infinite; }
+@keyframes radarPulse { 0%,100% { r: 9; opacity: .2; } 50% { r: 15; opacity: .05; } }
+.radar-legend { display: flex; gap: 12px; justify-content: center; padding: 4px 0 2px; font: 8px var(--font-mono); color: #94a3b8; }
+.radar-legend i { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 3px; }
+.radar-inspector { background: #0f172a; border: 1px solid #26344d; border-radius: 10px; padding: 10px; min-height: 300px; }
+.radar-inspector-head { display: flex; flex-direction: column; gap: 2px; border-bottom: 1px solid #26344d; padding-bottom: 7px; }
+.radar-inspector-head > span:first-child { color: #f59e0b; font: 700 8px var(--font-mono); letter-spacing: .1em; }
+.radar-inspector-head strong { font: 700 15px var(--font-mono); color: #f8fafc; }
+.role-badge { display: inline-block; font: 700 8px var(--font-mono); margin-top: 3px; }
+.radar-statutory { color: #94a3b8; font: 8.5px var(--font-mono); line-height: 1.45; }
+.radar-metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin: 8px 0; }
+.radar-metrics div { border: 1px solid #26344d; border-radius: 5px; padding: 4px; }
+.radar-metrics span { display: block; color: #64748b; font: 7px var(--font-mono); }
+.radar-metrics strong { display: block; color: #e2e8f0; font: 700 11px var(--font-mono); margin-top: 2px; }
+.correlation-title { color: #cbd5e1; font: 700 9px var(--font-mono); margin: 8px 0 5px; }
+.correlation-item { border-top: 1px solid #1e293b; padding: 7px 0; }
+.correlation-item-head { display: flex; gap: 6px; align-items: baseline; font: 9px var(--font-mono); color: #cbd5e1; }
+.correlation-item-head b { margin-left: auto; color: #f87171; }
+.correlation-bars > div { display: grid; grid-template-columns: 62px 1fr 28px; gap: 5px; align-items: center; font: 7.5px var(--font-mono); color: #94a3b8; margin: 3px 0; }
+.correlation-bars i { height: 3px; background: #1e293b; border-radius: 2px; overflow: hidden; }
+.correlation-bars i b { display: block; height: 100%; background: #f59e0b; }
+.correlation-bars em { font-style: normal; text-align: right; }
+.correlation-item p { color: #94a3b8; font-size: 8.5px; line-height: 1.35; margin: 4px 0; }
+.correlation-item .btn-outline { color: #cbd5e1; border-color: #334155; font-size: 8px; padding: 3px 5px; }
+.radar-empty { color: #64748b; font: 9px var(--font-mono); }
+
+@media (max-width: 1000px) { .radar-body { grid-template-columns: 1fr; } .radar-role-strip { grid-template-columns: repeat(2, 1fr); } }
+.topo-role { display: inline-block; margin-left: 5px; padding: 1px 4px; border-radius: 4px; font: 700 7px var(--font-mono); vertical-align: middle; }
+.role-mule_aggregator { color: #fecaca; background: #7f1d1d; }
+.role-carousel_ring { color: #fecdd3; background: #9f1239; }
+.role-compromised_victim { color: #fde68a; background: #92400e; }
+.role-isolated_anomaly { color: #cbd5e1; background: #334155; }
