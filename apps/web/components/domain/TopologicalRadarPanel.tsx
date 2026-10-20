@@ -108,16 +108,16 @@ export default function TopologicalRadarPanel({ rows, selectedId, roleFilter, on
         <div className="radar-canvas-wrap">
           <svg className="radar-svg" viewBox="0 0 520 520" role="img" aria-label="Concentric AML radar with client nodes">
             <defs>
-              <radialGradient id="coreGradient"><stop offset="0%" stopColor="#7f1d1d" stopOpacity="0.85" /><stop offset="100%" stopColor="#1e1b4b" stopOpacity="0.15" /></radialGradient>
+              <radialGradient id="coreGradient"><stop offset="0%" stopColor="#fecaca" stopOpacity="0.85" /><stop offset="100%" stopColor="#f8fafc" stopOpacity="0.15" /></radialGradient>
               <filter id="glow"><feGaussianBlur stdDeviation="2.5" result="b" /><feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
             </defs>
-            <rect width="520" height="520" rx="14" fill="#0b1020" />
-            <circle cx={C} cy={C} r={210 * 0.35} fill="url(#coreGradient)" stroke="#ef4444" strokeDasharray="4 5" />
-            <circle cx={C} cy={C} r={210 * 0.70} fill="none" stroke="#f59e0b" strokeOpacity="0.55" strokeDasharray="3 5" />
-            <circle cx={C} cy={C} r="210" fill="none" stroke="#64748b" strokeOpacity="0.6" />
-            <circle cx={C} cy={C} r="14" fill="#ef4444" opacity="0.8" />
-            <line x1={C - 230} y1={C} x2={C + 230} y2={C} stroke="#334155" strokeDasharray="2 6" />
-            <line x1={C} y1={C - 230} x2={C} y2={C + 230} stroke="#334155" strokeDasharray="2 6" />
+            <rect width="520" height="520" rx="14" fill="#f8fafc" />
+            <circle cx={C} cy={C} r={210 * 0.35} fill="url(#coreGradient)" stroke="#dc2626" strokeDasharray="4 5" />
+            <circle cx={C} cy={C} r={210 * 0.70} fill="none" stroke="#d97706" strokeOpacity="0.6" strokeDasharray="3 5" />
+            <circle cx={C} cy={C} r="210" fill="none" stroke="#94a3b8" strokeOpacity="0.8" />
+            <circle cx={C} cy={C} r="14" fill="#ef4444" opacity="0.24" />
+            <line x1={C - 230} y1={C} x2={C + 230} y2={C} stroke="#cbd5e1" strokeDasharray="2 6" />
+            <line x1={C} y1={C - 230} x2={C} y2={C + 230} stroke="#cbd5e1" strokeDasharray="2 6" />
             <text x={C} y="22" textAnchor="middle" className="radar-axis">STRUCTURING &amp; SMURFING</text>
             <text x="508" y={C + 4} textAnchor="end" className="radar-axis">MULE VELOCITY</text>
             <text x={C} y="510" textAnchor="middle" className="radar-axis">PEP &amp; HIGH-RISK CORRIDORS</text>

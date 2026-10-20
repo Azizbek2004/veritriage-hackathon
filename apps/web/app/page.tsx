@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import ClientTransactionCluster from "../components/domain/ClientTransactionCluster";
 import VerifierDiffTable from "../components/domain/VerifierDiffTable";
 import TopologicalRadarPanel from "../components/domain/TopologicalRadarPanel";
+
+const RAW_PAGE_SIZE = 100;
 import { MarkdownDocViewer } from "./MarkdownDocViewer";
 import RoleSwitcher, { ActiveUser, USERS } from "../components/domain/RoleSwitcher";
 import MoneyFlowDiagram from "../components/domain/MoneyFlowDiagram";
@@ -366,7 +368,7 @@ export default function Home() {
   const [viewingDocLoading, setViewingDocLoading] = useState(false);
   const [activeUser, setActiveUser] = useState<ActiveUser>(USERS.ANALYST);
   const [fauModalOpen, setFauModalOpen] = useState(false);
-  const [tableViewMode, setTableViewMode] = useState<"DELIVERABLE" | "ALL_QUEUE" | "RAW_TXS">("DELIVERABLE");
+  const [tableViewMode, setTableViewMode] = useState<"DELIVERABLE" | "ALL_QUEUE" | "RAW_TXS">("RAW_TXS");
   const [rawTxs, setRawTxs] = useState<any[]>([]);
   const [rawTxsTotal, setRawTxsTotal] = useState(0);
   const [rawTxsLoading, setRawTxsLoading] = useState(false);
@@ -376,7 +378,7 @@ export default function Home() {
   async function loadRawTransactions(page = 0, q = "") {
     setRawTxsLoading(true);
     try {
-      const take = 50;
+      const take = RAW_PAGE_SIZE;
       const skip = page * take;
       const url = `${API}/api/v1/transactions?skip=${skip}&take=${take}${q ? `&q=${encodeURIComponent(q)}` : ""}`;
       const res = await fetch(url);
@@ -1022,29 +1024,33 @@ export default function Home() {
       if (!response.ok) throw new Error(`Reprocess ${response.status}`);
       const data = await response.json();
 
-      if (data?.dataset_stats) {
-        setDatasetStats(data.dataset_stats);
-      }
-      if (data?.summary) {
-        setDataStats(data.summary);
-      }
+      const [freshStats, freshDataset] = await Promise.all([
+        fetch(`${API}/api/v1/deliverable/stats`).then((r) => (r.ok ? r.json() : null)).catch(() => null),
+        fetch(`${API}/api/v1/dataset/stats`).then((r) => (r.ok ? r.json() : null)).catch(() => null),
+      ]);
+      if (freshStats) setDataStats(freshStats);
+      if (freshDataset) setDatasetStats(freshDataset);
+      if (!freshStats && data?.summary) setDataStats(data.summary);
+      if (!freshDataset && data?.dataset_stats) setDatasetStats(data.dataset_stats);
 
       if (tableViewMode === "ALL_QUEUE") {
-        const queueList = Array.isArray(data?.queue_rows) ? data.queue_rows : (Array.isArray(data?.rows) ? data.rows : []);
-        setRows(queueList);
+        const queue = await fetch(`${API}/api/v1/cases?all=true`).then((r) => (r.ok ? r.json() : []));
+        setRows(Array.isArray(queue) ? queue : []);
       } else if (tableViewMode === "RAW_TXS") {
-        const list = Array.isArray(data?.rows) ? data.rows : [];
-        setRows(list);
         await loadRawTransactions(0, query);
+        setRawTxsPage(0);
+        const sample = await fetch(`${API}/api/v1/deliverable/sample`).then((r) => (r.ok ? r.json() : []));
+        setRows(Array.isArray(sample) ? sample : []);
       } else {
-        const list = Array.isArray(data?.rows) ? data.rows : [];
-        setRows(list);
+        const sample = await fetch(`${API}/api/v1/deliverable/sample`).then((r) => (r.ok ? r.json() : []));
+        setRows(Array.isArray(sample) ? sample : []);
       }
 
       setSensitivityRows(null);
+      setVisibleCount(45);
       setApiError("");
-      const elapsed = Math.round(data?.dataset_stats?.last_run_ms ?? data?.summary?.loadMs ?? 0);
-      const totalTx = formatNumber(data?.dataset_stats?.transactions_scanned ?? data?.summary?.transactionRows ?? 397853);
+      const elapsed = Math.round(freshDataset?.last_run_ms ?? data?.dataset_stats?.last_run_ms ?? data?.summary?.loadMs ?? 0);
+      const totalTx = formatNumber(freshDataset?.transactions_scanned ?? data?.dataset_stats?.transactions_scanned ?? data?.summary?.transactionRows ?? 397853);
       setToast(`✓ Re-indexed ${totalTx} transactions in ${elapsed} ms · 0 LLM Tokens · 100% C# Deterministic`);
     } catch (err) {
       setToast(`Reprocess failed: ${String(err)}`);
@@ -1243,6 +1249,27 @@ export default function Home() {
 
       {parityError && <div className="banner-violation" role="alert"><strong>{parityError}</strong></div>}
 
+      <div className="view-mode-group">
+        <button
+          className={tableViewMode === "DELIVERABLE" ? "view-mode-btn active" : "view-mode-btn"}
+          onClick={() => switchTableViewMode("DELIVERABLE")}
+        >
+          Deliverable Benchmark (45)
+        </button>
+        <button
+          className={tableViewMode === "ALL_QUEUE" ? "view-mode-btn active" : "view-mode-btn"}
+          onClick={() => switchTableViewMode("ALL_QUEUE")}
+        >
+          All Scanned Alerts ({dataStats?.deliverableRows ?? rows.length})
+        </button>
+        <button
+          className={tableViewMode === "RAW_TXS" ? "view-mode-btn active" : "view-mode-btn"}
+          onClick={() => switchTableViewMode("RAW_TXS")}
+        >
+          Raw Transactions Stream ({formatNumber(datasetStats?.transactions_scanned ?? 397853)})
+        </button>
+        <a className="btn-outline" href="#ledger">Jump to full ledger ↓</a>
+      </div>
       <TopologicalRadarPanel
         rows={rows as any}
         selectedId={selected?.alertId}
@@ -1264,28 +1291,8 @@ export default function Home() {
         </div>
       )}
 
-      <div className="view-mode-group">
-        <button
-          className={tableViewMode === "DELIVERABLE" ? "view-mode-btn active" : "view-mode-btn"}
-          onClick={() => switchTableViewMode("DELIVERABLE")}
-        >
-          Deliverable Benchmark (45)
-        </button>
-        <button
-          className={tableViewMode === "ALL_QUEUE" ? "view-mode-btn active" : "view-mode-btn"}
-          onClick={() => switchTableViewMode("ALL_QUEUE")}
-        >
-          All Scanned Alerts ({dataStats?.deliverableRows ?? rows.length})
-        </button>
-        <button
-          className={tableViewMode === "RAW_TXS" ? "view-mode-btn active" : "view-mode-btn"}
-          onClick={() => switchTableViewMode("RAW_TXS")}
-        >
-          Raw Transactions Stream ({formatNumber(datasetStats?.transactions_scanned ?? 397853)})
-        </button>
-      </div>
 
-      <div className="table-card">
+      <div className="table-card" id="ledger">
         {tableViewMode === "RAW_TXS" ? (
           <>
             <div className="table-wrap">
@@ -1386,7 +1393,7 @@ export default function Home() {
             </div>
             <div className="pagination-bar">
               <span>
-                Showing {rawTxs.length} of {formatNumber(rawTxsTotal)} raw transactions · Page {rawTxsPage + 1} of {Math.max(1, Math.ceil(rawTxsTotal / 50))}
+                Showing {rawTxs.length} of {formatNumber(rawTxsTotal)} raw transactions · Page {rawTxsPage + 1} of {Math.max(1, Math.ceil(rawTxsTotal / RAW_PAGE_SIZE))}
               </span>
               <div className="pagination-actions">
                 <button
@@ -1398,7 +1405,7 @@ export default function Home() {
                 </button>
                 <button
                   className="btn-outline"
-                  disabled={(rawTxsPage + 1) * 50 >= rawTxsTotal || rawTxsLoading}
+                  disabled={(rawTxsPage + 1) * RAW_PAGE_SIZE >= rawTxsTotal || rawTxsLoading}
                   onClick={() => loadRawTransactions(rawTxsPage + 1, query)}
                 >
                   Next →

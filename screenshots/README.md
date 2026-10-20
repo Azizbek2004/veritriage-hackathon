@@ -33,3 +33,5 @@ Forensic views:
 - `topology_radar.png` — concentric AML radar with role strip, correlation inspector, and 45 client nodes.
 
 - `case_drawer_topology.png` — selected case drawer with the topology context card, role, R distance, and shared-hub facts.
+
+- `pitch_full_ledger.png` — light-mode cockpit with the full-ledger selector and 397,853-row stream active.

@@ -1917,3 +1917,39 @@ tbody td { white-space: nowrap; }
 .drawer-tabs { overflow-x: auto; scrollbar-width: thin; }
 .drawer-tab { white-space: nowrap; }
 @media (prefers-reduced-motion: reduce) { .radar-pulse, .kpi-card, .radar-role-card { animation: none !important; transition: none !important; } }
+/* Light mode radar/correlation workspace */
+.radar-workspace { background: var(--surface); color: var(--on-surface); border-color: var(--outline-variant); box-shadow: 0 10px 30px rgba(15,23,42,.05); }
+.radar-heading h2 { color: var(--on-surface); }
+.radar-heading .eyebrow { color: var(--primary); }
+.radar-heading-right { color: var(--secondary); }
+.radar-heading-right .btn-outline { color: var(--primary); border-color: var(--outline-variant); background: var(--surface-container-low); }
+.radar-role-card { background: var(--surface-container-low); border-color: var(--outline-variant); color: var(--on-surface); }
+.radar-role-card:hover { background: var(--surface-container); border-color: var(--primary); }
+.radar-role-card strong { color: var(--on-surface); }
+.radar-role-card small { color: var(--secondary); }
+.radar-canvas-wrap { background: #f8fafc; border-color: var(--outline-variant); }
+.radar-axis { fill: #64748b; }
+.radar-ring-label { fill: #94a3b8; }
+.radar-core-label { fill: #b91c1c; }
+.radar-node-label { fill: #334155; }
+.radar-legend { color: var(--secondary); }
+.radar-inspector { background: var(--surface-container-low); border-color: var(--outline-variant); color: var(--on-surface); }
+.radar-inspector-head { border-color: var(--outline-variant); }
+.radar-inspector-head > span:first-child { color: var(--primary); }
+.radar-inspector-head strong { color: var(--on-surface); }
+.radar-statutory { color: var(--secondary); }
+.radar-metrics div { background: var(--surface); border-color: var(--outline-variant); }
+.radar-metrics span { color: var(--secondary); }
+.radar-metrics strong { color: var(--primary); }
+.correlation-title { color: var(--on-surface); }
+.correlation-item { border-color: var(--outline-variant); }
+.correlation-item-head { color: var(--on-surface); }
+.correlation-item p { color: var(--secondary); }
+.correlation-bars > div { color: var(--secondary); }
+.correlation-bars i { background: var(--surface-container); }
+.correlation-bars i b { background: var(--primary); }
+.correlation-item .btn-outline { color: var(--primary); border-color: var(--outline-variant); }
+.radar-empty { color: var(--secondary); }
+.view-mode-group { position: sticky; top: 8px; z-index: 8; background: color-mix(in srgb, var(--surface) 92%, transparent); backdrop-filter: blur(8px); padding: 6px; border: 1px solid var(--outline-variant); border-radius: 9px; }
+.view-mode-group .btn-outline { margin-left: auto; }
+#ledger { scroll-margin-top: 58px; }

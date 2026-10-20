@@ -19,6 +19,13 @@
 
 `8 MULE_AGGREGATOR / 8 CAROUSEL_RING / 15 COMPROMISED_VICTIM / 14 ISOLATED_ANOMALY`.
 
+## Final pitch polish (light + full ledger)
+
+- Radar restyled to the same light surface/outline/inspector system as the cockpit; no dark island.
+- View selector moved above the radar: **Deliverable Benchmark (45) / All Scanned Alerts / Raw Transactions Stream (397,853)**. Default is the full raw ledger; **Jump to full ledger ↓** scrolls to it. Server pagination is 100/page across 397,853 rows; all rows are queryable, not capped at 45.
+- **Reprocess fixed**: it now re-fetches `/deliverable/stats`, `/dataset/stats`, the active row set, and raw page after reprocessing. The cards and table update in place instead of showing stale data.
+- The graph is intentionally light, not a dark overlay; role colors use red / rose / amber / slate against the cockpit surface.
+
 ## Design direction
 
 - Kept the existing light Scandinavian cockpit, with one dark forensic canvas for the radar.
