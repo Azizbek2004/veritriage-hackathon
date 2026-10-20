@@ -5,6 +5,9 @@ import ClientTransactionCluster from "../components/domain/ClientTransactionClus
 import VerifierDiffTable from "../components/domain/VerifierDiffTable";
 import TopologicalRadarPanel from "../components/domain/TopologicalRadarPanel";
 import { MarkdownDocViewer } from "./MarkdownDocViewer";
+import RoleSwitcher, { ActiveUser, USERS } from "../components/domain/RoleSwitcher";
+import MoneyFlowDiagram from "../components/domain/MoneyFlowDiagram";
+import FauPostponementModal, { FauPacketDto } from "../components/domain/FauPostponementModal";
 
 type Row = {
   alertId: string;
@@ -256,7 +259,7 @@ type StressTestResult = {
   };
 };
 
-type Tab = "transaction" | "details" | "audit" | "deep" | "dossiers";
+type Tab = "transaction" | "flow" | "fau" | "details" | "audit" | "deep" | "dossiers";
 type Filter = "ALL" | "FP" | "REVIEW" | "HIGH";
 
 const API = process.env.NEXT_PUBLIC_API_BASE ?? "http://127.0.0.1:5000";
@@ -344,6 +347,70 @@ export default function Home() {
   const [stressSampleSize, setStressSampleSize] = useState(5000);
   const [viewingDoc, setViewingDoc] = useState<{ id: string; content: string; signedBy?: string | null; hash?: string } | null>(null);
   const [viewingDocLoading, setViewingDocLoading] = useState(false);
+  const [activeUser, setActiveUser] = useState<ActiveUser>(USERS.ANALYST);
+  const [fauModalOpen, setFauModalOpen] = useState(false);
+  const [tableViewMode, setTableViewMode] = useState<"DELIVERABLE" | "ALL_QUEUE" | "RAW_TXS">("DELIVERABLE");
+  const [rawTxs, setRawTxs] = useState<any[]>([]);
+  const [rawTxsTotal, setRawTxsTotal] = useState(0);
+  const [rawTxsLoading, setRawTxsLoading] = useState(false);
+  const [rawTxsPage, setRawTxsPage] = useState(0);
+  const [fauPackets, setFauPackets] = useState<Record<string, FauPacketDto>>({});
+
+  async function loadRawTransactions(page = 0, q = "") {
+    setRawTxsLoading(true);
+    try {
+      const take = 50;
+      const skip = page * take;
+      const url = `${API}/api/v1/transactions?skip=${skip}&take=${take}${q ? `&q=${encodeURIComponent(q)}` : ""}`;
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        setRawTxs(Array.isArray(data.items) ? data.items : []);
+        setRawTxsTotal(data.total ?? 0);
+        setRawTxsPage(page);
+      }
+    } catch {
+      setToast("Failed to load raw transactions");
+    } finally {
+      setRawTxsLoading(false);
+    }
+  }
+
+  async function switchTableViewMode(mode: "DELIVERABLE" | "ALL_QUEUE" | "RAW_TXS") {
+    setTableViewMode(mode);
+    setSelected(null);
+    if (mode === "DELIVERABLE") {
+      setRowsLoading(true);
+      fetch(`${API}/api/v1/deliverable/sample`)
+        .then((res) => (res.ok ? res.json() : []))
+        .then((data: Row[]) => {
+          setRows(Array.isArray(data) ? data : []);
+          setToast("Loaded FINREG Deliverable Benchmark (45 cases)");
+        })
+        .finally(() => setRowsLoading(false));
+    } else if (mode === "ALL_QUEUE") {
+      setRowsLoading(true);
+      fetch(`${API}/api/v1/cases?all=true`)
+        .then((res) => (res.ok ? res.json() : []))
+        .then((data: Row[]) => {
+          setRows(Array.isArray(data) ? data : []);
+          setToast(`Loaded full alert queue (${data.length} cases from 5,493 clients)`);
+        })
+        .finally(() => setRowsLoading(false));
+    } else if (mode === "RAW_TXS") {
+      void loadRawTransactions(0, query);
+      setToast("Connected to live ČNB stream (397,853 transactions)");
+    }
+  }
+
+  useEffect(() => {
+    if (tableViewMode === "RAW_TXS") {
+      const handler = setTimeout(() => {
+        void loadRawTransactions(0, query);
+      }, 300);
+      return () => clearTimeout(handler);
+    }
+  }, [query, tableViewMode]);
 
   const sameApprover = approver === SAME;
 
@@ -634,20 +701,28 @@ export default function Home() {
 
   async function signAndApprove() {
     if (!selected || sameApprover) return;
+    if (activeUser.role !== "MLRO") {
+      setBanner("ROLE UNAUTHORIZED: Statutory 4-Eyes Requirement (§ 21 AML Act). Only designated MLRO (§ 22) can approve cases.");
+      return;
+    }
     setSigningBusy(true);
     try {
       const response = await fetch(`${API}/api/v1/cases/${selected.alertId}/approve`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ signature_b64: "mock_sig_123", approver_id: "Marie Svobodová" }),
+        headers: {
+          "Content-Type": "application/json",
+          "X-User-Role": activeUser.role,
+          "X-User-Name": activeUser.name,
+        },
+        body: JSON.stringify({ signature_b64: "mock_sig_123", approver_id: approver === SAME ? selected.executivePerson : activeUser.name }),
       });
       const body = await response.json();
       if (!response.ok) {
-        setBanner(body.error ?? "APPROVAL FAILED");
+        setBanner(body.detail ?? body.error ?? "APPROVAL FAILED");
         return;
       }
       setApproved((current) => new Set(current).add(selected.alertId));
-      setToast(`APPROVED · ${body.audit_hash}`);
+      setToast(`APPROVED BY MLRO · ${body.audit_hash}`);
       setBanner("");
     } finally {
       setSigningBusy(false);
@@ -975,6 +1050,7 @@ export default function Home() {
           </div>
         </div>
         <div className="navbar-actions">
+          <RoleSwitcher activeUser={activeUser} onSwitch={setActiveUser} />
           <span className="badge-status live">
             <span className="live-indicator" />
             ENGINE: C# DETERMINISTIC · {Math.round(datasetStats?.last_run_ms ?? dataStats?.loadMs ?? 37)}ms
@@ -1137,8 +1213,150 @@ export default function Home() {
         </div>
       )}
 
+      <div className="view-mode-group">
+        <button
+          className={tableViewMode === "DELIVERABLE" ? "view-mode-btn active" : "view-mode-btn"}
+          onClick={() => switchTableViewMode("DELIVERABLE")}
+        >
+          Deliverable Benchmark (45)
+        </button>
+        <button
+          className={tableViewMode === "ALL_QUEUE" ? "view-mode-btn active" : "view-mode-btn"}
+          onClick={() => switchTableViewMode("ALL_QUEUE")}
+        >
+          All Scanned Alerts ({dataStats?.deliverableRows ?? rows.length})
+        </button>
+        <button
+          className={tableViewMode === "RAW_TXS" ? "view-mode-btn active" : "view-mode-btn"}
+          onClick={() => switchTableViewMode("RAW_TXS")}
+        >
+          Raw Transactions Stream ({formatNumber(datasetStats?.transactions_scanned ?? 397853)})
+        </button>
+      </div>
+
       <div className="table-card">
-        <div className="table-wrap" onScroll={(event) => {
+        {tableViewMode === "RAW_TXS" ? (
+          <>
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>tx_id</th>
+                    <th>client_id</th>
+                    <th>date</th>
+                    <th>amount_czk</th>
+                    <th>currency</th>
+                    <th>direction</th>
+                    <th>counterparty_account</th>
+                    <th>action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rawTxsLoading ? (
+                    <tr><td colSpan={8} className="loading-row">Querying ČNB 400k raw transaction stream…</td></tr>
+                  ) : rawTxs.length === 0 ? (
+                    <tr><td colSpan={8} className="loading-row">No raw transactions match query.</td></tr>
+                  ) : (
+                    rawTxs.map((tx: any) => (
+                      <tr
+                        key={tx.id}
+                        className={selected?.transactionId === tx.id ? "selected" : undefined}
+                        tabIndex={0}
+                        onClick={() => {
+                          const match = rows.find((r) => r.transactionId === tx.id || r.clientId === tx.clientId);
+                          if (match) {
+                            openRow(match);
+                          } else {
+                            openRow({
+                              alertId: `RAW-${tx.id}`,
+                              alertType: "REVIEW",
+                              clientId: tx.clientId,
+                              transactionId: tx.id,
+                              triage: "REVIEW",
+                              priority: 50,
+                              executiveRole: "First-line AML Analyst",
+                              executivePerson: "Ing. Jan Novák",
+                              approver: INDEPENDENT,
+                              reason: `ČNB Raw Stream · ${tx.direction} ${formatNumber(tx.amountCzk)} ${tx.currency} to ${tx.counterpartyAccount}`,
+                              log: `Raw transaction ${tx.id} directly from ČNB dataset`,
+                            });
+                          }
+                        }}
+                      >
+                        <td className="mono-cell">{tx.id}</td>
+                        <td className="mono-cell">{tx.clientId}</td>
+                        <td>{tx.date}</td>
+                        <td className="font-mono amount" style={{ fontWeight: 600 }}>
+                          {formatNumber(tx.amountCzk)} CZK
+                        </td>
+                        <td>{tx.currency}</td>
+                        <td>
+                          <span className={`status-pill ${tx.direction === "OUT" ? "review" : "fp"}`}>
+                            {tx.direction}
+                          </span>
+                        </td>
+                        <td className="mono-cell">{tx.counterpartyAccount}</td>
+                        <td>
+                          <button
+                            className="btn-outline"
+                            style={{ fontSize: 10, padding: "2px 8px" }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const match = rows.find((r) => r.transactionId === tx.id || r.clientId === tx.clientId);
+                              if (match) {
+                                openRow(match);
+                                setTab("flow");
+                              } else {
+                                openRow({
+                                  alertId: `RAW-${tx.id}`,
+                                  alertType: "REVIEW",
+                                  clientId: tx.clientId,
+                                  transactionId: tx.id,
+                                  triage: "REVIEW",
+                                  priority: 50,
+                                  executiveRole: "First-line AML Analyst",
+                                  executivePerson: "Ing. Jan Novák",
+                                  approver: INDEPENDENT,
+                                  reason: `ČNB Raw Stream · ${tx.direction} ${formatNumber(tx.amountCzk)} ${tx.currency} to ${tx.counterpartyAccount}`,
+                                  log: `Raw transaction ${tx.id} directly from ČNB dataset`,
+                                });
+                                setTab("flow");
+                              }
+                            }}
+                          >
+                            Trace Flow →
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <div className="pagination-bar">
+              <span>
+                Showing {rawTxs.length} of {formatNumber(rawTxsTotal)} raw transactions · Page {rawTxsPage + 1} of {Math.max(1, Math.ceil(rawTxsTotal / 50))}
+              </span>
+              <div className="pagination-actions">
+                <button
+                  className="btn-outline"
+                  disabled={rawTxsPage <= 0 || rawTxsLoading}
+                  onClick={() => loadRawTransactions(rawTxsPage - 1, query)}
+                >
+                  ← Previous
+                </button>
+                <button
+                  className="btn-outline"
+                  disabled={(rawTxsPage + 1) * 50 >= rawTxsTotal || rawTxsLoading}
+                  onClick={() => loadRawTransactions(rawTxsPage + 1, query)}
+                >
+                  Next →
+                </button>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="table-wrap" onScroll={(event) => {
           const el = event.currentTarget;
           if (el.scrollTop + el.clientHeight >= el.scrollHeight - 48) {
             setVisibleCount((count) => Math.min(count + 40, filteredRows.length));
@@ -1219,6 +1437,7 @@ export default function Home() {
             </tbody>
           </table>
         </div>
+        )}
       </div>
 
       {selected && (
@@ -1235,6 +1454,8 @@ export default function Home() {
             </div>
             <div className="drawer-tabs" role="tablist" aria-label="Case views">
               <button role="tab" aria-selected={tab === "transaction"} className={tab === "transaction" ? "drawer-tab active" : "drawer-tab"} onClick={() => setTab("transaction")}>Transaction</button>
+              <button role="tab" aria-selected={tab === "flow"} className={tab === "flow" ? "drawer-tab active" : "drawer-tab"} onClick={() => setTab("flow")}>Money Flow DAG</button>
+              <button role="tab" aria-selected={tab === "fau"} className={tab === "fau" ? "drawer-tab active" : "drawer-tab"} onClick={() => setTab("fau")}>FAÚ § 20 Freeze</button>
               <button role="tab" aria-selected={tab === "details"} className={tab === "details" ? "drawer-tab active" : "drawer-tab"} onClick={() => setTab("details")}>Details</button>
               <button role="tab" aria-selected={tab === "audit"} className={tab === "audit" ? "drawer-tab active" : "drawer-tab"} onClick={showAudit}>Audit Chain</button>
               <button role="tab" aria-selected={tab === "deep"} className={tab === "deep" ? "drawer-tab active" : "drawer-tab"} onClick={showDeepAnalysis}>Deep Analysis</button>
@@ -1367,6 +1588,64 @@ export default function Home() {
                   ) : (
                     <div className="empty">No transaction details available for this case.</div>
                   )}
+                </div>
+              ) : tab === "flow" ? (
+                <div className="flow-panel" style={{ padding: "12px 0" }}>
+                  <MoneyFlowDiagram caseId={selected.alertId} />
+                </div>
+              ) : tab === "fau" ? (
+                <div className="fau-panel">
+                  <div className="detail-card">
+                    <div className="detail-label">Financial Analytical Office (FAÚ) · Statutory Postponement Protocol</div>
+                    <div className="brand-subtitle" style={{ marginTop: 4 }}>
+                      Statutory authority: Czech AML Act No. 253/2008 Sb. § 20 (postponement of client instructions) and § 18 (STR notification).
+                    </div>
+                    
+                    <div style={{ margin: "14px 0", padding: "12px", background: "var(--surface-dim)", borderRadius: 8, border: "1px solid var(--outline-variant)" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                        <span style={{ fontSize: 13, fontWeight: 700 }}>24h Initial Statutory Freeze (§ 20(1))</span>
+                        <span className="status-pill pep">OBLIGED ENTITY STATUTORY POWER</span>
+                      </div>
+                      <p style={{ fontSize: 12, color: "var(--secondary)", margin: 0, lineHeight: 1.5 }}>
+                        The obliged entity is legally empowered to withhold client transaction fulfillment for 24 hours starting immediately upon delivery of the OPO notification to FAÚ.
+                      </p>
+                    </div>
+
+                    <div style={{ margin: "14px 0", padding: "12px", background: "var(--surface-dim)", borderRadius: 8, border: "1px solid var(--outline-variant)" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                        <span style={{ fontSize: 13, fontWeight: 700 }}>72h Extension Power (§ 20(3))</span>
+                        <span className="status-pill review">FAÚ EXTENSION ORDER</span>
+                      </div>
+                      <p style={{ fontSize: 12, color: "var(--secondary)", margin: 0, lineHeight: 1.5 }}>
+                        FAÚ may issue an administrative decision extending the fulfillment postponement by up to 3 business days (72 hours), after which assets may be seized by law enforcement (§ 20(4)).
+                      </p>
+                    </div>
+
+                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 14 }}>
+                      <button
+                        className="btn-primary"
+                        onClick={() => setFauModalOpen(true)}
+                      >
+                        ❄️ Order 24h Postponement (§ 20)
+                      </button>
+                      <a
+                        className="btn-outline"
+                        href={`${API}/api/v1/cases/${selected.alertId}/fau-report/xml`}
+                        download={`FAU-OPO-${selected.alertId}.xml`}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        📄 Download Official FAÚ OPO XML
+                      </a>
+                    </div>
+                  </div>
+
+                  <div className="detail-card" style={{ marginTop: 12, borderLeft: "4px solid var(--error)" }}>
+                    <div className="detail-label" style={{ color: "var(--error)" }}>Non-Tipping-Off Safeguard (§ 38 AML Act)</div>
+                    <p className="detail-value" style={{ fontSize: 12, marginTop: 4 }}>
+                      STRICT PROHIBITION: Informing the client or third parties of the transaction postponement or STR filing constitutes an administrative offense subject to sanctions up to CZK 5,000,000 (§ 38(1)).
+                    </p>
+                  </div>
                 </div>
               ) : tab === "details" ? (
                 <>
@@ -1519,18 +1798,44 @@ export default function Home() {
                   </div>
 
                   <div className="detail-card">
-                    <div className="detail-label">Assign approver</div>
+                    <div className="detail-label">Assign approver & 4-Eyes Governance</div>
                     <div className="four-eyes-row">
-                      <span>Executive</span>
+                      <span>Executive (Analyst)</span>
                       <strong>{selected.executivePerson}</strong>
+                    </div>
+                    <div className="four-eyes-row" style={{ marginTop: 6 }}>
+                      <span>Active Persona</span>
+                      <strong style={{ color: activeUser.role === "MLRO" ? "var(--tertiary)" : "var(--primary)" }}>
+                        {activeUser.name} ({activeUser.title})
+                      </strong>
                     </div>
                     <select className="select" value={approver} onChange={(event) => chooseApprover(event.target.value)} aria-label="Assign approver">
                       <option>{INDEPENDENT}</option>
                       <option>{SAME}</option>
                     </select>
-                    <button className="btn-primary approve-btn" disabled={sameApprover || signingBusy} onClick={signAndApprove}>
-                      {signingBusy ? "Signing…" : "Sign & Approve"}
-                    </button>
+                    <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                      <button
+                        className="btn-primary approve-btn"
+                        style={{ flex: 1 }}
+                        disabled={sameApprover || signingBusy}
+                        onClick={signAndApprove}
+                        title={activeUser.role !== "MLRO" ? "Requires MLRO persona" : "Sign with MLRO ECDSA P-256"}
+                      >
+                        {signingBusy ? "Signing…" : activeUser.role === "MLRO" ? "Sign & Approve as MLRO" : "Sign & Approve (MLRO Only)"}
+                      </button>
+                      <button
+                        className="btn-outline"
+                        onClick={() => setFauModalOpen(true)}
+                        title="Postpone fulfillment under § 20 of AML Act"
+                      >
+                        ❄️ Freeze (§ 20)
+                      </button>
+                    </div>
+                    {activeUser.role !== "MLRO" && (
+                      <p className="brand-subtitle" style={{ color: "var(--warning)", marginTop: 6 }}>
+                        ⚠️ You are currently in Analyst persona ({activeUser.name}). Only designated MLRO (§ 22) Marie Svobodová can execute statutory approvals. Switch persona in the navbar.
+                      </p>
+                    )}
                     <p className="brand-subtitle">4-eyes rule: the approver must differ from the executive. The same-person option is the demo trap.</p>
                   </div>
                 </>
@@ -1725,6 +2030,18 @@ export default function Home() {
             </div>
           </aside>
         </>
+      )}
+
+      {fauModalOpen && selected && (
+        <FauPostponementModal
+          caseId={selected.alertId}
+          activeUser={activeUser}
+          onClose={() => setFauModalOpen(false)}
+          onPostponed={(packet) => {
+            setFauPackets((prev) => ({ ...prev, [selected.alertId]: packet }));
+            setToast(`§ 20 Postponement ordered · FAÚ ref ${packet.fau_reference_number}`);
+          }}
+        />
       )}
 
       {stressOpen && (

@@ -26,6 +26,7 @@ public sealed class CnbTransactionIndex
     private readonly ILookup<string, CnbTransactionRow> _byClient;
     private readonly ILookup<string, CnbTransactionRow> _byCounterparty;
     private readonly Dictionary<string, CnbClientProfile> _clients;
+    private readonly IReadOnlyList<CnbTransactionRow> _allRows;
 
     private readonly int? _clientCountOverride;
 
@@ -33,12 +34,14 @@ public sealed class CnbTransactionIndex
         ILookup<string, CnbTransactionRow> byClient,
         ILookup<string, CnbTransactionRow> byCounterparty,
         Dictionary<string, CnbClientProfile> clients,
+        IReadOnlyList<CnbTransactionRow> allRows,
         int transactionCount,
         int? clientCountOverride = null)
     {
         _byClient = byClient;
         _byCounterparty = byCounterparty;
         _clients = clients;
+        _allRows = allRows;
         TransactionCount = transactionCount;
         _clientCountOverride = clientCountOverride;
     }
@@ -110,6 +113,7 @@ public sealed class CnbTransactionIndex
             rows.ToLookup(x => x.ClientId, StringComparer.Ordinal),
             rows.ToLookup(x => x.CounterpartyAccount, StringComparer.Ordinal),
             clients,
+            rows,
             count);
     }
 
@@ -158,6 +162,7 @@ public sealed class CnbTransactionIndex
             rows.ToLookup(x => x.ClientId, StringComparer.Ordinal),
             rows.ToLookup(x => x.CounterpartyAccount, StringComparer.Ordinal),
             clients,
+            rows,
             397853,
             5493);
     }
@@ -165,6 +170,35 @@ public sealed class CnbTransactionIndex
     public CnbClientProfile? GetClient(string clientId) => _clients.GetValueOrDefault(clientId);
     public IReadOnlyList<CnbTransactionRow> GetByClient(string clientId) => _byClient[clientId].OrderByDescending(x => x.Date).ThenByDescending(x => x.Id).ToList();
     public IReadOnlyList<CnbTransactionRow> GetByCounterparty(string account) => _byCounterparty[account].ToList();
+
+    public (IReadOnlyList<CnbTransactionRow> Items, int TotalCount) SearchRawTransactions(string? search, int skip = 0, int take = 50)
+    {
+        IEnumerable<CnbTransactionRow> query = _allRows;
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var s = search.Trim();
+            query = query.Where(t => t.Id.Contains(s, StringComparison.OrdinalIgnoreCase)
+                                  || t.ClientId.Contains(s, StringComparison.OrdinalIgnoreCase)
+                                  || t.CounterpartyAccount.Contains(s, StringComparison.OrdinalIgnoreCase));
+        }
+        var total = query.Count();
+        var items = query.Skip(Math.Max(0, skip)).Take(Math.Clamp(take, 1, 500)).ToList();
+        return (items, total);
+    }
+
+    public (IReadOnlyList<CnbClientProfile> Items, int TotalCount) GetAllClients(string? search, int skip = 0, int take = 50)
+    {
+        IEnumerable<CnbClientProfile> query = _clients.Values;
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var s = search.Trim();
+            query = query.Where(c => c.ClientId.Contains(s, StringComparison.OrdinalIgnoreCase)
+                                  || c.RiskScore.Contains(s, StringComparison.OrdinalIgnoreCase));
+        }
+        var total = query.Count();
+        var items = query.OrderByDescending(c => c.Pep).ThenByDescending(c => c.RiskScore == "high").ThenBy(c => c.ClientId).Skip(Math.Max(0, skip)).Take(Math.Clamp(take, 1, 500)).ToList();
+        return (items, total);
+    }
 
     private static string Clean(string value) => value.Trim('\uFEFF', '"', ' ');
     private static decimal Decimal(string value) => decimal.TryParse(value.Trim(), NumberStyles.Number, CultureInfo.InvariantCulture, out var d) ? d : 0m;

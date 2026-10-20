@@ -74,6 +74,8 @@ builder.Services.AddSingleton(_ => FatfCorpus.Load(Path.Combine(repoRoot, "fixtu
 builder.Services.AddSingleton<ICaseRepository, CaseRepository>();
 builder.Services.AddSingleton<TopologicalForensicsAnalyzer>();
 builder.Services.AddSingleton<DeterministicForensicAnalyzer>();
+builder.Services.AddSingleton<VeriTriage.Infrastructure.Forensics.MoneyFlowAnalyzer>();
+builder.Services.AddSingleton<VeriTriage.Infrastructure.Fau.FauReportingService>();
 builder.Services.AddSingleton(sp => new LegalDossierService(repoRoot, sp.GetRequiredService<FileAuditLedger>(), sp.GetRequiredService<DeterministicForensicAnalyzer>(), sp.GetRequiredService<DeliverableState>()));
 builder.Services.AddSingleton(sp => new DeepAnalysisService(repoRoot, sp.GetRequiredService<CnbTransactionIndex>(), sp.GetRequiredService<FileAuditLedger>(), sp.GetRequiredService<FatfCorpus>(), sp.GetRequiredService<DeterministicForensicAnalyzer>()));
 builder.Services.AddSingleton<IDeepAnalysisService>(sp => sp.GetRequiredService<DeepAnalysisService>());
@@ -83,11 +85,12 @@ app.UseCors("cockpit");
 app.Services.GetRequiredService<CnbTransactionIndex>();
 app.Services.GetRequiredService<LegalDossierService>();
 
-static object WithTopology(VeriTriage.Domain.DeliverableCsvRow row, TopologyDto topology)
+static object WithTopology(VeriTriage.Domain.DeliverableCsvRow row, TopologyDto? topology)
 {
     var options = new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase };
     var node = System.Text.Json.Nodes.JsonNode.Parse(System.Text.Json.JsonSerializer.Serialize(row, options)) as System.Text.Json.Nodes.JsonObject ?? new System.Text.Json.Nodes.JsonObject();
-    node["topology"] = System.Text.Json.Nodes.JsonNode.Parse(System.Text.Json.JsonSerializer.Serialize(topology, options));
+    if (topology is not null)
+        node["topology"] = System.Text.Json.Nodes.JsonNode.Parse(System.Text.Json.JsonSerializer.Serialize(topology, options));
     return node;
 }
 
@@ -129,18 +132,21 @@ app.MapGet("/api/v1/priority/weights", (PriorityWeights weights) => Results.Ok(n
     max_raw = weights.MaxRaw,
 }));
 
-app.MapGet("/api/v1/cases", (DeliverableState state, TopologicalForensicsAnalyzer topology) =>
+app.MapGet("/api/v1/cases", (DeliverableState state, TopologicalForensicsAnalyzer topology, bool? all, string? view) =>
 {
-    var map = topology.Analyze(state.Rows);
-    return Results.Ok(state.Rows.OrderBy(r => r.Rank).ThenBy(r => r.AlertId, StringComparer.Ordinal)
-        .Select(r => WithTopology(r, map[r.AlertId])));
+    var source = (all == true || string.Equals(view, "all", StringComparison.OrdinalIgnoreCase))
+        ? state.QueueRows
+        : state.Rows;
+    var map = topology.Analyze(source);
+    return Results.Ok(source.OrderBy(r => r.Rank).ThenBy(r => r.AlertId, StringComparer.Ordinal)
+        .Select(r => WithTopology(r, map.TryGetValue(r.AlertId, out var t) ? t : null)));
 });
 
 app.MapGet("/api/v1/cases/{id}", (string id, DeliverableState state, TopologicalForensicsAnalyzer topology) =>
 {
     var row = state.QueueRows.FirstOrDefault(r => r.AlertId.Equals(id, StringComparison.OrdinalIgnoreCase));
     if (row is null) return Results.NotFound();
-    var map = topology.Analyze(state.Rows);
+    var map = topology.Analyze(state.QueueRows);
     return map.TryGetValue(row.AlertId, out var t) ? Results.Ok(WithTopology(row, t)) : Results.Ok(row);
 });
 
@@ -450,12 +456,23 @@ app.MapGet("/api/v1/cases/{id}/diff", (string id, DeliverableState state, CnbTra
     return Results.Ok(ForensicBuilder.Diff(id, row, index));
 });
 
-app.MapPost("/api/v1/cases/{id}/approve", (string id, ApproveRequest request, DeliverableState state) =>
+app.MapPost("/api/v1/cases/{id}/approve", (string id, ApproveRequest request, DeliverableState state, HttpRequest req) =>
 {
     var matching = state.QueueRows.FirstOrDefault(r => r.AlertId.Equals(id, StringComparison.OrdinalIgnoreCase));
     if (matching is null) return Results.NotFound();
 
-    var validation = ApprovalPolicy.Validate(matching.ExecutivePerson, request.ApproverId);
+    var role = req.Headers["X-User-Role"].FirstOrDefault();
+    if (string.Equals(role, "ANALYST", StringComparison.OrdinalIgnoreCase))
+    {
+        return Results.Json(new
+        {
+            error = "ROLE_UNAUTHORIZED",
+            detail = "Statutory 4-Eyes Requirement: Only a designated MLRO (§ 22 AML Act) can execute final case approval."
+        }, statusCode: 403);
+    }
+
+    var approverName = req.Headers["X-User-Name"].FirstOrDefault() ?? request.ApproverId;
+    var validation = ApprovalPolicy.Validate(matching.ExecutivePerson, approverName);
     if (validation is not null)
     {
         return Results.Json(new
@@ -473,11 +490,67 @@ app.MapPost("/api/v1/cases/{id}/approve", (string id, ApproveRequest request, De
     }
 
     var ts = DateTimeOffset.UtcNow.ToString("O");
-    var digest = SHA256.HashData(Encoding.UTF8.GetBytes($"{id}|{request.SignatureB64}|{request.ApproverId}|{ts}"));
+    var digest = SHA256.HashData(Encoding.UTF8.GetBytes($"{id}|{request.SignatureB64}|{approverName}|{ts}"));
     var auditHash = "sha256:" + Convert.ToHexString(digest).ToLowerInvariant();
     var ledger = app.Services.GetRequiredService<FileAuditLedger>();
-    ledger.Append(id, "APPROVED", new { approver = request.ApproverId, audit_hash = auditHash });
+    ledger.Append(id, "APPROVED", new { approver = approverName, audit_hash = auditHash });
     return Results.Ok(new ApproveResponse("APPROVED", auditHash));
+});
+
+app.MapPost("/api/v1/cases/{id}/postpone", (string id, DeliverableState state, VeriTriage.Infrastructure.Fau.FauReportingService fau, HttpRequest request) =>
+{
+    var matching = state.QueueRows.FirstOrDefault(r => r.AlertId.Equals(id, StringComparison.OrdinalIgnoreCase));
+    if (matching is null) return Results.NotFound();
+
+    var executive = request.Headers["X-User-Name"].FirstOrDefault() ?? matching.ExecutivePerson;
+    var executiveRole = request.Headers["X-User-Role"].FirstOrDefault() ?? matching.ExecutiveRole;
+    var approver = matching.Approver;
+
+    var packet = fau.PostponeAndGenerateReport(matching, executive, executiveRole, approver);
+    return Results.Ok(packet);
+});
+
+app.MapGet("/api/v1/cases/{id}/fau-report", (string id, DeliverableState state, VeriTriage.Infrastructure.Fau.FauReportingService fau) =>
+{
+    var report = fau.GetReport(id);
+    if (report is not null) return Results.Ok(report);
+
+    var matching = state.QueueRows.FirstOrDefault(r => r.AlertId.Equals(id, StringComparison.OrdinalIgnoreCase));
+    if (matching is null) return Results.NotFound();
+
+    var generated = fau.PostponeAndGenerateReport(matching, matching.ExecutivePerson, matching.ExecutiveRole, matching.Approver);
+    return Results.Ok(generated);
+});
+
+app.MapGet("/api/v1/cases/{id}/fau-report/xml", (string id, DeliverableState state, VeriTriage.Infrastructure.Fau.FauReportingService fau) =>
+{
+    var report = fau.GetReport(id);
+    if (report is null)
+    {
+        var matching = state.QueueRows.FirstOrDefault(r => r.AlertId.Equals(id, StringComparison.OrdinalIgnoreCase));
+        if (matching is null) return Results.NotFound();
+        report = fau.PostponeAndGenerateReport(matching, matching.ExecutivePerson, matching.ExecutiveRole, matching.Approver);
+    }
+    return Results.Text(report.ToOfficialXml(), "application/xml", Encoding.UTF8);
+});
+
+app.MapGet("/api/v1/cases/{id}/money-flow", (string id, DeliverableState state, VeriTriage.Infrastructure.Forensics.MoneyFlowAnalyzer flow) =>
+{
+    var matching = state.QueueRows.FirstOrDefault(r => r.AlertId.Equals(id, StringComparison.OrdinalIgnoreCase));
+    if (matching is null) return Results.NotFound();
+    return Results.Ok(flow.Analyze(matching.AlertId, matching.ClientId));
+});
+
+app.MapGet("/api/v1/transactions", (CnbTransactionIndex index, string? q, int? skip, int? take) =>
+{
+    var (items, total) = index.SearchRawTransactions(q, skip ?? 0, take ?? 50);
+    return Results.Ok(new { total, skip = skip ?? 0, take = take ?? 50, items });
+});
+
+app.MapGet("/api/v1/clients", (CnbTransactionIndex index, string? q, int? skip, int? take) =>
+{
+    var (items, total) = index.GetAllClients(q, skip ?? 0, take ?? 50);
+    return Results.Ok(new { total, skip = skip ?? 0, take = take ?? 50, items });
 });
 
 app.Run();
