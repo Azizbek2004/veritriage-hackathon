@@ -22,19 +22,19 @@ Calibrated thresholds: high-tier/high-score hub or shared >= 12 for mules; cycle
 
 | Pair | Score | Reason |
 |---|---:|---|
-| ALERT-007 ↔ ALERT-032 | 62 | temporal 100% · amount 70% · entity 100% |
-| ALERT-027 ↔ ALERT-029 | 62 | temporal 100% · amount 100% |
-| ALERT-003 ↔ ALERT-005 | 61 | temporal 100% · amount 100% |
+| ALERT-005 ↔ ALERT-015 | 60 | temporal 100% · amount 100% · entity 40% |
+| ALERT-010 ↔ ALERT-016 | 60 | temporal 100% · amount 100% · entity 40% |
+| ALERT-015 ↔ ALERT-027 | 60 | temporal 100% · amount 100% · entity 40% |
 | Other pairs | 35–60 | partial temporal / amount / entity match |
 
-The radar uses crimson for score >= 58 and amber for 45–57; the top live pairs (62) render crimson. No pair reached 75; the synthetic test proves the >75 path. The synthetic test `AccountCorrelation_WhenSharedIbanAndTemporalSync_ReturnsScoreAbove75` proves the >75 path.
+The radar uses crimson for score >= 58 and amber for 45–57; the top live pairs (60) render crimson. No pair reached 75; the synthetic test proves the >75 path. The synthetic test `AccountCorrelation_WhenSharedIbanAndTemporalSync_ReturnsScoreAbove75` proves the >75 path.
 
 ## Non-regression
 
 - 11-column CSV header and 46-line contract unchanged.
 - 4-eyes same-person: 400.
 - `priority`/`priority_raw`/parity math untouched; topology is additive.
-- Tests: **67/67 passed** (63 prior + 4 topology/correlation).
+- Tests: **72/72 passed** (63 prior + 4 topology/correlation + 5 remote verifier tests).
 - `npm run build`: green.
 - API and cockpit running.
 

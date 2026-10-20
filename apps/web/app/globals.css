@@ -1884,3 +1884,36 @@ tbody td { white-space: nowrap; }
 }
 
 
+.drawer-backdrop { background: rgba(8, 13, 24, 0.74); backdrop-filter: blur(9px) saturate(0.8); }
+.drawer { box-shadow: -30px 0 80px rgba(2, 6, 23, 0.35); }
+.drawer-topology-card { background: linear-gradient(135deg, #0b1020 0%, #111a2e 100%); border-color: #26344d; color: #e2e8f0; }
+.drawer-topology-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.drawer-role { margin-top: 3px; color: #f8fafc; font: 700 13px Georgia, serif; }
+.drawer-r { color: #f59e0b; font: 700 16px var(--font-mono); }
+.topology-facts { display: grid; grid-template-columns: repeat(6, 1fr); gap: 3px; margin: 9px 0 7px; }
+.topology-facts span { display: block; color: #64748b; font: 6.5px var(--font-mono); letter-spacing: .04em; }
+.topology-facts strong { display: block; color: #e2e8f0; font: 700 9px var(--font-mono); margin-top: 2px; }
+.topology-bars > div { display: grid; grid-template-columns: 58px 1fr 22px; gap: 5px; align-items: center; font: 7.5px var(--font-mono); color: #94a3b8; margin: 3px 0; }
+.topology-bars i { height: 3px; background: #1e293b; border-radius: 2px; overflow: hidden; }
+.topology-bars i b { display: block; height: 100%; background: #f59e0b; }
+.topology-bars em { font-style: normal; text-align: right; color: #cbd5e1; }
+.topology-basis { color: #94a3b8; font: 7.5px var(--font-mono); line-height: 1.4; margin: 7px 0 0; }
+@media (max-width: 700px) { .topology-facts { grid-template-columns: repeat(3, 1fr); } }
+/* 2026 workstation polish: layered cards, strong focus, quiet motion */
+.kpi-card { position: relative; overflow: hidden; transition: transform .18s ease, box-shadow .18s ease; }
+.kpi-card::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 3px; background: var(--primary); opacity: .65; }
+.kpi-card:nth-child(2)::before { background: var(--error); }
+.kpi-card:nth-child(3)::before { background: var(--warn); }
+.kpi-card:nth-child(4)::before { background: var(--tertiary); }
+.kpi-card:hover { transform: translateY(-1px); box-shadow: var(--shadow-card, 0 8px 24px rgba(15,23,42,.06)); }
+.radar-role-card { transition: transform .16s ease, border-color .16s ease, background .16s ease; }
+.radar-role-card:hover { transform: translateY(-1px); border-color: #475569; background: #172033; }
+.radar-node:hover circle, .radar-node:hover rect { filter: brightness(1.35); }
+.radar-node:focus-visible { outline: none; }
+.radar-node:focus-visible circle:last-of-type { stroke: #fff; stroke-width: 2.4px; }
+.table-wrap tbody tr { transition: background .12s ease; }
+.table-wrap tbody tr:hover { background: var(--surface-container-low); }
+.drawer { border-left: 3px solid var(--primary); }
+.drawer-tabs { overflow-x: auto; scrollbar-width: thin; }
+.drawer-tab { white-space: nowrap; }
+@media (prefers-reduced-motion: reduce) { .radar-pulse, .kpi-card, .radar-role-card { animation: none !important; transition: none !important; } }

@@ -25,10 +25,27 @@ type Row = {
     topology_score: number;
     radial_distance: number;
     radar_angle_deg: number;
+    radar_quadrant: string;
     forensic_role: string;
     forensic_role_label: string;
+    shared_counterparty_count: number;
+    has_cyclic_flow: boolean;
+    pass_through_hours: number;
+    in_out_ratio: number;
+    c_degree: number;
+    c_clustering: number;
+    c_diffusion: number;
     statutory_basis: string;
-    correlated_accounts: unknown[];
+    correlated_accounts: {
+      target_alert_id: string;
+      target_client_id: string;
+      correlation_score: number;
+      shared_iban_score: number;
+      temporal_sync_score: number;
+      amount_mirror_score: number;
+      entity_link_score: number;
+      correlation_reason: string;
+    }[];
   };
   priority_breakdown?: {
     base: number;
@@ -411,6 +428,20 @@ export default function Home() {
       return () => clearTimeout(handler);
     }
   }, [query, tableViewMode]);
+
+  useEffect(() => {
+    if (!selected) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setSelected(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [selected]);
 
   const sameApprover = approver === SAME;
 
@@ -1463,14 +1494,14 @@ export default function Home() {
       {selected && (
         <>
           <div className="drawer-backdrop" onClick={() => setSelected(null)} />
-          <aside className="drawer" aria-label={`Case ${selected.alertId}`}>
+          <aside className="drawer" role="dialog" aria-modal="true" aria-label={`Case ${selected.alertId}`}>
             <div className="drawer-header">
               <div>
                 <div className="brand-subtitle">{selected.alertId} · {selected.alertType}</div>
                 <div className="brand-title">{selected.clientId}</div>
                 <div className="brand-subtitle">{selected.executiveRole} · priority {selected.priority}{selected.topology ? ` · ${selected.topology.forensic_role_label} · R ${selected.topology.radial_distance.toFixed(2)}` : ""}</div>
               </div>
-              <button className="drawer-close" onClick={() => setSelected(null)} aria-label="Close case">×</button>
+              <button className="drawer-close" onClick={() => setSelected(null)} aria-label="Close case" autoFocus>×</button>
             </div>
             <div className="drawer-tabs" role="tablist" aria-label="Case views">
               <button role="tab" aria-selected={tab === "transaction"} className={tab === "transaction" ? "drawer-tab active" : "drawer-tab"} onClick={() => setTab("transaction")}>Transaction</button>
@@ -1482,6 +1513,32 @@ export default function Home() {
               <button role="tab" aria-selected={tab === "dossiers"} className={tab === "dossiers" ? "drawer-tab active" : "drawer-tab"} onClick={showDossiers}>Legal Dossiers</button>
             </div>
             <div className="drawer-body">
+              {selected.topology && (
+                <div className="detail-card drawer-topology-card">
+                  <div className="drawer-topology-head">
+                    <div>
+                      <div className="detail-label">Network topology</div>
+                      <div className="drawer-role">{selected.topology.forensic_role_label}</div>
+                    </div>
+                    <div className="drawer-r">R {selected.topology.radial_distance.toFixed(2)}</div>
+                  </div>
+                  <div className="topology-facts">
+                    <div><span>TOPOLOGY</span><strong>{selected.topology.topology_score}/100</strong></div>
+                    <div><span>SHARED HUB</span><strong>{selected.topology.shared_counterparty_count}</strong></div>
+                    <div><span>PASS-THROUGH</span><strong>{selected.topology.pass_through_hours}h</strong></div>
+                    <div><span>IN/OUT</span><strong>{selected.topology.in_out_ratio.toFixed(4)}</strong></div>
+                    <div><span>CYCLIC</span><strong>{selected.topology.has_cyclic_flow ? "YES" : "NO"}</strong></div>
+                    <div><span>LINKS</span><strong>{selected.topology.correlated_accounts.length}</strong></div>
+                  </div>
+                  <div className="topology-bars">
+                    <div><span>DEGREE</span><i><b style={{ width: `${selected.topology.c_degree}%` }} /></i><em>{selected.topology.c_degree}</em></div>
+                    <div><span>CLUSTERING</span><i><b style={{ width: `${selected.topology.c_clustering}%` }} /></i><em>{selected.topology.c_clustering}</em></div>
+                    <div><span>DIFFUSION</span><i><b style={{ width: `${selected.topology.c_diffusion}%` }} /></i><em>{selected.topology.c_diffusion}</em></div>
+                  </div>
+                  <p className="topology-basis">{selected.topology.statutory_basis}</p>
+                </div>
+              )}
+
               {banner && (
                 <div className="banner-violation" role="alert">
                   <strong>{banner}</strong>

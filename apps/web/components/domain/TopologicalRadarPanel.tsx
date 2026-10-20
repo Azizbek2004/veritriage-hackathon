@@ -139,7 +139,7 @@ export default function TopologicalRadarPanel({ rows, selectedId, roleFilter, on
               const meta = ROLE_META[row.topology.forensic_role] ?? ROLE_META.ISOLATED_ANOMALY;
               const isSelected = row.alertId === selectedId;
               return (
-                <g key={row.alertId} className="radar-node" onClick={() => onSelect(row)} role="button" tabIndex={0} aria-label={`${row.alertId} ${row.topology.forensic_role}`}>
+                <g key={row.alertId} className="radar-node" onClick={() => onSelect(row)} role="button" tabIndex={0} aria-label={`${row.alertId} ${row.topology.forensic_role}`}><title>{`${row.alertId} · ${row.topology.forensic_role_label} · score ${row.topology.topology_score} · R ${row.topology.radial_distance.toFixed(2)}`}</title>
                   {isSelected && <circle cx={p.x} cy={p.y} r={13} fill="none" stroke={meta.ring} strokeWidth="1.5" opacity="0.9" />}
                   {row.topology.forensic_role === "MULE_AGGREGATOR" && <circle cx={p.x} cy={p.y} r={9} fill={meta.color} opacity="0.25" className="radar-pulse" />}
                   {row.topology.forensic_role === "CAROUSEL_RING"

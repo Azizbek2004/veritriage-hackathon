@@ -31,3 +31,5 @@ Forensic views:
 - `priority_hardening.png` — 45-row priority table with confidence, V11/S20 breakdown, and 0-mismatch sensitivity panel.
 
 - `topology_radar.png` — concentric AML radar with role strip, correlation inspector, and 45 client nodes.
+
+- `case_drawer_topology.png` — selected case drawer with the topology context card, role, R distance, and shared-hub facts.

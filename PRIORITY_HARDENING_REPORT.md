@@ -60,7 +60,7 @@
 - `/api/v1/cases/ALERT-045`: evidence 96, confidence 80.
 - `/api/v1/priority/weights`: pep 25, per-unit 10, max_raw 125.
 - `grep 21(5) src/PayShield.Domain`: zero.
-- `dotnet test`: **63/63 passed**.
+- `dotnet test`: **72/72 passed**.
 - `npm run build`: green.
 - UI: `http://127.0.0.1:3100` → 200.
 - Demo path preserved: CSV → REVIEW → same-person 400 → independent approval → audit.

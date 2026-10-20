@@ -92,7 +92,7 @@ public sealed class TopologicalForensicsAnalyzer
             {
                 var iban = IbanOverlap(txs[item.Row.AlertId], txs[other.AlertId]);
                 var temporal = TemporalSync(txs[item.Row.AlertId], txs[other.AlertId]);
-                var amount = AmountMirror(item.Row, other);
+                var amount = AmountMirror(item.Row, other, txs[item.Row.AlertId], txs[other.AlertId]);
                 var entity = EntityLink(item.Row, other, primary[item.Row.AlertId], primary[other.AlertId]);
                 var score = TopologyMath.CorrelationScore(iban, temporal, amount, entity);
                 if (score < 35) continue;
@@ -113,7 +113,8 @@ public sealed class TopologicalForensicsAnalyzer
         var nodes = rows.Select(r => new TopologyNodeDto(r.AlertId, r.ClientId, r.Priority, r.ConfidenceScore,
             topology[r.AlertId].RadialDistance, topology[r.AlertId].RadarAngleDeg, topology[r.AlertId].RadarQuadrant,
             topology[r.AlertId].ForensicRole, topology[r.AlertId].TopologyScore)).ToList();
-        var edges = topology.Values.SelectMany((t, i) => t.CorrelatedAccounts.Select(c => new RadarEdgeDto(rows.ElementAt(i).AlertId, c.TargetAlertId, c.CorrelationScore, c.CorrelationReason))).ToList();
+        var edges = topology.SelectMany(pair => pair.Value.CorrelatedAccounts
+            .Select(c => new RadarEdgeDto(pair.Key, c.TargetAlertId, c.CorrelationScore, c.CorrelationReason))).ToList();
         var summary = new
         {
             mule_aggregators = topology.Values.Count(x => x.ForensicRole == "MULE_AGGREGATOR"),
@@ -190,11 +191,12 @@ public sealed class TopologicalForensicsAnalyzer
         return 0;
     }
 
-    private static int AmountMirror(DeliverableCsvRow a, DeliverableCsvRow b)
+    private static int AmountMirror(DeliverableCsvRow a, DeliverableCsvRow b, IReadOnlyList<CnbTransactionRow> ta, IReadOnlyList<CnbTransactionRow> tb)
     {
-        var va = a.Inputs?.VolRatio ?? 0m;
-        var vb = b.Inputs?.VolRatio ?? 0m;
-        var diff = Math.Abs(va - vb);
+        var va = ta.Where(t => t.Direction == "OUT").Sum(t => t.AmountCzk);
+        var vb = tb.Where(t => t.Direction == "OUT").Sum(t => t.AmountCzk);
+        if (va <= 0m || vb <= 0m) return 0;
+        var diff = Math.Abs(va - vb) / Math.Max(va, vb);
         return diff <= 0.05m ? 100 : diff <= 0.15m ? 70 : diff <= 0.35m ? 40 : 0;
     }
 
