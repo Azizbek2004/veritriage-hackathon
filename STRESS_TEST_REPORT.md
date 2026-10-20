@@ -32,7 +32,7 @@ No `Task.Delay`, no fixed percentiles, no forced 82/14/4 counts.
 | 50,000 | 7.568 ms | 0.0001 ms | 0.0002 ms | 0.0003 ms | 6,606,940/s | 45,225 / 4,758 / 17 |
 | 397,853 | 60.349 ms | 0.0001 ms | 0.0002 ms | 0.0003 ms | 6,592,548/s | 358,909 / 38,795 / 149 |
 
-These are real loop measurements on the current synthetic ČNB slice, not a claim about production hardware. The UI now formats elapsed to 3 decimals and percentile latency to 4 decimals.
+Latest full-ledger run (12:46): **397,853 rows / 115.65ms / 3,440,147 rows/s**. These are real loop measurements on the current synthetic ČNB slice, not a claim about production hardware; repeated runs vary with load/cache. The UI now formats elapsed to 3 decimals and percentile latency to 4 decimals.
 
 ## UI
 
