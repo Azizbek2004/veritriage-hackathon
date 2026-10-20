@@ -59,7 +59,10 @@ The agent proposes. The verifier proves. The human signs. Every task ends with a
 - **PayShield API:** [http://18.153.69.221/api/v1/health](http://18.153.69.221/api/v1/health)
 - **Live Bedrock Runtime:** [http://18.153.69.221/api/v1/bedrock/status](http://18.153.69.221/api/v1/bedrock/status) (Claude Sonnet 4.5)
 
-## License
+## License & Commercial Use Restriction
 
-Licensed under the **Apache License, Version 2.0** (the "License"). You may use this work for commercial, research, and non-commercial purposes. See [LICENSE](LICENSE) for full legal terms.
+Copyright (c) 2026 Azizbek Khursanov. All Rights Reserved.
+
+**COMMERCIAL USE IS STRICTLY RESTRICTED.**  
+This repository is licensed under the **VeriTriage Non-Commercial Software License**. You may inspect, test, research, and evaluate the software for non-commercial, educational, and hackathon judging purposes. Commercial deployment in production financial institutions, banking SaaS, or revenue-generating activities is strictly prohibited without prior written commercial licensing from the author. See [LICENSE](LICENSE) for full legal terms.
 
