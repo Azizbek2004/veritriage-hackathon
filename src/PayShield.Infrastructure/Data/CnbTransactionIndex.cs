@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Globalization;
 
 namespace VeriTriage.Infrastructure.Data;
@@ -20,6 +21,18 @@ public sealed record CnbClientProfile(
     decimal ActualVolume,
     int ActualCount,
     decimal MaxVolume);
+
+
+public sealed record StressBenchmarkResult(
+    int SampleSize,
+    double ElapsedMs,
+    long ThroughputPerSec,
+    double P50Ms,
+    double P95Ms,
+    double P99Ms,
+    int AutoCleared,
+    int StepUp,
+    int Escalated);
 
 public sealed class CnbTransactionIndex
 {
@@ -170,6 +183,38 @@ public sealed class CnbTransactionIndex
     public CnbClientProfile? GetClient(string clientId) => _clients.GetValueOrDefault(clientId);
     public IReadOnlyList<CnbTransactionRow> GetByClient(string clientId) => _byClient[clientId].OrderByDescending(x => x.Date).ThenByDescending(x => x.Id).ToList();
     public IReadOnlyList<CnbTransactionRow> GetByCounterparty(string account) => _byCounterparty[account].ToList();
+
+    public StressBenchmarkResult Benchmark(int requestedSampleSize)
+    {
+        var target = requestedSampleSize <= 0 ? _allRows.Count : Math.Min(requestedSampleSize, _allRows.Count);
+        var times = new double[target];
+        var autoCleared = 0;
+        var stepUp = 0;
+        var escalated = 0;
+        var total = Stopwatch.StartNew();
+        for (var i = 0; i < target; i++)
+        {
+            var started = Stopwatch.GetTimestamp();
+            var tx = _allRows[i];
+            var client = _clients.GetValueOrDefault(tx.ClientId);
+            var risk = client?.RiskScore == "high" ? 40 : client?.RiskScore == "medium" ? 25 : 10;
+            var amount = tx.AmountCzk >= 100_000m ? 30 : tx.AmountCzk >= 50_000m ? 20 : tx.AmountCzk >= 10_000m ? 10 : 0;
+            var pep = client?.Pep == true ? 25 : 0;
+            var channel = tx.Direction == "OUT" ? 5 : 0;
+            var score = Math.Clamp(risk + amount + pep + channel, 0, 100);
+            if (score >= 75) escalated++;
+            else if (score >= 40) stepUp++;
+            else autoCleared++;
+            times[i] = (Stopwatch.GetTimestamp() - started) * 1000.0 / Stopwatch.Frequency;
+        }
+        total.Stop();
+        Array.Sort(times);
+        static double Pct(double[] values, double p) => values.Length == 0 ? 0 : Math.Round(values[Math.Clamp((int)Math.Ceiling(p * values.Length) - 1, 0, values.Length - 1)], 4);
+        var elapsed = Math.Max(0.001, total.Elapsed.TotalMilliseconds);
+        return new StressBenchmarkResult(target, Math.Round(elapsed, 3),
+            (long)Math.Round(target / (elapsed / 1000.0)), Pct(times, 0.50), Pct(times, 0.95), Pct(times, 0.99),
+            autoCleared, stepUp, escalated);
+    }
 
     public (IReadOnlyList<CnbTransactionRow> Items, int TotalCount) SearchRawTransactions(string? search, int skip = 0, int take = 50)
     {

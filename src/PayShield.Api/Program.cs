@@ -187,43 +187,29 @@ app.MapGet("/api/v1/cases/{id}/transaction-detail", (string id, DeliverableState
     return Results.Ok(ForensicBuilder.TransactionDetail(id, row, index));
 });
 
-app.MapPost("/api/v1/stress-test/run", async (StressTestRequest request, CnbTransactionIndex index) =>
+app.MapPost("/api/v1/stress-test/run", (StressTestRequest request, CnbTransactionIndex index) =>
 {
-    var sw = System.Diagnostics.Stopwatch.StartNew();
-    var sampleSize = request.SampleSize <= 0 ? 397853 : request.SampleSize;
-    var target = Math.Min(sampleSize, index.TransactionCount > 0 ? index.TransactionCount : 397853);
-
-    int autoCleared = (int)(target * 0.82);
-    int stepUp = (int)(target * 0.14);
-    int escalated = target - autoCleared - stepUp;
-
-    await Task.Delay(Math.Clamp(target / 400000 * 25, 10, 180));
-    sw.Stop();
-
-    var elapsedMs = Math.Max(14, (long)sw.ElapsedMilliseconds);
-    var elapsedSec = Math.Max(0.001, elapsedMs / 1000.0);
-    var throughput = (long)(target / elapsedSec);
-
+    var result = index.Benchmark(request.SampleSize);
     return Results.Ok(new
     {
-        sample_size = target,
-        elapsed_ms = elapsedMs,
-        throughput_per_sec = throughput,
-        p50_ms = 0.004,
-        p95_ms = 0.012,
-        p99_ms = 0.047,
+        sample_size = result.SampleSize,
+        elapsed_ms = result.ElapsedMs,
+        throughput_per_sec = result.ThroughputPerSec,
+        p50_ms = result.P50Ms,
+        p95_ms = result.P95Ms,
+        p99_ms = result.P99Ms,
         tiers = new
         {
-            auto_cleared = autoCleared,
-            step_up = stepUp,
-            escalated = escalated
+            auto_cleared = result.AutoCleared,
+            step_up = result.StepUp,
+            escalated = result.Escalated
         },
         cost_comparison = new
         {
             deterministic_czk = 0.00,
-            bedrock_only_estimate_czk = Math.Round(target * 0.03136m, 2),
-            bedrock_latency_estimate_hours = Math.Round((target * 0.032) / 3600.0, 2),
-            bedrock_tokens_estimate = (long)target * 100
+            bedrock_only_estimate_czk = Math.Round(result.SampleSize * 0.03136m, 2),
+            bedrock_latency_estimate_hours = Math.Round((result.SampleSize * 0.032) / 3600.0, 2),
+            bedrock_tokens_estimate = (long)result.SampleSize * 100
         }
     });
 });

@@ -52,3 +52,8 @@
 - Topology: 8/8/15/14
 - Hero: MULE_AGGREGATOR, R 0.20
 - UI: 200
+
+
+## Stress test
+
+The old `Task.Delay`/fixed-percentile endpoint was replaced with a real `CnbTransactionIndex.Benchmark`: 397,853 rows in **60.349ms**, throughput **6.59M/s**, real p50/p95/p99 and real tier distribution. See `STRESS_TEST_REPORT.md`. The number is the deterministic rules layer only, not full verifier/document work.

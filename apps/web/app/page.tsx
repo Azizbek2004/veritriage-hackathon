@@ -2177,13 +2177,13 @@ export default function Home() {
                     <div style={{ textAlign: "right" }}>
                       <div className="detail-label">Execution Time</div>
                       <div className="font-mono" style={{ fontSize: 16, fontWeight: 700, color: "var(--on-surface)" }}>
-                        {stressResult.elapsed_ms.toFixed(2)} ms
+                        {stressResult.elapsed_ms.toFixed(3)} ms
                       </div>
                     </div>
                   </div>
 
                   <div className="stress-tiers-pill">
-                    Latency: p50 {stressResult.p50_ms}ms · p95 {stressResult.p95_ms}ms · p99 {stressResult.p99_ms}ms
+                    Latency: p50 {stressResult.p50_ms.toFixed(4)}ms · p95 {stressResult.p95_ms.toFixed(4)}ms · p99 {stressResult.p99_ms.toFixed(4)}ms
                   </div>
 
                   <div className="stress-tiers-pill">
