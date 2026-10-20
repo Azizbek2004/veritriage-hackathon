@@ -1,5 +1,7 @@
 # VeriTriage — Agent Environment
 
+> **Built during the Fintechers Hackathon** — *Track 5: AML (FINREG Partners Challenge)*
+
 This repository is the VeriTriage agent environment plus a green backend verifier/rules slice and a FINREG cockpit. The mobile app, real signing, and persistent audit storage are not built. A visible 5-event demo audit chain is built. Bedrock is probe-driven (live observed, currently cached); the cassette remains a labeled fallback. See `FINAL_REPORT.md` and `BUILD_LOG.md` for the exact state.
 
 ## What Is Here
