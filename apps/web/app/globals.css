@@ -1925,8 +1925,14 @@ tbody td { white-space: nowrap; }
 .radar-heading-right .btn-outline { color: var(--primary); border-color: var(--outline-variant); background: var(--surface-container-low); }
 .radar-role-card { background: var(--surface-container-low); border-color: var(--outline-variant); color: var(--on-surface); }
 .radar-role-card:hover { background: var(--surface-container); border-color: var(--primary); }
+.radar-role-card.active { background: #eff6ff !important; border-color: #2563eb !important; box-shadow: 0 0 0 1.5px #2563eb, 0 2px 8px rgba(37,99,235,0.15) !important; }
 .radar-role-card strong { color: var(--on-surface); }
+.radar-role-card.active strong { color: #1e3a8a !important; }
 .radar-role-card small { color: var(--secondary); }
+.radar-role-card.active small { color: #2563eb !important; font-weight: 600 !important; }
+.radar-node.focused text { fill: #0284c7 !important; font-weight: 800; font-size: 7.5px; }
+.radar-open-card-btn { background: var(--primary, #1e40af); color: #ffffff !important; border: 1px solid rgba(255,255,255,0.2); transition: all 0.15s ease; }
+.radar-open-card-btn:hover { background: #1d4ed8; box-shadow: 0 4px 12px rgba(37,99,235,0.25); transform: translateY(-1px); }
 .radar-canvas-wrap { background: #f8fafc; border-color: var(--outline-variant); }
 .radar-axis { fill: #64748b; }
 .radar-ring-label { fill: #94a3b8; }

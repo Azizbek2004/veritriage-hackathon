@@ -1520,32 +1520,6 @@ export default function Home() {
               <button role="tab" aria-selected={tab === "dossiers"} className={tab === "dossiers" ? "drawer-tab active" : "drawer-tab"} onClick={showDossiers}>Legal Dossiers</button>
             </div>
             <div className="drawer-body">
-              {selected.topology && (
-                <div className="detail-card drawer-topology-card">
-                  <div className="drawer-topology-head">
-                    <div>
-                      <div className="detail-label">Network topology</div>
-                      <div className="drawer-role">{selected.topology.forensic_role_label}</div>
-                    </div>
-                    <div className="drawer-r">R {selected.topology.radial_distance.toFixed(2)}</div>
-                  </div>
-                  <div className="topology-facts">
-                    <div><span>TOPOLOGY</span><strong>{selected.topology.topology_score}/100</strong></div>
-                    <div><span>SHARED HUB</span><strong>{selected.topology.shared_counterparty_count}</strong></div>
-                    <div><span>PASS-THROUGH</span><strong>{selected.topology.pass_through_hours}h</strong></div>
-                    <div><span>IN/OUT</span><strong>{selected.topology.in_out_ratio.toFixed(4)}</strong></div>
-                    <div><span>CYCLIC</span><strong>{selected.topology.has_cyclic_flow ? "YES" : "NO"}</strong></div>
-                    <div><span>LINKS</span><strong>{selected.topology.correlated_accounts.length}</strong></div>
-                  </div>
-                  <div className="topology-bars">
-                    <div><span>DEGREE</span><i><b style={{ width: `${selected.topology.c_degree}%` }} /></i><em>{selected.topology.c_degree}</em></div>
-                    <div><span>CLUSTERING</span><i><b style={{ width: `${selected.topology.c_clustering}%` }} /></i><em>{selected.topology.c_clustering}</em></div>
-                    <div><span>DIFFUSION</span><i><b style={{ width: `${selected.topology.c_diffusion}%` }} /></i><em>{selected.topology.c_diffusion}</em></div>
-                  </div>
-                  <p className="topology-basis">{selected.topology.statutory_basis}</p>
-                </div>
-              )}
-
               {banner && (
                 <div className="banner-violation" role="alert">
                   <strong>{banner}</strong>
@@ -1736,6 +1710,31 @@ export default function Home() {
                 </div>
               ) : tab === "details" ? (
                 <>
+                  {selected.topology && (
+                    <div className="detail-card drawer-topology-card" style={{ marginBottom: 12 }}>
+                      <div className="drawer-topology-head">
+                        <div>
+                          <div className="detail-label">Network topology &amp; Forensic Role</div>
+                          <div className="drawer-role">{selected.topology.forensic_role_label}</div>
+                        </div>
+                        <div className="drawer-r">R {selected.topology.radial_distance.toFixed(2)}</div>
+                      </div>
+                      <div className="topology-facts">
+                        <div><span>TOPOLOGY</span><strong>{selected.topology.topology_score}/100</strong></div>
+                        <div><span>SHARED HUB</span><strong>{selected.topology.shared_counterparty_count}</strong></div>
+                        <div><span>PASS-THROUGH</span><strong>{selected.topology.pass_through_hours}h</strong></div>
+                        <div><span>IN/OUT</span><strong>{selected.topology.in_out_ratio.toFixed(4)}</strong></div>
+                        <div><span>CYCLIC</span><strong>{selected.topology.has_cyclic_flow ? "YES" : "NO"}</strong></div>
+                        <div><span>LINKS</span><strong>{selected.topology.correlated_accounts.length}</strong></div>
+                      </div>
+                      <div className="topology-bars">
+                        <div><span>DEGREE</span><i><b style={{ width: `${selected.topology.c_degree}%` }} /></i><em>{selected.topology.c_degree}</em></div>
+                        <div><span>CLUSTERING</span><i><b style={{ width: `${selected.topology.c_clustering}%` }} /></i><em>{selected.topology.c_clustering}</em></div>
+                        <div><span>DIFFUSION</span><i><b style={{ width: `${selected.topology.c_diffusion}%` }} /></i><em>{selected.topology.c_diffusion}</em></div>
+                      </div>
+                      <p className="topology-basis">{selected.topology.statutory_basis}</p>
+                    </div>
+                  )}
                   <ClientTransactionCluster clientId={selected.clientId} transactionId={selected.transactionId} onFilterClients={(ids) => setQuery(ids[0] ?? "")} />
                   <VerifierDiffTable caseId={selected.alertId} />
                   <div className="decision-grid">

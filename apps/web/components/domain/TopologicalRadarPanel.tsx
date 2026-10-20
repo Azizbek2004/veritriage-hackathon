@@ -65,19 +65,24 @@ function point(radial: number, angle: number) {
 
 export default function TopologicalRadarPanel({ rows, selectedId, roleFilter, onSelect, onRoleFilter }: Props) {
   const [showAll, setShowAll] = useState(true);
+  const [focusedId, setFocusedId] = useState<string | null>(null);
+
   const nodes = rows.filter((r) => r.topology);
-  const selected = rows.find((r) => r.alertId === selectedId) ?? null;
+  // Active focused node defaults to focusedId, or selectedId from props, or the first node
+  const activeId = focusedId ?? selectedId ?? (nodes[0]?.alertId ?? null);
+  const activeNode = rows.find((r) => r.alertId === activeId) ?? nodes[0] ?? null;
+  const activeTopology = activeNode?.topology;
+
   const counts = useMemo(() => {
     const base: Record<string, number> = { MULE_AGGREGATOR: 0, CAROUSEL_RING: 0, COMPROMISED_VICTIM: 0, ISOLATED_ANOMALY: 0 };
     for (const row of nodes) if (row.topology) base[row.topology.forensic_role as keyof typeof base]++;
     return base;
   }, [nodes]);
 
-  const selectedTopology = selected?.topology;
   const edges = useMemo(() => {
     const list: { from: RadarRow; to: RadarRow; edge: Correlated }[] = [];
     const byId = new Map(rows.map((r) => [r.alertId, r]));
-    const sources = showAll ? nodes : selected ? [selected] : [];
+    const sources = showAll ? nodes : activeNode ? [activeNode] : [];
     for (const source of sources) {
       if (!source.topology) continue;
       for (const edge of source.topology.correlated_accounts ?? []) {
@@ -86,7 +91,7 @@ export default function TopologicalRadarPanel({ rows, selectedId, roleFilter, on
       }
     }
     return list;
-  }, [rows, nodes, selected, showAll]);
+  }, [rows, nodes, activeNode, showAll]);
 
   return (
     <section className="radar-workspace" aria-label="Topological AML radar and account correlation">
@@ -137,15 +142,29 @@ export default function TopologicalRadarPanel({ rows, selectedId, roleFilter, on
               if (!row.topology) return null;
               const p = point(row.topology.radial_distance, row.topology.radar_angle_deg);
               const meta = ROLE_META[row.topology.forensic_role] ?? ROLE_META.ISOLATED_ANOMALY;
-              const isSelected = row.alertId === selectedId;
+              const isFocused = row.alertId === activeId;
               return (
-                <g key={row.alertId} className="radar-node" onClick={() => onSelect(row)} role="button" tabIndex={0} aria-label={`${row.alertId} ${row.topology.forensic_role}`}><title>{`${row.alertId} · ${row.topology.forensic_role_label} · score ${row.topology.topology_score} · R ${row.topology.radial_distance.toFixed(2)}`}</title>
-                  {isSelected && <circle cx={p.x} cy={p.y} r={13} fill="none" stroke={meta.ring} strokeWidth="1.5" opacity="0.9" />}
+                <g
+                  key={row.alertId}
+                  className={`radar-node ${isFocused ? "focused" : ""}`}
+                  onClick={() => setFocusedId(row.alertId)}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { setFocusedId(row.alertId); } }}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`${row.alertId} ${row.topology.forensic_role}`}
+                >
+                  <title>{`${row.alertId} · ${row.topology.forensic_role_label} · score ${row.topology.topology_score} · R ${row.topology.radial_distance.toFixed(2)}`}</title>
+                  {isFocused && (
+                    <>
+                      <circle cx={p.x} cy={p.y} r={17} fill="none" stroke={meta.ring} strokeWidth="2.5" strokeDasharray="3 3" opacity="0.95" />
+                      <circle cx={p.x} cy={p.y} r={24} fill={meta.color} opacity="0.14" />
+                    </>
+                  )}
                   {row.topology.forensic_role === "MULE_AGGREGATOR" && <circle cx={p.x} cy={p.y} r={9} fill={meta.color} opacity="0.25" className="radar-pulse" />}
                   {row.topology.forensic_role === "CAROUSEL_RING"
-                    ? <rect x={p.x - 5} y={p.y - 5} width="10" height="10" transform={`rotate(45 ${p.x} ${p.y})`} fill={meta.color} stroke="#1e293b" strokeWidth="0.7" />
-                    : <circle cx={p.x} cy={p.y} r={row.topology.forensic_role === "COMPROMISED_VICTIM" ? 6.5 : 5.5} fill={meta.color} stroke={isSelected ? "#fff" : "#0f172a"} strokeWidth={isSelected ? 2 : 1} filter="url(#glow)" />}
-                  <text x={p.x + 8} y={p.y - 6} className="radar-node-label">{row.alertId.replace("ALERT-", "A")}</text>
+                    ? <rect x={p.x - 5} y={p.y - 5} width="10" height="10" transform={`rotate(45 ${p.x} ${p.y})`} fill={meta.color} stroke={isFocused ? "#38bdf8" : "#1e293b"} strokeWidth={isFocused ? 2 : 0.7} />
+                    : <circle cx={p.x} cy={p.y} r={row.topology.forensic_role === "COMPROMISED_VICTIM" ? 6.5 : 5.5} fill={meta.color} stroke={isFocused ? "#38bdf8" : "#0f172a"} strokeWidth={isFocused ? 2.5 : 1} filter="url(#glow)" />}
+                  <text x={p.x + 8} y={p.y - 6} className={`radar-node-label ${isFocused ? "focused-label" : ""}`}>{row.alertId.replace("ALERT-", "A")}</text>
                 </g>
               );
             })}
@@ -155,13 +174,58 @@ export default function TopologicalRadarPanel({ rows, selectedId, roleFilter, on
         </div>
 
         <aside className="radar-inspector">
-          <div className="radar-inspector-head"><span>ACCOUNT CORRELATION</span><strong>{selected ? selected.alertId : "Select a node"}</strong>{selectedTopology && <span className="role-badge" style={{ color: (ROLE_META[selectedTopology.forensic_role] ?? ROLE_META.ISOLATED_ANOMALY).color }}>{(ROLE_META[selectedTopology.forensic_role] ?? ROLE_META.ISOLATED_ANOMALY).short} · R {selectedTopology.radial_distance.toFixed(2)}</span>}</div>
-          {selectedTopology ? (
+          <div className="radar-inspector-head">
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px" }}>
+              <div>
+                <span>ACCOUNT CORRELATION</span>
+                <strong>{activeNode ? activeNode.alertId : "Select a node"}</strong>
+                {activeNode && (
+                  <div style={{ fontSize: "11px", color: "var(--secondary)", marginTop: "2px" }}>
+                    Client: <span className="mono">{activeNode.clientId}</span>
+                  </div>
+                )}
+              </div>
+              {activeTopology && (
+                <span className="role-badge" style={{ color: (ROLE_META[activeTopology.forensic_role] ?? ROLE_META.ISOLATED_ANOMALY).color }}>
+                  {(ROLE_META[activeTopology.forensic_role] ?? ROLE_META.ISOLATED_ANOMALY).short} · R {activeTopology.radial_distance.toFixed(2)}
+                </span>
+              )}
+            </div>
+
+            {activeNode && (
+              <div style={{ marginTop: "10px" }}>
+                <button
+                  type="button"
+                  className="btn-primary radar-open-card-btn"
+                  onClick={() => onSelect(activeNode)}
+                  title={`Open full case dossier and transaction stream for ${activeNode.alertId}`}
+                  style={{
+                    width: "100%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "8px",
+                    padding: "8px 14px",
+                    fontWeight: 700,
+                    fontSize: "12px",
+                    cursor: "pointer",
+                    borderRadius: "6px",
+                  }}
+                >
+                  <span>📂</span>
+                  <span>Open Case Card ({activeNode.alertId})</span>
+                  <span style={{ opacity: 0.75 }}>→</span>
+                </button>
+              </div>
+            )}
+          </div>
+
+          {activeTopology ? (
             <>
-              <p className="radar-statutory">{selectedTopology.statutory_basis}</p>
-              <div className="radar-metrics"><div><span>TOPOLOGY</span><strong>{selectedTopology.topology_score}/100</strong></div><div><span>PASS-THROUGH</span><strong>{selectedTopology.pass_through_hours}h</strong></div><div><span>IN/OUT</span><strong>{selectedTopology.in_out_ratio.toFixed(4)}</strong></div><div><span>SHARED HUB</span><strong>{selectedTopology.shared_counterparty_count}</strong></div></div>
+              <p className="radar-statutory">{activeTopology.statutory_basis}</p>
+              <div className="radar-metrics"><div><span>TOPOLOGY</span><strong>{activeTopology.topology_score}/100</strong></div><div><span>PASS-THROUGH</span><strong>{activeTopology.pass_through_hours}h</strong></div><div><span>IN/OUT</span><strong>{activeTopology.in_out_ratio.toFixed(4)}</strong></div><div><span>SHARED HUB</span><strong>{activeTopology.shared_counterparty_count}</strong></div></div>
               <div className="correlation-title">4-Signal correlation matrix</div>
-              {(selectedTopology.correlated_accounts ?? []).length === 0 ? <p className="radar-empty">No correlated accounts above 35%.</p> : selectedTopology.correlated_accounts.map((c) => (
+              {(activeTopology.correlated_accounts ?? []).length === 0 ? <p className="radar-empty">No correlated accounts above 35%.</p> : activeTopology.correlated_accounts.map((c) => (
                 <div className="correlation-item" key={c.target_alert_id}>
                   <div className="correlation-item-head"><strong>{c.target_alert_id}</strong><span>{c.target_client_id}</span><b>{c.correlation_score}%</b></div>
                   <div className="correlation-bars">
@@ -170,7 +234,29 @@ export default function TopologicalRadarPanel({ rows, selectedId, roleFilter, on
                     ))}
                   </div>
                   <p>{c.correlation_reason}</p>
-                  <button className="btn-outline" onClick={() => { const target = rows.find((r) => r.alertId === c.target_alert_id); if (target) onSelect(target); }}>Jump to Correlated Alert</button>
+                  <div style={{ display: "flex", gap: "6px", marginTop: "8px" }}>
+                    <button
+                      type="button"
+                      className="btn-outline"
+                      style={{ flex: 1, fontSize: "11px", padding: "5px 8px" }}
+                      onClick={() => setFocusedId(c.target_alert_id)}
+                      title={`Inspect ${c.target_alert_id} in the radar without opening card`}
+                    >
+                      🎯 Focus Node ({c.target_alert_id.replace("ALERT-", "A")})
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-primary"
+                      style={{ fontSize: "11px", padding: "5px 10px" }}
+                      onClick={() => {
+                        const target = rows.find((r) => r.alertId === c.target_alert_id);
+                        if (target) onSelect(target);
+                      }}
+                      title={`Open case card for ${c.target_alert_id}`}
+                    >
+                      Open Card →
+                    </button>
+                  </div>
                 </div>
               ))}
             </>
