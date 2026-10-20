@@ -52,3 +52,14 @@ The agent proposes. The verifier proves. The human signs. Every task ends with a
 - Human escalation: `.agents/human-handoff.md`
 - Original blueprint: `blueprint.md`
 - Original narrative: `project.md`
+
+## Live Deployment (AWS eu-central-1)
+
+- **Cockpit UI:** [http://18.153.69.221](http://18.153.69.221)
+- **PayShield API:** [http://18.153.69.221/api/v1/health](http://18.153.69.221/api/v1/health)
+- **Live Bedrock Runtime:** [http://18.153.69.221/api/v1/bedrock/status](http://18.153.69.221/api/v1/bedrock/status) (Claude Sonnet 4.5)
+
+## License
+
+Licensed under the **Apache License, Version 2.0** (the "License"). You may use this work for commercial, research, and non-commercial purposes. See [LICENSE](LICENSE) for full legal terms.
+
