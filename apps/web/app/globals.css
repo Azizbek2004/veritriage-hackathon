@@ -1959,3 +1959,543 @@ tbody td { white-space: nowrap; }
 .view-mode-group { position: sticky; top: 8px; z-index: 8; background: color-mix(in srgb, var(--surface) 92%, transparent); backdrop-filter: blur(8px); padding: 6px; border: 1px solid var(--outline-variant); border-radius: 9px; }
 .view-mode-group .btn-outline { margin-left: auto; }
 #ledger { scroll-margin-top: 58px; }
+
+/* ==========================================================================
+   Forensic Topology Card (Redesigned Intelligence Section)
+   ========================================================================== */
+.forensic-topology-card {
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--outline-variant, #e2e8f0);
+  border-radius: 12px;
+  padding: 16px 18px;
+  box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.05);
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: all 0.2s ease;
+}
+
+.ftc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  border-bottom: 1px solid var(--outline-variant, #e2e8f0);
+  padding-bottom: 12px;
+}
+
+.ftc-eyebrow {
+  display: flex;
+  align-items: center;
+  font: 700 9px var(--font-mono);
+  color: var(--primary, #0284c7);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ftc-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.ftc-title {
+  margin: 0;
+  font: 700 17px Georgia, serif;
+  color: var(--on-surface, #0f172a);
+}
+
+.ftc-role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid;
+  font: 700 9px var(--font-mono);
+  letter-spacing: 0.04em;
+}
+
+.ftc-role-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.ftc-r-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+  gap: 2px;
+}
+
+.ftc-r-label {
+  font: 700 8px var(--font-mono);
+  color: var(--secondary, #64748b);
+  letter-spacing: 0.06em;
+}
+
+.ftc-r-val {
+  font: 800 18px var(--font-mono);
+  color: #d97706;
+  line-height: 1.1;
+}
+
+.ftc-ring-tier {
+  font: 600 9px var(--font-mono);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.ftc-ring-tier.bullseye {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.ftc-ring-tier.mid {
+  background: #fffbeb;
+  color: #d97706;
+  border: 1px solid #fde68a;
+}
+
+.ftc-ring-tier.outer {
+  background: #f8fafc;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+}
+
+.ftc-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.ftc-metric-tile {
+  background: var(--surface-container-low, #f8fafc);
+  border: 1px solid var(--outline-variant, #e2e8f0);
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ftc-metric-head {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font: 700 8px var(--font-mono);
+  color: var(--secondary, #64748b);
+  letter-spacing: 0.05em;
+}
+
+.ftc-metric-val {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--on-surface, #0f172a);
+}
+
+.ftc-metric-val small {
+  font-size: 9px;
+  color: var(--secondary, #64748b);
+  font-weight: 400;
+  margin-left: 2px;
+}
+
+.ftc-metric-sub {
+  font: 500 8.5px var(--font-mono);
+  color: var(--secondary, #64748b);
+}
+
+.ftc-bars-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--surface-container-low, #f8fafc);
+  border: 1px solid var(--outline-variant, #e2e8f0);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.ftc-bars-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+.ftc-bars-title {
+  font: 700 8.5px var(--font-mono);
+  color: var(--on-surface, #0f172a);
+  letter-spacing: 0.06em;
+}
+
+.ftc-formula-pill {
+  font: 600 8px var(--font-mono);
+  color: var(--secondary, #64748b);
+}
+
+.ftc-bar-row {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ftc-bar-info {
+  display: flex;
+  justify-content: space-between;
+  font: 600 10px var(--font-mono);
+  color: var(--on-surface, #0f172a);
+}
+
+.ftc-bar-score {
+  font-weight: 700;
+}
+
+.ftc-bar-track {
+  height: 6px;
+  background: var(--outline-variant, #e2e8f0);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.ftc-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.ftc-bar-fill.degree {
+  background: linear-gradient(90deg, #3b82f6, #60a5fa);
+}
+
+.ftc-bar-fill.clustering {
+  background: linear-gradient(90deg, #f43f5e, #fb7185);
+}
+
+.ftc-bar-fill.diffusion {
+  background: linear-gradient(90deg, #d97706, #fbbf24);
+}
+
+.ftc-bar-hint {
+  font: 400 8px var(--font-mono);
+  color: var(--secondary, #64748b);
+}
+
+.ftc-legal-box {
+  background: #fffbeb;
+  border: 1px solid #fef3c7;
+  border-left: 3px solid #d97706;
+  border-radius: 6px;
+  padding: 10px 12px;
+}
+
+.ftc-legal-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font: 700 10px system-ui, -apple-system, sans-serif;
+  color: #92400e;
+  margin-bottom: 4px;
+}
+
+.ftc-legal-text {
+  margin: 0 0 6px;
+  font-size: 11px;
+  color: #78350f;
+  line-height: 1.4;
+}
+
+.ftc-legal-badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.ftc-statute-tag {
+  background: #fde68a;
+  color: #78350f;
+  font: 700 8px var(--font-mono);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.ftc-correlated-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 4px;
+}
+
+.ftc-correlated-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font: 700 8.5px var(--font-mono);
+  color: var(--secondary, #64748b);
+  letter-spacing: 0.05em;
+}
+
+.ftc-correlated-chips {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 6px;
+}
+
+.ftc-correlated-chip {
+  background: var(--surface-container-low, #f8fafc);
+  border: 1px solid var(--outline-variant, #e2e8f0);
+  border-radius: 6px;
+  padding: 7px 9px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ftc-chip-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+}
+
+.ftc-chip-id {
+  font-weight: 700;
+  color: var(--primary, #0284c7);
+}
+
+.ftc-chip-score {
+  font-weight: 700;
+  color: #dc2626;
+  font-size: 9px;
+}
+
+.ftc-chip-client {
+  font-size: 8.5px;
+  color: var(--secondary, #64748b);
+}
+
+.ftc-chip-reason {
+  font-size: 8.5px;
+  color: var(--on-surface, #334155);
+  line-height: 1.3;
+}
+
+.ftc-chip-jump-btn {
+  margin-top: 4px;
+  align-self: flex-start;
+  background: transparent;
+  border: 1px solid var(--outline-variant, #cbd5e1);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font: 600 8.5px var(--font-mono);
+  color: var(--primary, #0284c7);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.ftc-chip-jump-btn:hover {
+  background: var(--primary, #0284c7);
+  color: #ffffff;
+  border-color: var(--primary, #0284c7);
+}
+
+/* ==========================================================================
+   Interactive Trail Carousel (Money Flow DAG)
+   ========================================================================== */
+.trail-carousel-wrapper {
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.trail-carousel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.trail-carousel-title-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.trail-carousel-title {
+  font: 700 8.5px var(--font-mono);
+  color: #94a3b8;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.trail-carousel-badge {
+  font: 700 8px var(--font-mono);
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.trail-carousel-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.trail-carousel-nav-btn {
+  background: #111a2e;
+  border: 1px solid #26344d;
+  color: #cbd5e1;
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.trail-carousel-nav-btn:hover:not(:disabled) {
+  background: #1e293b;
+  color: #38bdf8;
+  border-color: #38bdf8;
+}
+
+.trail-carousel-nav-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.trail-carousel-track {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  padding: 4px 2px 8px;
+}
+
+.trail-carousel-track::-webkit-scrollbar {
+  display: none;
+}
+
+.trail-card {
+  flex: 0 0 195px;
+  scroll-snap-align: start;
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+  padding: 9px 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+
+.trail-card:hover {
+  transform: translateY(-2px);
+  border-color: #475569;
+  background: #141e33;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.trail-card.active {
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.18) 0%, rgba(15, 23, 42, 0.95) 100%);
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 1px #38bdf8, 0 6px 16px rgba(56, 189, 248, 0.2);
+}
+
+.trail-card.overview-card {
+  border-left: 3px solid #10b981;
+}
+
+.trail-card.overview-card.active {
+  border-color: #10b981;
+  box-shadow: 0 0 0 1px #10b981, 0 6px 16px rgba(16, 185, 129, 0.2);
+}
+
+.tc-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 4px;
+}
+
+.tc-id {
+  font-weight: 700;
+  font-size: 11px;
+  color: #f8fafc;
+}
+
+.trail-card.active .tc-id {
+  color: #38bdf8;
+}
+
+.tc-badge {
+  font: 700 7.5px var(--font-mono);
+  padding: 1px 5px;
+  border-radius: 3px;
+  text-transform: uppercase;
+}
+
+.tc-badge.overview {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+}
+
+.tc-badge.typology {
+  background: rgba(244, 63, 94, 0.2);
+  color: #fb7185;
+}
+
+.tc-amount {
+  font-size: 12px;
+  font-weight: 700;
+  color: #e2e8f0;
+}
+
+.tc-meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font: 500 8px var(--font-mono);
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+.kpi-sub {
+  font: 500 7.5px var(--font-mono);
+  color: #64748b;
+}
+
+.postponement-btn {
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  padding: 7px 14px;
+  font-weight: 700;
+  font-size: 11px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.3);
+  transition: all 0.15s ease;
+}
+
+.postponement-btn:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}

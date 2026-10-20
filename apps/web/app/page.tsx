@@ -10,6 +10,7 @@ import { MarkdownDocViewer } from "./MarkdownDocViewer";
 import RoleSwitcher, { ActiveUser, USERS } from "../components/domain/RoleSwitcher";
 import MoneyFlowDiagram from "../components/domain/MoneyFlowDiagram";
 import FauPostponementModal, { FauPacketDto } from "../components/domain/FauPostponementModal";
+import ForensicTopologyCard from "../components/domain/ForensicTopologyCard";
 
 type Row = {
   alertId: string;
@@ -1711,29 +1712,15 @@ export default function Home() {
               ) : tab === "details" ? (
                 <>
                   {selected.topology && (
-                    <div className="detail-card drawer-topology-card" style={{ marginBottom: 12 }}>
-                      <div className="drawer-topology-head">
-                        <div>
-                          <div className="detail-label">Network topology &amp; Forensic Role</div>
-                          <div className="drawer-role">{selected.topology.forensic_role_label}</div>
-                        </div>
-                        <div className="drawer-r">R {selected.topology.radial_distance.toFixed(2)}</div>
-                      </div>
-                      <div className="topology-facts">
-                        <div><span>TOPOLOGY</span><strong>{selected.topology.topology_score}/100</strong></div>
-                        <div><span>SHARED HUB</span><strong>{selected.topology.shared_counterparty_count}</strong></div>
-                        <div><span>PASS-THROUGH</span><strong>{selected.topology.pass_through_hours}h</strong></div>
-                        <div><span>IN/OUT</span><strong>{selected.topology.in_out_ratio.toFixed(4)}</strong></div>
-                        <div><span>CYCLIC</span><strong>{selected.topology.has_cyclic_flow ? "YES" : "NO"}</strong></div>
-                        <div><span>LINKS</span><strong>{selected.topology.correlated_accounts.length}</strong></div>
-                      </div>
-                      <div className="topology-bars">
-                        <div><span>DEGREE</span><i><b style={{ width: `${selected.topology.c_degree}%` }} /></i><em>{selected.topology.c_degree}</em></div>
-                        <div><span>CLUSTERING</span><i><b style={{ width: `${selected.topology.c_clustering}%` }} /></i><em>{selected.topology.c_clustering}</em></div>
-                        <div><span>DIFFUSION</span><i><b style={{ width: `${selected.topology.c_diffusion}%` }} /></i><em>{selected.topology.c_diffusion}</em></div>
-                      </div>
-                      <p className="topology-basis">{selected.topology.statutory_basis}</p>
-                    </div>
+                    <ForensicTopologyCard
+                      topology={selected.topology as any}
+                      clientId={selected.clientId}
+                      alertId={selected.alertId}
+                      onJumpToAlert={(targetAlertId) => {
+                        const target = rows.find((r) => r.alertId === targetAlertId);
+                        if (target) openRow(target as unknown as Row);
+                      }}
+                    />
                   )}
                   <ClientTransactionCluster clientId={selected.clientId} transactionId={selected.transactionId} onFilterClients={(ids) => setQuery(ids[0] ?? "")} />
                   <VerifierDiffTable caseId={selected.alertId} />

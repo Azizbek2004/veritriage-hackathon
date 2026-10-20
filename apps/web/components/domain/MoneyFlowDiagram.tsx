@@ -17,6 +17,10 @@ import {
   Maximize2,
   Minimize2,
   Sparkles,
+  ChevronLeft,
+  ChevronRight,
+  GitFork,
+  ArrowDownUp,
 } from "lucide-react";
 
 export interface FlowNode {
@@ -102,6 +106,32 @@ export default function MoneyFlowDiagram({
   const svgRef = useRef<SVGSVGElement | null>(null);
   const gRef = useRef<SVGGElement | null>(null);
   const zoomBehaviorRef = useRef<d3.ZoomBehavior<SVGSVGElement, unknown> | null>(null);
+  const carouselRef = useRef<HTMLDivElement | null>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+
+  const checkScroll = () => {
+    if (carouselRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = carouselRef.current;
+      setCanScrollLeft(scrollLeft > 4);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 4);
+    }
+  };
+
+  const scrollCarousel = (direction: "left" | "right") => {
+    if (carouselRef.current) {
+      const scrollAmount = 260;
+      carouselRef.current.scrollBy({
+        left: direction === "left" ? -scrollAmount : scrollAmount,
+        behavior: "smooth",
+      });
+      setTimeout(checkScroll, 320);
+    }
+  };
+
+  useEffect(() => {
+    checkScroll();
+  }, [data]);
 
   // Load graph data from API
   useEffect(() => {
@@ -328,63 +358,142 @@ export default function MoneyFlowDiagram({
         </div>
       </div>
 
-      {/* KPI Forensic Metrics Bar */}
+      {/* Redesigned KPI Forensic Metrics Bar */}
       <div className="flow-kpi-bar">
         <div className="kpi-cell">
           <span className="kpi-lbl">
-            <Coins size={10} className="mr-1 text-slate-400 inline" />
+            <Coins size={11} className="mr-1 text-amber-500 inline" />
             Outflow Volume
           </span>
           <strong className="kpi-val text-amber-400 font-mono">
             {new Intl.NumberFormat("cs-CZ").format(data.aggregate_outflow_czk)} CZK
           </strong>
+          <span className="kpi-sub">Total Dispersed</span>
         </div>
         <div className="kpi-cell">
           <span className="kpi-lbl">
-            <Activity size={10} className="mr-1 text-slate-400 inline" />
+            <Activity size={11} className="mr-1 text-emerald-400 inline" />
             Conservation
           </span>
           <strong className="kpi-val text-emerald-400 font-mono">
             {(data.flow_conservation_ratio * 100).toFixed(0)}%
           </strong>
+          <span className="kpi-sub">Zero Leakage</span>
         </div>
         <div className="kpi-cell">
           <span className="kpi-lbl">
-            <ShieldAlert size={10} className="mr-1 text-slate-400 inline" />
+            <GitFork size={11} className="mr-1 text-rose-400 inline" />
             Structuring Fan-Out
           </span>
           <strong className="kpi-val text-rose-400 font-mono">
             {data.structuring_fan_out_degree} txs
           </strong>
+          <span className="kpi-sub">Sub-Threshold Mules</span>
         </div>
         <div className="kpi-cell">
-          <span className="kpi-lbl">Layering Topology</span>
+          <span className="kpi-lbl">
+            <ShieldAlert size={11} className="mr-1 text-rose-400 inline" />
+            Layering Topology
+          </span>
           <strong className={`kpi-val font-mono ${data.is_layering_detected ? "text-rose-400 font-bold" : "text-slate-300"}`}>
             {data.is_layering_detected ? "⚠ DETECTED" : "LINEAR"}
           </strong>
+          <span className="kpi-sub">
+            {data.is_layering_detected ? "Carousel Layering Ring" : "Normal Fan"}
+          </span>
         </div>
       </div>
 
-      {/* Path Filter Pills */}
+      {/* Interactive Trail Carousel */}
       {data.paths.length > 0 && (
-        <div className="path-strip">
-          <span className="path-strip-title">FILTER BY TRAIL:</span>
-          <button
-            className={`path-chip ${activePathId === null ? "active" : ""}`}
-            onClick={() => setActivePathId(null)}
+        <div className="trail-carousel-wrapper">
+          <div className="trail-carousel-header">
+            <div className="trail-carousel-title-group">
+              <GitFork size={12} className="text-primary" />
+              <span className="trail-carousel-title">RECONSTRUCTED MONEY FLOW TRAILS CAROUSEL</span>
+              <span className="trail-carousel-badge font-mono">{data.paths.length} DISCOVERED PATHS</span>
+            </div>
+            <div className="trail-carousel-controls">
+              <button
+                type="button"
+                className="trail-carousel-nav-btn"
+                onClick={() => scrollCarousel("left")}
+                disabled={!canScrollLeft}
+                aria-label="Previous trail"
+                title="Scroll previous trail"
+              >
+                <ChevronLeft size={14} />
+              </button>
+              <button
+                type="button"
+                className="trail-carousel-nav-btn"
+                onClick={() => scrollCarousel("right")}
+                disabled={!canScrollRight}
+                aria-label="Next trail"
+                title="Scroll next trail"
+              >
+                <ChevronRight size={14} />
+              </button>
+            </div>
+          </div>
+
+          <div
+            ref={carouselRef}
+            className="trail-carousel-track"
+            onScroll={checkScroll}
           >
-            All Trails ({data.paths.length})
-          </button>
-          {data.paths.map((p) => (
-            <button
-              key={p.path_id}
-              className={`path-chip ${activePathId === p.path_id ? "active" : ""}`}
-              onClick={() => setActivePathId(activePathId === p.path_id ? null : p.path_id)}
+            {/* Overview Card */}
+            <div
+              className={`trail-card overview-card ${activePathId === null ? "active" : ""}`}
+              onClick={() => setActivePathId(null)}
+              role="button"
+              tabIndex={0}
             >
-              <span>{p.path_id}</span>
-              <small>({new Intl.NumberFormat("cs-CZ").format(p.total_volume_czk)} CZK)</small>
-            </button>
-          ))}
+              <div className="tc-top">
+                <span className="tc-id font-mono">ALL TRAILS</span>
+                <span className="tc-badge overview">FULL DAG</span>
+              </div>
+              <div className="tc-amount font-mono">
+                {new Intl.NumberFormat("cs-CZ").format(data.aggregate_outflow_czk)} CZK
+              </div>
+              <div className="tc-meta">
+                <span>{data.paths.length} Layering Paths</span>
+                <span>·</span>
+                <span>{data.nodes.length} Accounts</span>
+              </div>
+            </div>
+
+            {/* Individual Trail Cards in Carousel */}
+            {data.paths.map((p, idx) => {
+              const isActive = activePathId === p.path_id;
+              return (
+                <div
+                  key={p.path_id}
+                  className={`trail-card ${isActive ? "active" : ""}`}
+                  onClick={() => setActivePathId(isActive ? null : p.path_id)}
+                  role="button"
+                  tabIndex={0}
+                >
+                  <div className="tc-top">
+                    <span className="tc-id font-mono">{p.path_id}</span>
+                    <span className="tc-badge typology">
+                      {p.typology ? p.typology.replace("_", " ") : `Trail #${idx + 1}`}
+                    </span>
+                  </div>
+                  <div className="tc-amount font-mono">
+                    {new Intl.NumberFormat("cs-CZ").format(p.total_volume_czk)} CZK
+                  </div>
+                  <div className="tc-meta">
+                    <span>{p.hops.length} Hops</span>
+                    <span>·</span>
+                    <span>{(p.preservation_ratio * 100).toFixed(0)}% Vol</span>
+                    <span>·</span>
+                    <span>{p.duration_hours > 0 ? `${p.duration_hours}h` : "<1h"}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 
@@ -675,12 +784,13 @@ export default function MoneyFlowDiagram({
           </div>
 
           {onPostponeRequested && (
-            <div className="mt-2 flex justify-end">
+            <div className="mt-3 flex justify-end">
               <button
-                className="btn-outline text-[11px] py-1 px-3 border-rose-700 text-rose-300 hover:bg-rose-950/60"
+                type="button"
+                className="postponement-btn"
                 onClick={() => onPostponeRequested(selectedNode.id)}
               >
-                ❄️ Order Statutory Postponement on {selectedNode.id} (§ 20)
+                ❄️ Order Statutory Postponement on {selectedNode.id} (§ 20 AML Act) →
               </button>
             </div>
           )}
