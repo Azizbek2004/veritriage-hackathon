@@ -2499,3 +2499,88 @@ tbody td { white-space: nowrap; }
   filter: brightness(1.1);
   transform: translateY(-1px);
 }
+/* Minimal banking theme overrides */
+:root {
+  --bg: #f6f7f3;
+  --surface: #ffffff;
+  --surface-dim: #f1f4ef;
+  --surface-container-low: #f8faf6;
+  --surface-container: #eef2ec;
+  --surface-container-high: #e2e8df;
+  --on-surface: #15231d;
+  --on-surface-variant: #33463b;
+  --secondary: #5c6f65;
+  --muted: #83948a;
+  --outline: #d4ddd6;
+  --outline-variant: #e3e9e4;
+  --primary: #17624b;
+  --primary-hover: #0e4a38;
+  --primary-container: #2f7d63;
+  --primary-subtle: #edf5f0;
+  --primary-border: #cfe3d9;
+  --tertiary: #1f6b4f;
+  --tertiary-container: #edf7f1;
+  --tertiary-border: #c9e6d7;
+  --shadow-card: 0 1px 2px rgba(21,35,29,.04), 0 8px 24px rgba(21,35,29,.035);
+  --shadow-hover: 0 2px 4px rgba(21,35,29,.05), 0 12px 28px rgba(21,35,29,.06);
+}
+body { background: var(--bg); }
+.shell { max-width: 1380px; }
+.kpi-card, .data-strip, .toolbar, .sensitivity-panel, .radar-workspace, .table-card { box-shadow: none; }
+.kpi-card, .data-strip, .toolbar, .table-card { border-color: var(--outline-variant); }
+.brand-title { letter-spacing: -0.02em; }
+.btn-primary { background: var(--primary); border-color: var(--primary); }
+.btn-primary:hover { background: var(--primary-hover); }
+.drawer-tx-brief { display: grid; grid-template-columns: 1.2fr .9fr 1.3fr .6fr; gap: 1px; background: var(--outline-variant); border-bottom: 1px solid var(--outline-variant); }
+.drawer-tx-brief div { background: var(--surface-container-low); padding: 7px 10px; min-width: 0; }
+.drawer-tx-brief span { display: block; font: 700 7px var(--font-mono); color: var(--secondary); letter-spacing: .05em; }
+.drawer-tx-brief strong { display: block; font: 700 9px var(--font-mono); color: var(--on-surface); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 700px) { .drawer-tx-brief { grid-template-columns: 1fr 1fr; } }
+/* Light money-flow DAG */
+.money-flow-panel-v2 { background: var(--surface); border-color: var(--outline-variant); color: var(--on-surface); }
+.money-flow-panel-v2.expanded { border-color: var(--primary); box-shadow: 0 10px 30px rgba(21,35,29,.08); }
+.flow-header { border-color: var(--outline-variant); }
+.flow-title { color: var(--on-surface); }
+.statute-chip { background: var(--tertiary-container); color: var(--tertiary); border-color: var(--tertiary-border); }
+.mode-toggle-group, .icon-btn, .path-chip { background: var(--surface-container-low); border-color: var(--outline-variant); color: var(--secondary); }
+.mode-btn { color: var(--secondary); }
+.mode-btn:hover { color: var(--on-surface); }
+.mode-btn.active { background: var(--primary); color: #fff; }
+.icon-btn:hover { background: var(--surface-container); color: var(--primary); border-color: var(--primary-border); }
+.icon-btn.active { background: var(--primary-subtle); color: var(--primary); border-color: var(--primary-border); }
+.flow-kpi-bar { background: var(--surface-container-low); border-color: var(--outline-variant); }
+.kpi-lbl, .path-strip-title { color: var(--secondary); }
+.kpi-val { color: var(--on-surface); }
+.path-chip { color: var(--on-surface-variant); }
+.path-chip:hover { border-color: var(--primary); }
+.path-chip.active { background: var(--primary-subtle); color: var(--primary); border-color: var(--primary-border); }
+.flow-canvas-wrap { background: #fbfdf9; border-color: var(--outline-variant); }
+.flow-svg text { fill: #33463b !important; }
+.flow-inspector-card { background: var(--surface-container-low); border-color: var(--outline-variant); }
+.flow-inspector-card.edge-inspector { border-left-color: var(--primary); }
+.inspector-tag { color: var(--warn); }
+.inspector-title { color: var(--on-surface); }
+.inspector-field { background: var(--surface); border-color: var(--outline-variant); }
+.field-lbl { color: var(--secondary); }
+.field-val { color: var(--on-surface); }
+.freeze-badge { background: var(--error-container); color: var(--error); border-color: var(--error-border); }
+/* Light DAG: high-specificity overrides for the drawer graph */
+.drawer .flow-kpi-bar { background: #f7faf5 !important; border-color: var(--outline-variant) !important; }
+.drawer .kpi-lbl, .drawer .kpi-sub { color: var(--secondary) !important; }
+.drawer .path-strip-title { color: var(--secondary) !important; }
+.drawer .trail-card { background: var(--surface-container-low) !important; border-color: var(--outline-variant) !important; color: var(--on-surface) !important; }
+.drawer .trail-card:hover { border-color: var(--primary-border) !important; }
+.drawer .trail-card.active { background: var(--primary-subtle) !important; border-color: var(--primary) !important; }
+.drawer .trail-card .tc-id, .drawer .trail-card .tc-meta, .drawer .trail-card .tc-amount { color: var(--on-surface) !important; }
+.drawer .trail-carousel-title, .drawer .trail-carousel-badge { color: var(--secondary) !important; }
+.drawer .trail-carousel-badge { background: var(--surface-container) !important; border-color: var(--outline-variant) !important; }
+.drawer .trail-carousel-nav-btn { background: var(--surface-container-low) !important; border-color: var(--outline-variant) !important; color: var(--secondary) !important; }
+.drawer .flow-canvas-wrap { background: #fbfdf9 !important; border-color: var(--outline-variant) !important; }
+.drawer .stage-guides text, .drawer .flow-svg text { fill: #33463b !important; }
+.drawer .flow-subtitle, .drawer .text-slate-300, .drawer .text-slate-400 { color: var(--secondary) !important; }
+.drawer .text-amber-400, .drawer .text-amber-500 { color: var(--warn) !important; }
+.drawer .text-emerald-400 { color: var(--tertiary) !important; }
+.drawer .text-rose-300, .drawer .text-rose-400 { color: var(--error) !important; }
+.drawer .text-white { color: var(--on-surface) !important; }
+.drawer .postponement-btn { background: var(--primary) !important; border-color: var(--primary) !important; color: #fff !important; }
+.drawer .mode-btn.active { background: var(--primary) !important; color: #fff !important; }

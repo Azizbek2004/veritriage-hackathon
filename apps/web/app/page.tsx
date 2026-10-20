@@ -24,6 +24,10 @@ type Row = {
   approver: string;
   reason: string;
   log: string;
+  rawAmountCzk?: number;
+  rawDirection?: string;
+  rawCounterparty?: string;
+  rawDate?: string;
   topology?: {
     topology_score: number;
     radial_distance: number;
@@ -576,7 +580,7 @@ export default function Home() {
           setSelected(row);
           setApprover(INDEPENDENT);
           const requestedTab = params.get("tab");
-          const targetTab = requestedTab === "audit" ? "audit" : requestedTab === "details" ? "details" : requestedTab === "deep" ? "deep" : requestedTab === "dossiers" ? "dossiers" : "transaction";
+          const targetTab = requestedTab === "audit" ? "audit" : requestedTab === "details" ? "details" : requestedTab === "deep" ? "deep" : requestedTab === "dossiers" ? "dossiers" : requestedTab === "flow" ? "flow" : requestedTab === "fau" ? "fau" : "transaction";
           setTab(targetTab);
           if (targetTab === "deep") {
             fetch(`${API}/api/v1/cases/${row.alertId}/documents`).then((res) => (res.ok ? res.json() : [])).then(setDocuments).catch(() => setDocuments([]));
@@ -1338,6 +1342,10 @@ export default function Home() {
                               approver: INDEPENDENT,
                               reason: `ČNB Raw Stream · ${tx.direction} ${formatNumber(tx.amountCzk)} ${tx.currency} to ${tx.counterpartyAccount}`,
                               log: `Raw transaction ${tx.id} directly from ČNB dataset`,
+                              rawAmountCzk: tx.amountCzk,
+                              rawDirection: tx.direction,
+                              rawCounterparty: tx.counterpartyAccount,
+                              rawDate: tx.date,
                             });
                           }
                         }}
@@ -1510,6 +1518,12 @@ export default function Home() {
                 <div className="brand-subtitle">{selected.executiveRole} · priority {selected.priority}{selected.topology ? ` · ${selected.topology.forensic_role_label} · R ${selected.topology.radial_distance.toFixed(2)}` : ""}</div>
               </div>
               <button className="drawer-close" onClick={() => setSelected(null)} aria-label="Close case" autoFocus>×</button>
+            </div>
+            <div className="drawer-tx-brief">
+              <div><span>TRANSACTION</span><strong>{txDetail?.transaction.id ?? selected.transactionId}</strong></div>
+              <div><span>AMOUNT</span><strong>{txDetail ? `${new Intl.NumberFormat("cs-CZ", { minimumFractionDigits: 2 }).format(txDetail.transaction.amount_czk)} ${txDetail.transaction.currency}` : selected.rawAmountCzk ? `${new Intl.NumberFormat("cs-CZ", { minimumFractionDigits: 2 }).format(selected.rawAmountCzk)} CZK` : txDetailLoading ? "loading…" : "—"}</strong></div>
+              <div><span>COUNTERPARTY</span><strong>{txDetail?.transaction.counterparty_account ?? selected.rawCounterparty ?? "—"}</strong></div>
+              <div><span>DIRECTION</span><strong>{txDetail?.transaction.direction ?? selected.rawDirection ?? "—"}</strong></div>
             </div>
             <div className="drawer-tabs" role="tablist" aria-label="Case views">
               <button role="tab" aria-selected={tab === "transaction"} className={tab === "transaction" ? "drawer-tab active" : "drawer-tab"} onClick={() => setTab("transaction")}>Transaction</button>

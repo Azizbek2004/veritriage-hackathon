@@ -21,10 +21,12 @@
 
 ## Final pitch polish (light + full ledger)
 
-- Radar restyled to the same light surface/outline/inspector system as the cockpit; no dark island.
+- Radar and the **Money Flow DAG** were restyled to the same light surface/outline/inspector system as the cockpit; no dark island. The DAG trail cards, KPI strip, canvas, inspector, and buttons are light.
+- Minimal banking palette: warm off-white canvas, white cards, ink-green primary, restrained role accents; shadows reduced and borders made quieter.
 - View selector moved above the radar: **Deliverable Benchmark (45) / All Scanned Alerts / Raw Transactions Stream (397,853)**. Default is the full raw ledger; **Jump to full ledger ↓** scrolls to it. Server pagination is 100/page across 397,853 rows; all rows are queryable, not capped at 45.
 - **Reprocess fixed**: it now re-fetches `/deliverable/stats`, `/dataset/stats`, the active row set, and raw page after reprocessing. The cards and table update in place instead of showing stale data.
-- The graph is intentionally light, not a dark overlay; role colors use red / rose / amber / slate against the cockpit surface.
+- **Drawer now opens with a transaction brief above all tabs**: transaction ID, amount/currency, counterparty, direction; raw-stream rows use their own amount/direction/counterparty when the case-detail endpoint is absent.
+- **Raw-stream clicks are complete**: unmatched raw transactions carry `rawAmountCzk`, `rawDirection`, `rawCounterparty`, `rawDate` into the drawer instead of leaving "loading…" forever.
 
 ## Design direction
 

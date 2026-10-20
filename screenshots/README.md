@@ -35,3 +35,7 @@ Forensic views:
 - `case_drawer_topology.png` — selected case drawer with the topology context card, role, R distance, and shared-hub facts.
 
 - `pitch_full_ledger.png` — light-mode cockpit with the full-ledger selector and 397,853-row stream active.
+
+- `pitch_minimal.png` — minimal banking cockpit with green palette and full-ledger selector.
+
+- `transaction_flow_light.png` — light Money Flow DAG and transaction brief.
