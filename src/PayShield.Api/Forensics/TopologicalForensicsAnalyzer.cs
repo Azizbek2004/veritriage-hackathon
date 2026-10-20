@@ -78,15 +78,42 @@ public sealed class TopologicalForensicsAnalyzer
                 x.Pass, x.Row.Inputs?.BaseTier ?? "low", x.Row.Inputs?.VolRatio ?? 0m,
                 x.Row.Inputs?.IsNewRemote ?? false, false) == "MULE_AGGREGATOR")
             .Select(x => primary[x.Row.AlertId]).Where(x => x is not null).ToHashSet(StringComparer.Ordinal);
+
+        var classifiedRoles = scoreRows.ToDictionary(
+            x => x.Row.AlertId,
+            x =>
+            {
+                var linked = txs[x.Row.AlertId].Any(t => !string.IsNullOrWhiteSpace(t.CounterpartyAccount) && muleHubAccounts.Contains(t.CounterpartyAccount));
+                return TopologyMath.ClassifyRole(shared[x.Row.AlertId], cycle[x.Row.AlertId], x.Clustering, x.Topology.TopologyScore,
+                    x.Pass, x.Row.Inputs?.BaseTier ?? "low", x.Row.Inputs?.VolRatio ?? 0m, x.Row.Inputs?.IsNewRemote ?? false, linked);
+            },
+            StringComparer.Ordinal);
+
+        var distributedAngles = new Dictionary<string, int>(StringComparer.Ordinal);
+        foreach (var roleGroup in scoreRows.GroupBy(x => classifiedRoles[x.Row.AlertId]))
+        {
+            var list = roleGroup.OrderBy(x => x.Row.AlertId).ToList();
+            var baseAngle = roleGroup.Key switch
+            {
+                "CAROUSEL_RING" => 0,
+                "MULE_AGGREGATOR" => 90,
+                "COMPROMISED_VICTIM" => 180,
+                _ => 270,
+            };
+            var count = list.Count;
+            for (var i = 0; i < count; i++)
+            {
+                var span = count > 1 ? (74 * i) / (count - 1) : 45;
+                distributedAngles[list[i].Row.AlertId] = (baseAngle + 8 + span) % 360;
+            }
+        }
+
         var result = new Dictionary<string, TopologyDto>(StringComparer.Ordinal);
         foreach (var item in scoreRows)
         {
-            var linked = txs[item.Row.AlertId].Any(t => !string.IsNullOrWhiteSpace(t.CounterpartyAccount) && muleHubAccounts.Contains(t.CounterpartyAccount));
-            var preliminary = TopologyMath.ClassifyRole(shared[item.Row.AlertId], cycle[item.Row.AlertId], item.Clustering, item.Topology.TopologyScore,
-                item.Pass, item.Row.Inputs?.BaseTier ?? "low", item.Row.Inputs?.VolRatio ?? 0m, item.Row.Inputs?.IsNewRemote ?? false, linked);
-            var role = preliminary;
+            var role = classifiedRoles[item.Row.AlertId];
             var quadrant = TopologyMath.Quadrant(role, item.Topology.RadialDistance);
-            var angle = TopologyMath.RadarAngle(item.Row.AlertId, role);
+            var angle = distributedAngles.GetValueOrDefault(item.Row.AlertId, TopologyMath.RadarAngle(item.Row.AlertId, role));
             var correlations = new List<CorrelatedAccountDto>();
             foreach (var other in rows.Where(x => x.AlertId != item.Row.AlertId))
             {

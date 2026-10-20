@@ -143,10 +143,16 @@ export default function TopologicalRadarPanel({ rows, selectedId, roleFilter, on
               const p = point(row.topology.radial_distance, row.topology.radar_angle_deg);
               const meta = ROLE_META[row.topology.forensic_role] ?? ROLE_META.ISOLATED_ANOMALY;
               const isFocused = row.alertId === activeId;
+              const isFilteredOut = Boolean(roleFilter && row.topology.forensic_role !== roleFilter);
               return (
                 <g
                   key={row.alertId}
                   className={`radar-node ${isFocused ? "focused" : ""}`}
+                  style={{
+                    opacity: isFilteredOut ? 0.22 : 1,
+                    transition: "opacity 0.2s ease",
+                    cursor: "pointer",
+                  }}
                   onClick={() => setFocusedId(row.alertId)}
                   onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { setFocusedId(row.alertId); } }}
                   role="button"

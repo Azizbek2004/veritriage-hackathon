@@ -49,7 +49,7 @@ public static class TopologyMath
         "MULE_AGGREGATOR" => "MULE_VELOCITY",
         "CAROUSEL_RING" => "STRUCTURING_RING",
         "COMPROMISED_VICTIM" => "PEP_CORRIDOR",
-        _ => radialDistance >= 0.65m ? "VOLUME_OUTLIER" : "PEP_CORRIDOR",
+        _ => "VOLUME_OUTLIER",
     };
 
     public static int RadarAngle(string alertId, string role)
