@@ -55,9 +55,9 @@ The agent proposes. The verifier proves. The human signs. Every task ends with a
 
 ## Live Deployment (AWS eu-central-1)
 
-- **Cockpit UI:** [http://18.153.69.221](http://18.153.69.221)
-- **PayShield API:** [http://18.153.69.221/api/v1/health](http://18.153.69.221/api/v1/health)
-- **Live Bedrock Runtime:** [http://18.153.69.221/api/v1/bedrock/status](http://18.153.69.221/api/v1/bedrock/status) (Claude Sonnet 4.5)
+- **Cockpit UI (Permanent Static URL):** [http://3.71.227.128](http://3.71.227.128)
+- **PayShield API:** [http://3.71.227.128/api/v1/health](http://3.71.227.128/api/v1/health)
+- **Live Bedrock Runtime:** [http://3.71.227.128/api/v1/bedrock/status](http://3.71.227.128/api/v1/bedrock/status) (Claude Sonnet 4.5)
 
 ## License & Commercial Use Restriction
 

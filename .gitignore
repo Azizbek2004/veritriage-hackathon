@@ -32,3 +32,5 @@ Library/
 /data/
 
 /documents/
+.dsh-office*
+
